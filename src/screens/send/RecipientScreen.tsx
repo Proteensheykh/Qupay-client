@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenHeader, GradientAvatar, BottomSheet } from '../../components';
+import { ScreenHeader, GradientAvatar, CTAButton, BottomSheet } from '../../components';
+import { banks } from '../../data/mockData';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
 
@@ -26,15 +27,30 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
   const [inputVal, setInputVal] = useState('');
   const [resolveState, setResolveState] = useState<'idle' | 'resolving' | 'resolved' | 'error'>('idle');
   const [resolvedContact, setResolvedContact] = useState<(typeof contacts)[0] | null>(null);
+  const [showBankSheet, setShowBankSheet] = useState(false);
+  const [bankName, setBankName] = useState('');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
+  const [bankAccountName, setBankAccountName] = useState('');
+  const [selectedBank, setSelectedBank] = useState<string | null>(null);
+
+  const destCountry = dest?.name || 'Nigeria';
+  const countryBanks = banks[destCountry] || [];
+  const bankFormValid = selectedBank && bankAccountNumber.length >= 8 && bankAccountName.trim().length >= 2;
 
   const handleInput = useCallback(
     (val: string) => {
       setInputVal(val);
       if (val.length >= 10) {
         setResolveState('resolving');
+        setResolvedContact(null);
         setTimeout(() => {
-          setResolveState('resolved');
-          setResolvedContact(contacts[0]);
+          // Simulate: numbers starting with 0 resolve, others error
+          if (val.startsWith('0')) {
+            setResolveState('resolved');
+            setResolvedContact(contacts[0]);
+          } else {
+            setResolveState('error');
+          }
         }, 1200);
       } else {
         setResolveState('idle');
@@ -61,26 +77,12 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScreenHeader
-        title="Who are you sending to?"
-        onBack={() => navigation.goBack()}
-      />
+      <ScreenHeader title="Who are you sending to?" />
       <ScrollView
         style={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Corridor indicator */}
-        <View style={styles.corridorBar}>
-          <Text style={styles.corridorText}>
-            {'\u{1F1F8}\u{1F1EC}'} {'\u2192'} {dest?.flag || '\u{1F1F3}\u{1F1EC}'}{' '}
-            <Text style={styles.corridorSub}>
-              {dest?.name || 'Nigeria'} {'\u00B7'} {dest?.providers || 'OPay, GTBank, PalmPay'}
-            </Text>
-          </Text>
-          <Text style={styles.changeText}>Change</Text>
-        </View>
-
         {/* Smart input card */}
         <View style={[styles.sendInputCard, resolveState !== 'idle' && styles.sendInputCardActive]}>
           <View style={styles.sicField}>
@@ -99,6 +101,17 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             <View style={styles.resolvingRow}>
               <View style={styles.miniSpin} />
               <Text style={styles.resolvingText}>Looking up account\u2026</Text>
+            </View>
+          )}
+
+          {/* Error state */}
+          {resolveState === 'error' && (
+            <View style={styles.errorRow}>
+              <Ionicons name="alert-circle" size={16} color="#FF4D6A" />
+              <View style={styles.errorInfo}>
+                <Text style={styles.errorTitle}>Account not found</Text>
+                <Text style={styles.errorSub}>Check the number and try again, or add bank details below</Text>
+              </View>
             </View>
           )}
 
@@ -133,6 +146,22 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
           )}
         </View>
 
+        {/* Add bank account for non-Qupay users */}
+        <TouchableOpacity
+          style={styles.addBankBtn}
+          onPress={() => setShowBankSheet(true)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.addBankIcon}>
+            <Ionicons name="business-outline" size={18} color="#00E5A0" />
+          </View>
+          <View style={styles.addBankInfo}>
+            <Text style={styles.addBankTitle}>No Qupay account?</Text>
+            <Text style={styles.addBankSub}>Enter bank account details to send directly</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color="rgba(255,255,245,0.4)" />
+        </TouchableOpacity>
+
         {/* Recent contacts */}
         <Text style={styles.sectionLabel}>Recent</Text>
         <View style={styles.contactList}>
@@ -165,6 +194,93 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
           ))}
         </View>
       </ScrollView>
+      {/* Bank Account Entry Sheet */}
+      <BottomSheet
+        visible={showBankSheet}
+        onClose={() => setShowBankSheet(false)}
+        title="Enter Bank Details"
+      >
+        <View style={styles.bankForm}>
+          <Text style={styles.bankFormNote}>
+            Send to a bank account — no Qupay account needed
+          </Text>
+
+          <Text style={styles.bankLabel}>Select Bank</Text>
+          <View style={styles.bankPicker}>
+            {countryBanks.map((b) => (
+              <TouchableOpacity
+                key={b.id}
+                style={[
+                  styles.bankChip,
+                  selectedBank === b.id && styles.bankChipSelected,
+                ]}
+                onPress={() => {
+                  setSelectedBank(b.id);
+                  setBankName(b.name);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.bankChipText,
+                    selectedBank === b.id && styles.bankChipTextSelected,
+                  ]}
+                >
+                  {b.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={styles.bankLabel}>Account Number</Text>
+          <TextInput
+            style={styles.bankInput}
+            placeholder="Enter account number"
+            placeholderTextColor="rgba(255,255,245,0.4)"
+            keyboardType="number-pad"
+            value={bankAccountNumber}
+            onChangeText={setBankAccountNumber}
+            maxLength={20}
+          />
+
+          <Text style={styles.bankLabel}>Account Holder Name</Text>
+          <TextInput
+            style={styles.bankInput}
+            placeholder="Enter account holder name"
+            placeholderTextColor="rgba(255,255,245,0.4)"
+            autoCapitalize="words"
+            value={bankAccountName}
+            onChangeText={setBankAccountName}
+            maxLength={60}
+          />
+
+          <CTAButton
+            title="Continue"
+            disabled={!bankFormValid}
+            onPress={() => {
+              setShowBankSheet(false);
+              const initials = bankAccountName
+                .trim()
+                .split(' ')
+                .map((w) => w[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase();
+              navigation.navigate('Amount', {
+                recipientName: bankAccountName.trim(),
+                recipientInitials: initials,
+                recipientColors: ['#1a6fff', '#00e5a0'],
+                recipientMethod: bankName,
+                recipientPhone: bankAccountNumber,
+                recipientFlag: dest?.flag || '\u{1F1F3}\u{1F1EC}',
+                dest,
+              });
+            }}
+            style={{ marginTop: 16 }}
+          />
+        </View>
+        <View style={{ height: 40 }} />
+      </BottomSheet>
     </SafeAreaView>
   );
 };
@@ -172,35 +288,6 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#111118' },
   scroll: { flex: 1 },
-  corridorBar: {
-    marginHorizontal: 24,
-    marginBottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#222236',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,245,0.08)',
-    borderRadius: 12,
-  },
-  corridorText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 13,
-    color: '#FFFFF5',
-    flex: 1,
-  },
-  corridorSub: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
-    color: 'rgba(255,255,245,0.6)',
-  },
-  changeText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 11,
-    color: '#00E5A0',
-  },
   sendInputCard: {
     marginHorizontal: 24,
     marginBottom: 16,
@@ -288,6 +375,28 @@ const styles = StyleSheet.create({
     color: '#00E5A0',
     marginTop: 2,
   },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,77,106,0.15)',
+    backgroundColor: 'rgba(255,77,106,0.05)',
+  },
+  errorInfo: { flex: 1 },
+  errorTitle: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
+    color: '#FF4D6A',
+  },
+  errorSub: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 11,
+    color: 'rgba(255,255,245,0.5)',
+    marginTop: 2,
+  },
   rcCheck: {
     fontSize: 18,
     color: '#00E5A0',
@@ -320,9 +429,9 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#19192A',
+    backgroundColor: '#111118',
     borderWidth: 1.5,
-    borderColor: '#19192A',
+    borderColor: '#111118',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -337,5 +446,95 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
     color: 'rgba(255,255,245,0.6)',
+  },
+  // Add bank button
+  addBankBtn: {
+    marginHorizontal: 24,
+    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(0,229,160,0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,229,160,0.15)',
+    borderRadius: 12,
+  },
+  addBankIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,229,160,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addBankInfo: { flex: 1 },
+  addBankTitle: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
+    color: '#00E5A0',
+  },
+  addBankSub: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 11,
+    color: 'rgba(255,255,245,0.6)',
+    marginTop: 1,
+  },
+  // Bank form
+  bankForm: {
+    paddingHorizontal: 24,
+  },
+  bankFormNote: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: 'rgba(255,255,245,0.6)',
+    marginBottom: 16,
+  },
+  bankLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: 'rgba(255,255,245,0.6)',
+    marginBottom: 8,
+  },
+  bankPicker: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  bankChip: {
+    backgroundColor: '#222236',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,245,0.08)',
+    borderRadius: 20,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+  },
+  bankChipSelected: {
+    borderColor: '#00E5A0',
+    backgroundColor: 'rgba(0,229,160,0.12)',
+  },
+  bankChipText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    color: 'rgba(255,255,245,0.6)',
+  },
+  bankChipTextSelected: {
+    color: '#00E5A0',
+  },
+  bankInput: {
+    backgroundColor: '#222236',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,245,0.08)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
+    color: '#FFFFF5',
+    marginBottom: 16,
   },
 });

@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { GradientAvatar, ScreenHeader } from '../../components';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HistoryStackParamList } from '../../navigation/AppNavigator';
@@ -38,11 +39,39 @@ const statusDotStyle = (status: HistoryItem['status']) => {
 };
 
 export const HistoryScreen: React.FC<Props> = ({ navigation }) => {
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1500);
+  }, []);
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScreenHeader title="History" onBack={() => navigation.goBack()} />
+      <ScreenHeader title="History" />
+      {historyItems.length === 0 ? (
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIcon}>
+            <Ionicons name="time-outline" size={36} color="rgba(255,255,245,0.2)" />
+          </View>
+          <Text style={styles.emptyTitle}>No transfers yet</Text>
+          <Text style={styles.emptySub}>Your transfer history will appear here once you send your first payment.</Text>
+        </View>
+      ) : (
+      <>
       <Text style={styles.countText}>{historyItems.length} transfers</Text>
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#00E5A0"
+            colors={['#00E5A0']}
+            progressBackgroundColor="#222236"
+          />
+        }
+      >
         {historyItems.map((item) => {
           const dot = statusDotStyle(item.status);
           return (
@@ -89,6 +118,8 @@ export const HistoryScreen: React.FC<Props> = ({ navigation }) => {
         })}
         <View style={{ height: 24 }} />
       </ScrollView>
+      </>
+      )}
     </SafeAreaView>
   );
 };
@@ -123,7 +154,7 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 7,
     borderWidth: 2,
-    borderColor: '#19192A',
+    borderColor: '#111118',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -155,5 +186,33 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: 'rgba(255,255,245,0.6)',
     marginTop: 1,
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#222236',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 18,
+    color: '#FFFFF5',
+    marginBottom: 8,
+  },
+  emptySub: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 13,
+    color: 'rgba(255,255,245,0.5)',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

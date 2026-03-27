@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { QupayLogo, CTAButton } from '../../components';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -13,6 +13,18 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
   const [code, setCode] = useState<string[]>([]);
   const [resendTimer, setResendTimer] = useState(45);
   const [loading, setLoading] = useState(false);
+
+  const blinkAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(blinkAnim, { toValue: 0, duration: 500, easing: Easing.step0, useNativeDriver: true }),
+        Animated.timing(blinkAnim, { toValue: 1, duration: 500, easing: Easing.step0, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [blinkAnim]);
 
   useEffect(() => {
     if (resendTimer <= 0) return;
@@ -29,11 +41,7 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      // Navigate to main app — handled by parent
-      navigation.getParent()?.reset({
-        index: 0,
-        routes: [{ name: 'Main' as never }],
-      });
+      navigation.navigate('PinSetup');
     }, 800);
   }, [navigation]);
 
@@ -69,7 +77,7 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
                 {code[i] ? (
                   <Text style={styles.otpDigit}>{code[i]}</Text>
                 ) : i === code.length ? (
-                  <View style={styles.curLine} />
+                  <Animated.View style={[styles.curLine, { opacity: blinkAnim }]} />
                 ) : null}
               </View>
             ))}
@@ -181,6 +189,6 @@ const styles = StyleSheet.create({
   },
   bottom: {
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingBottom: 12,
   },
 });

@@ -8,7 +8,13 @@ interface BackButtonProps {
 
 export const BackButton: React.FC<BackButtonProps> = ({ onPress }) => {
   return (
-    <TouchableOpacity style={styles.btn} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.btn}
+      onPress={onPress}
+      activeOpacity={0.7}
+      accessibilityLabel="Go back"
+      accessibilityRole="button"
+    >
       <Ionicons name="arrow-back" size={18} color="#FFFFF5" />
     </TouchableOpacity>
   );

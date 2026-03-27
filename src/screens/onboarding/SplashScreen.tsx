@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { QupayLogo, CTAButton } from '../../components';
@@ -48,12 +48,11 @@ export const SplashScreen: React.FC<Props> = ({ navigation }) => {
             onPress={() => navigation.navigate('SignUp')}
             style={styles.ctaBtn}
           />
-          <Text style={styles.loginText}>
-            Already have an account?{' '}
-            <Text style={styles.loginLink} onPress={() => navigation.navigate('SignUp')}>
-              Log in
+          <TouchableOpacity onPress={() => navigation.navigate('SignUp')} activeOpacity={0.7}>
+            <Text style={styles.loginText}>
+              Already have an account? <Text style={styles.loginLink}>Log in</Text>
             </Text>
-          </Text>
+          </TouchableOpacity>
           <View style={styles.footer}>
             <Ionicons name="shield-checkmark-outline" size={11} color="rgba(255,255,245,0.4)" />
             <Text style={styles.footerText}>Licensed & regulated globally</Text>

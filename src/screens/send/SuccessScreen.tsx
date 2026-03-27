@@ -1,8 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { CTAButton } from '../../components';
+import { userProfile } from '../../data/mockData';
+import { CommonActions } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
 
@@ -20,19 +23,61 @@ export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
   const symbol = dest?.symbol || '\u20A6';
   const firstName = recipientName.split(' ')[0];
 
+  const iconScale = useRef(new Animated.Value(0)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Animated.sequence([
+      Animated.spring(iconScale, {
+        toValue: 1,
+        damping: 12,
+        stiffness: 200,
+        mass: 0.8,
+        useNativeDriver: true,
+      }),
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [iconScale, contentOpacity]);
+
+  const goToReceipt = () => {
+    // Navigate to History tab → TransferDetail screen
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{
+          name: 'Recipient' as any,
+        }],
+      })
+    );
+    // Jump to History tab and open the transfer detail
+    const tabNav = navigation.getParent();
+    if (tabNav) {
+      tabNav.navigate('HistoryTab', {
+        screen: 'TransferDetail',
+        params: { status: 'delivered' },
+      });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <View style={styles.content}>
           {/* Success icon */}
-          <View style={styles.sucIcon}>
+          <Animated.View style={[styles.sucIcon, { transform: [{ scale: iconScale }] }]}>
             <Ionicons name="checkmark" size={32} color="#00E5A0" />
-          </View>
+          </Animated.View>
 
+          <Animated.View style={{ opacity: contentOpacity, alignItems: 'center', alignSelf: 'stretch' }}>
           <Text style={styles.sucTitle}>Delivered {'\u{1F389}'}</Text>
           <Text style={styles.sucSub}>
             {firstName} received {symbol}
-            {receiveAmount.toLocaleString()}.{'\n'}4 mins 11 secs.
+            {receiveAmount.toLocaleString()}
           </Text>
 
           {/* Notification card */}
@@ -43,7 +88,7 @@ export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
             <View style={styles.notifBody}>
               <Text style={styles.notifTitle}>{firstName} was notified</Text>
               <Text style={styles.notifMsg}>
-                "Raj sent you {symbol}
+                "{userProfile.name} sent you {symbol}
                 {receiveAmount.toLocaleString()} via Qupay. Check your {recipientMethod} now."
               </Text>
               <View style={styles.notifTag}>
@@ -56,16 +101,21 @@ export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
           {/* Buttons */}
           <CTAButton
             title="View receipt"
-            onPress={() => {
-              navigation.reset({ index: 0, routes: [{ name: 'Recipient' }] });
-            }}
+            onPress={goToReceipt}
             style={styles.receiptBtn}
+          />
+          <CTAButton
+            title="Share receipt"
+            ghost
+            onPress={() => {}}
+            style={styles.shareBtn}
           />
           <CTAButton
             title="Send another"
             ghost
             onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Recipient' }] })}
           />
+          </Animated.View>
         </View>
       </View>
     </SafeAreaView>
@@ -152,5 +202,9 @@ const styles = StyleSheet.create({
   receiptBtn: {
     alignSelf: 'stretch',
     marginBottom: 10,
+  },
+  shareBtn: {
+    alignSelf: 'stretch',
+    marginBottom: 0,
   },
 });

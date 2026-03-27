@@ -9,53 +9,35 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { QupayLogo, CTAButton, BottomSheet } from '../../components';
+import { QupayLogo, CTAButton, FormField, BottomSheet } from '../../components';
 import { countries } from '../../data/mockData';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'SignUp'>;
 
-const quickPicks = ['SG', 'UK', 'US', 'UAE', 'NG'];
-const quickPickMap: Record<string, string> = {
-  SG: 'Singapore',
-  UK: 'United Kingdom',
-  US: 'United States',
-  UAE: 'UAE',
-  NG: 'Nigeria',
-};
-const quickPickFlags: Record<string, string> = {
-  SG: '\u{1F1F8}\u{1F1EC}',
-  UK: '\u{1F1EC}\u{1F1E7}',
-  US: '\u{1F1FA}\u{1F1F8}',
-  UAE: '\u{1F1E6}\u{1F1EA}',
-  NG: '\u{1F1F3}\u{1F1EC}',
-};
-
 export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
-  const [selectedCountry, setSelectedCountry] = useState(countries[0]);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [phoneFocused, setPhoneFocused] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState(countries[0]);
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
 
+  const nameValid = fullName.trim().length >= 2;
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const phoneValid = phone.length >= 8;
+  const allFieldsValid = nameValid && emailValid && phoneValid;
 
   const handleSendCode = useCallback(() => {
-    if (!phoneValid) return;
+    if (!allFieldsValid) return;
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      navigation.navigate('OTP', { phone: `${selectedCountry.code} ${phone}` });
+      navigation.navigate('OTP', { phone: `${selectedCountry.code} ${phone}`, name: fullName.trim(), email: email.trim() });
     }, 800);
-  }, [phone, phoneValid, selectedCountry, navigation]);
-
-  const selectCountry = useCallback(
-    (c: (typeof countries)[0]) => {
-      setSelectedCountry(c);
-      setShowCountryPicker(false);
-    },
-    []
-  );
+  }, [phone, allFieldsValid, selectedCountry, navigation, fullName, email]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -68,64 +50,54 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           <QupayLogo size={22} />
           <View style={{ height: 28 }} />
           <Text style={styles.headline}>
-            Where are you{'\n'}
-            <Text style={styles.greenText}>sending from?</Text>
+            Create your{'\n'}
+            <Text style={styles.greenText}>account</Text>
           </Text>
           <Text style={styles.desc}>
-            30 seconds. We'll verify your ID after your first transfer — send immediately within Tier
-            1 limits.
+            Takes 30 seconds. Start sending crypto to cash instantly.
           </Text>
 
-          <Text style={styles.sectionLabel}>Your Country</Text>
-          <TouchableOpacity
-            style={styles.countryRow}
-            onPress={() => setShowCountryPicker(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.countryFlag}>{selectedCountry.flag}</Text>
-            <View style={styles.countryInfo}>
-              <Text style={styles.countryName}>{selectedCountry.name}</Text>
-              <Text style={styles.countryReg}>
-                {selectedCountry.reg} {'\u00B7'} {selectedCountry.code}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,245,0.6)" />
-          </TouchableOpacity>
+          <FormField
+            label="Full Name"
+            placeholder="Enter your full name"
+            autoCapitalize="words"
+            value={fullName}
+            onChangeText={setFullName}
+            maxLength={60}
+            isValid={nameValid}
+            accessibilityLabel="Full name"
+          />
 
-          {/* Quick picks */}
-          <View style={styles.quickRow}>
-            {quickPicks.map((code) => (
-              <TouchableOpacity
-                key={code}
-                style={styles.quickChip}
-                onPress={() => {
-                  const c = countries.find(
-                    (cn) => cn.name === quickPickMap[code]
-                  );
-                  if (c) setSelectedCountry(c);
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.quickText}>
-                  {quickPickFlags[code]} {code}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <FormField
+            label="Email Address"
+            placeholder="Enter your email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={email}
+            onChangeText={setEmail}
+            maxLength={80}
+            isValid={emailValid}
+            accessibilityLabel="Email address"
+          />
 
-          <Text style={styles.sectionLabel}>Phone Number</Text>
+          <Text style={styles.phoneLabel}>Phone Number</Text>
           <View style={styles.phoneGroup}>
             <TouchableOpacity
               style={styles.prefixBtn}
               onPress={() => setShowCountryPicker(true)}
               activeOpacity={0.7}
+              accessibilityLabel={`Country: ${selectedCountry.name}. Tap to change`}
+              accessibilityRole="button"
             >
               <Text style={styles.prefixFlag}>{selectedCountry.flag}</Text>
               <Text style={styles.prefixCode}>{selectedCountry.code}</Text>
+              <Ionicons name="chevron-down" size={12} color="rgba(255,255,245,0.4)" />
             </TouchableOpacity>
             <View
               style={[
                 styles.phoneField,
+                phoneFocused && styles.phoneFieldFocused,
                 phoneValid && styles.phoneFieldOk,
               ]}
             >
@@ -137,6 +109,9 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 value={phone}
                 onChangeText={setPhone}
                 maxLength={12}
+                onFocus={() => setPhoneFocused(true)}
+                onBlur={() => setPhoneFocused(false)}
+                accessibilityLabel="Phone number"
               />
               {phoneValid && (
                 <Ionicons name="checkmark" size={16} color="#00E5A0" />
@@ -144,17 +119,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Compliance note */}
-          <View style={styles.compNote}>
-            <Text style={styles.compTitle}>
-              {selectedCountry.flag} {selectedCountry.name} {'\u00B7'}{' '}
-              {selectedCountry.reg}
-            </Text>
-            <Text style={styles.compBody}>
-              Identity verification required. We'll ask for a government ID — complete it after your
-              first transfer if you're within Tier 1 limits.
-            </Text>
-          </View>
+          <View style={{ height: 8 }} />
         </View>
       </ScrollView>
 
@@ -162,7 +127,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         <CTAButton
           title="Send Code"
           onPress={handleSendCode}
-          disabled={!phoneValid}
+          disabled={!allFieldsValid}
           loading={loading}
           style={styles.cta}
         />
@@ -173,7 +138,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         </Text>
       </View>
 
-      {/* Country Picker Sheet */}
+      {/* Country Picker */}
       <BottomSheet
         visible={showCountryPicker}
         onClose={() => setShowCountryPicker(false)}
@@ -181,23 +146,24 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       >
         {countries.map((c) => (
           <TouchableOpacity
-            key={c.name}
+            key={c.code}
             style={[
-              styles.cpItem,
-              selectedCountry.name === c.name && styles.cpItemSel,
+              styles.countryItem,
+              selectedCountry.code === c.code && styles.countryItemSel,
             ]}
-            onPress={() => selectCountry(c)}
+            onPress={() => {
+              setSelectedCountry(c);
+              setShowCountryPicker(false);
+            }}
             activeOpacity={0.7}
           >
-            <Text style={styles.cpFlag}>{c.flag}</Text>
-            <View style={styles.cpInfo}>
-              <Text style={styles.cpName}>{c.name}</Text>
-              <Text style={styles.cpSub}>
-                {c.reg} {'\u00B7'} {c.code}
-              </Text>
+            <Text style={styles.countryFlag}>{c.flag}</Text>
+            <View style={styles.countryInfo}>
+              <Text style={styles.countryName}>{c.name}</Text>
+              <Text style={styles.countrySub}>{c.reg} {'\u00B7'} {c.code}</Text>
             </View>
-            {selectedCountry.name === c.name && (
-              <Text style={styles.cpCheck}>{'\u2713'}</Text>
+            {selectedCountry.code === c.code && (
+              <Ionicons name="checkmark" size={18} color="#00E5A0" />
             )}
           </TouchableOpacity>
         ))}
@@ -228,7 +194,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,245,0.6)',
     marginBottom: 24,
   },
-  sectionLabel: {
+  phoneLabel: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 11,
     letterSpacing: 0.8,
@@ -236,46 +202,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,245,0.6)',
     marginBottom: 8,
   },
-  countryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#222236',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,245,0.08)',
-    borderRadius: 12,
-    padding: 12,
-    paddingHorizontal: 16,
-    marginBottom: 10,
-  },
-  countryFlag: { fontSize: 22 },
-  countryInfo: { flex: 1 },
-  countryName: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 14,
-    color: '#FFFFF5',
-  },
-  countryReg: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
-    color: 'rgba(255,255,245,0.6)',
-    marginTop: 1,
-  },
-  quickRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 20,
-  },
-  quickChip: {
-    backgroundColor: '#222236',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,245,0.08)',
-    borderRadius: 20,
-    paddingVertical: 5,
-    paddingHorizontal: 11,
-  },
-  quickText: { fontSize: 12, color: '#FFFFF5' },
   phoneGroup: {
     flexDirection: 'row',
     gap: 10,
@@ -308,6 +234,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 8,
   },
+  phoneFieldFocused: {
+    borderColor: 'rgba(0,229,160,0.4)',
+  },
   phoneFieldOk: {
     borderColor: 'rgba(0,229,160,0.5)',
   },
@@ -318,26 +247,6 @@ const styles = StyleSheet.create({
     color: '#FFFFF5',
     paddingVertical: 14,
     letterSpacing: 1,
-  },
-  compNote: {
-    backgroundColor: 'rgba(26,111,255,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(26,111,255,0.15)',
-    borderRadius: 12,
-    padding: 13,
-    marginBottom: 20,
-  },
-  compTitle: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 12,
-    color: '#FFFFF5',
-    marginBottom: 2,
-  },
-  compBody: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
-    lineHeight: 17,
-    color: '#93c5fd',
   },
   bottomArea: {
     paddingHorizontal: 24,
@@ -356,7 +265,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
   },
   // Country picker items
-  cpItem: {
+  countryItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
@@ -365,24 +274,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,245,0.08)',
   },
-  cpItemSel: {
-    backgroundColor: 'rgba(0,229,160,0.12)',
+  countryItemSel: {
+    backgroundColor: 'rgba(0,229,160,0.08)',
   },
-  cpFlag: { fontSize: 24, width: 32, textAlign: 'center' },
-  cpInfo: { flex: 1 },
-  cpName: {
+  countryFlag: { fontSize: 24 },
+  countryInfo: { flex: 1 },
+  countryName: {
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     color: '#FFFFF5',
   },
-  cpSub: {
+  countrySub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
     color: 'rgba(255,255,245,0.6)',
-  },
-  cpCheck: {
-    fontSize: 16,
-    color: '#00E5A0',
-    fontFamily: 'Inter_700Bold',
+    marginTop: 1,
   },
 });

@@ -37,6 +37,9 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
         onPress={onPress}
         disabled={disabled || loading}
         activeOpacity={0.85}
+        accessibilityLabel={title}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: disabled || loading }}
       >
         <Text style={[styles.dangerText, textStyle]}>{title}</Text>
       </TouchableOpacity>
@@ -50,6 +53,9 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
         onPress={onPress}
         disabled={disabled || loading}
         activeOpacity={0.85}
+        accessibilityLabel={title}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: disabled || loading }}
       >
         {loading ? (
           <ActivityIndicator size="small" color="rgba(255,255,245,0.6)" />
@@ -66,6 +72,9 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.85}
+      accessibilityLabel={title}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading }}
     >
       {loading ? (
         <ActivityIndicator size="small" color="#060a07" />

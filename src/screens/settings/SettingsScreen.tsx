@@ -3,12 +3,11 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Switch } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { QupayLogo, GradientAvatar, CTAButton, BottomSheet } from '../../components';
+import { QupayLogo, GradientAvatar, CTAButton } from '../../components';
 import { userProfile } from '../../data/mockData';
 
 export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const [notifOn, setNotifOn] = useState(true);
-  const [showCorridorSheet, setShowCorridorSheet] = useState(false);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -35,71 +34,47 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
                 fontSize={20}
               />
               <View style={styles.phInfo}>
-                <Text style={styles.phName}>Raj Arumugam</Text>
+                <Text style={styles.phName}>{userProfile.name}</Text>
+                <Text style={styles.phEmail}>{userProfile.email}</Text>
                 <Text style={styles.phPhone}>{userProfile.phone}</Text>
-                <Text style={styles.phReg}>
-                  {userProfile.flag} {userProfile.country} {'\u00B7'} MAS regulated
-                </Text>
               </View>
             </View>
             <View style={styles.phStats}>
               <View style={styles.phStat}>
-                <Text style={styles.phVal}>6</Text>
+                <Text style={styles.phVal}>{userProfile.totalTransfers}</Text>
                 <Text style={styles.phLabel}>Transfers</Text>
               </View>
               <View style={styles.phStatDivider} />
               <View style={styles.phStat}>
-                <Text style={[styles.phVal, styles.phValGreen]}>{'\u20A6'}22k</Text>
-                <Text style={styles.phLabel}>Saved</Text>
+                <Text style={[styles.phVal, styles.phValGreen]}>${userProfile.totalSent.toLocaleString()}</Text>
+                <Text style={styles.phLabel}>Total Sent</Text>
               </View>
               <View style={styles.phStatDivider} />
               <View style={styles.phStat}>
-                <Text style={styles.phVal}>Mar '24</Text>
+                <Text style={styles.phVal}>Nov '25</Text>
                 <Text style={styles.phLabel}>Member</Text>
               </View>
             </View>
           </LinearGradient>
         </View>
 
-        {/* Account section */}
-        <Text style={styles.sectionLabel}>Account</Text>
+        {/* Settings */}
+        <Text style={styles.sectionLabel}>Settings</Text>
         <View style={styles.card}>
-          <TouchableOpacity
-            style={styles.row}
-            onPress={() => setShowCorridorSheet(true)}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={styles.row} activeOpacity={0.7}>
             <View style={[styles.rowIcon, { backgroundColor: 'rgba(0,229,160,0.07)' }]}>
-              <Text style={styles.rowIconEmoji}>{'\u{1F30D}'}</Text>
+              <Ionicons name="lock-closed-outline" size={18} color="#00E5A0" />
             </View>
             <View style={styles.rowBody}>
-              <Text style={styles.rowTitle}>Sending Corridor</Text>
-              <Text style={styles.rowSub}>
-                {'\u{1F1F8}\u{1F1EC}'} Singapore {'\u2192'} {'\u{1F1F3}\u{1F1EC}'} Nigeria
-              </Text>
+              <Text style={styles.rowTitle}>Transaction PIN</Text>
+              <Text style={styles.rowSub}>Change your 4-digit PIN</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color="rgba(255,255,245,0.4)" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.row} activeOpacity={0.7}>
-            <View style={[styles.rowIcon, { backgroundColor: 'rgba(255,77,106,0.1)' }]}>
-              <Text style={styles.rowIconEmoji}>{'\u{1F510}'}</Text>
-            </View>
-            <View style={styles.rowBody}>
-              <Text style={styles.rowTitle}>Security</Text>
-              <Text style={styles.rowSub}>PIN {'\u00B7'} Biometrics active</Text>
-            </View>
-            <View style={styles.rowRight}>
-              <View style={styles.strongBadge}>
-                <Text style={styles.strongBadgeText}>Strong</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color="rgba(255,255,245,0.4)" />
-            </View>
-          </TouchableOpacity>
-
           <View style={[styles.row, styles.rowLast]}>
             <View style={[styles.rowIcon, { backgroundColor: 'rgba(255,212,96,0.1)' }]}>
-              <Text style={styles.rowIconEmoji}>{'\u{1F514}'}</Text>
+              <Ionicons name="notifications-outline" size={18} color="#FFD460" />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowTitle}>Notifications</Text>
@@ -115,12 +90,12 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
           </View>
         </View>
 
-        {/* Support section */}
+        {/* Support */}
         <Text style={styles.sectionLabel}>Support</Text>
         <View style={styles.card}>
           <TouchableOpacity style={[styles.row, styles.rowLast]} activeOpacity={0.7}>
             <View style={[styles.rowIcon, { backgroundColor: '#2A2A42' }]}>
-              <Text style={styles.rowIconEmoji}>{'\u{1F4AC}'}</Text>
+              <Ionicons name="chatbubble-ellipses-outline" size={18} color="rgba(255,255,245,0.6)" />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowTitle}>Help & Support</Text>
@@ -130,9 +105,6 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
           </TouchableOpacity>
         </View>
 
-        {/* Footer */}
-        <Text style={styles.masText}>MAS Licensed {'\u00B7'} Global regulated network</Text>
-
         {/* Log Out */}
         <CTAButton
           title="Log Out"
@@ -141,36 +113,9 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
           style={styles.logoutBtn}
         />
 
+        <Text style={styles.versionText}>Qupay v1.0.0</Text>
         <View style={{ height: 20 }} />
       </ScrollView>
-
-      <BottomSheet
-        visible={showCorridorSheet}
-        onClose={() => setShowCorridorSheet(false)}
-        title="Sending Corridor"
-      >
-        <Text style={styles.cpNote}>Select your destination country</Text>
-        {[
-          { flag: '\u{1F1F3}\u{1F1EC}', name: 'Nigeria', rate: '\u20A61,645/USDT' },
-          { flag: '\u{1F1EC}\u{1F1ED}', name: 'Ghana', rate: '\u20B513.8/USDT' },
-          { flag: '\u{1F1F0}\u{1F1EA}', name: 'Kenya', rate: 'KSh143/USDT' },
-        ].map((d) => (
-          <TouchableOpacity
-            key={d.name}
-            style={styles.cpItem}
-            onPress={() => setShowCorridorSheet(false)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.cpFlag}>{d.flag}</Text>
-            <View style={styles.cpInfo}>
-              <Text style={styles.cpName}>{d.name}</Text>
-              <Text style={styles.cpRate}>{d.rate}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-        <View style={{ height: 40 }} />
-      </BottomSheet>
-
     </SafeAreaView>
   );
 };
@@ -209,18 +154,17 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     color: '#FFFFF5',
   },
-  phPhone: {
+  phEmail: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
     color: 'rgba(255,255,245,0.6)',
     marginTop: 2,
   },
-  phReg: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 10,
+  phPhone: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
     color: 'rgba(255,255,245,0.4)',
-    marginTop: 4,
-    fontVariant: ['tabular-nums'],
+    marginTop: 1,
   },
   phStats: {
     flexDirection: 'row',
@@ -282,7 +226,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowIconEmoji: { fontSize: 18 },
   rowBody: { flex: 1 },
   rowTitle: {
     fontFamily: 'Inter_500Medium',
@@ -295,60 +238,15 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,245,0.6)',
     marginTop: 1,
   },
-  rowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  strongBadge: {
-    backgroundColor: 'rgba(0,229,160,0.12)',
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderRadius: 20,
-  },
-  strongBadgeText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 10,
-    color: '#00E5A0',
-  },
-  masText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
-    color: 'rgba(255,255,245,0.4)',
-    textAlign: 'center',
-    paddingVertical: 8,
-  },
   logoutBtn: {
     marginHorizontal: 24,
     marginTop: 4,
   },
-  // Corridor picker
-  cpNote: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    color: 'rgba(255,255,245,0.6)',
-    paddingHorizontal: 24,
-    paddingBottom: 12,
-  },
-  cpItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,245,0.08)',
-  },
-  cpFlag: { fontSize: 24, width: 32, textAlign: 'center' },
-  cpInfo: { flex: 1 },
-  cpName: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 14,
-    color: '#FFFFF5',
-  },
-  cpRate: {
+  versionText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,245,0.2)',
+    textAlign: 'center',
+    paddingVertical: 12,
   },
 });

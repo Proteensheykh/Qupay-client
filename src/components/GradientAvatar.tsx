@@ -33,6 +33,9 @@ export const GradientAvatar: React.FC<GradientAvatarProps> = ({
         },
         borderWidth ? { borderWidth, borderColor: borderColor || 'rgba(255,255,255,0.1)' } : undefined,
       ]}
+      accessible
+      accessibilityLabel={`Avatar for ${initials}`}
+      accessibilityRole="image"
     >
       <LinearGradient
         colors={colors as [string, string, ...string[]]}

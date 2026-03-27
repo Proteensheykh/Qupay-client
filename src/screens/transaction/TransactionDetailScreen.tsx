@@ -4,9 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenHeader, StatusBadge, GradientAvatar, CTAButton } from '../../components';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { HomeStackParamList } from '../../navigation/AppNavigator';
+import type { HistoryStackParamList } from '../../navigation/AppNavigator';
 
-type Props = NativeStackScreenProps<HomeStackParamList, 'TransferDetail'>;
+type Props = NativeStackScreenProps<HistoryStackParamList, 'TransferDetail'>;
 
 type TransferStatus = 'delivered' | 'pending' | 'failed' | 'disputed';
 
@@ -65,17 +65,6 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
           ))}
         </View>
 
-        {/* Savings banner */}
-        {status === 'delivered' && (
-          <View style={styles.savingsBanner}>
-            <Text style={styles.savingsIcon}>{'\u{1F4B0}'}</Text>
-            <View style={styles.savingsTextWrap}>
-              <Text style={styles.savingsAmt}>Saved {'\u20A6'}22,000</Text>
-              <Text style={styles.savingsSub}>vs Western Union on this transfer</Text>
-            </View>
-          </View>
-        )}
-
         {/* No account note */}
         <View style={styles.noAcctBand}>
           <Text style={styles.noAcctIcon}>{'\u2139\uFE0F'}</Text>
@@ -106,7 +95,7 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
             <ReceiptRow label="You sent" value="200 USDT" />
             <ReceiptRow label="Exchange rate" value={'\u20A61,645 / USDT'} />
             <ReceiptRow label="Fee" value={'\u20A63,290 (0.98%)'} />
-            <ReceiptRow label="From wallet" value="MetaMask \u00B7 0x3f9a\u2026b812" />
+            <ReceiptRow label="From wallet" value="Qupay Wallet" />
             <ReceiptRow label="Network" value="Polygon" />
             <ReceiptRow label="Date & time" value="21 Mar 2026 \u00B7 09:41 SGT" />
             <ReceiptRow label="Reference" value="QP-2026-0384-7821" valueStyle={styles.refVal} isLast />
@@ -236,31 +225,6 @@ const styles = StyleSheet.create({
   actionLabel: {
     fontFamily: 'Inter_400Regular',
     fontSize: 10,
-    color: 'rgba(255,255,245,0.6)',
-  },
-  // Savings
-  savingsBanner: {
-    marginHorizontal: 24,
-    marginBottom: 16,
-    backgroundColor: 'rgba(0,229,160,0.07)',
-    borderWidth: 1,
-    borderColor: 'rgba(0,229,160,0.15)',
-    borderRadius: 12,
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  savingsIcon: { fontSize: 24 },
-  savingsTextWrap: { flex: 1 },
-  savingsAmt: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 14,
-    color: '#00E5A0',
-  },
-  savingsSub: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
     color: 'rgba(255,255,245,0.6)',
   },
   // No account

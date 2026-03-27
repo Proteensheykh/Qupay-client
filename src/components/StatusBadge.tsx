@@ -22,7 +22,12 @@ const colorMap: Record<BadgeVariant, string> = {
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ label, variant }) => {
   return (
-    <View style={[styles.badge, { backgroundColor: bgMap[variant] }]}>
+    <View
+      style={[styles.badge, { backgroundColor: bgMap[variant] }]}
+      accessible
+      accessibilityLabel={`Status: ${label}`}
+      accessibilityRole="text"
+    >
       <Text style={[styles.text, { color: colorMap[variant] }]}>{label}</Text>
     </View>
   );

@@ -7,20 +7,29 @@ import { Ionicons } from '@expo/vector-icons';
 import { SplashScreen } from '../screens/onboarding/SplashScreen';
 import { SignUpScreen } from '../screens/onboarding/SignUpScreen';
 import { OTPScreen } from '../screens/onboarding/OTPScreen';
-import type { DestInfo } from '../screens/home/HomeScreen';
+import { PinSetupScreen } from '../screens/onboarding/PinSetupScreen';
+export interface DestInfo {
+  flag: string;
+  name: string;
+  code: string;
+  symbol: string;
+  rate: number;
+  providers: string;
+}
 import { HistoryScreen } from '../screens/portfolio/PortfolioScreen';
 import { TransactionDetailScreen } from '../screens/transaction/TransactionDetailScreen';
 import { ProfileScreen } from '../screens/settings/SettingsScreen';
 import { RecipientScreen } from '../screens/send/RecipientScreen';
 import { AmountScreen } from '../screens/send/AmountScreen';
-import { TrackingScreen } from '../screens/send/TrackingScreen';
+import { DepositWaitingScreen } from '../screens/send/DepositWaitingScreen';
 import { SuccessScreen } from '../screens/send/SuccessScreen';
 
 // ─── Param lists ───
 export type OnboardingStackParamList = {
   Splash: undefined;
   SignUp: undefined;
-  OTP: { phone: string };
+  OTP: { phone: string; name: string; email: string };
+  PinSetup: undefined;
 };
 
 export type HistoryStackParamList = {
@@ -44,14 +53,17 @@ export type SendFlowParamList = {
     lastAmount?: number;
     dest?: DestInfo;
   };
-  Tracking: {
+  DepositWaiting: {
     recipientName?: string;
     recipientInitials?: string;
-    recipientColors?: [string, string];
     recipientMethod?: string;
     recipientFlag?: string;
     amount?: number;
     receiveAmount?: number;
+    sendCurrency?: string;
+    recvCurrency?: string;
+    walletAddress?: string;
+    network?: string;
     dest?: DestInfo;
   };
   Success: {
@@ -90,9 +102,10 @@ function OnboardingNavigator() {
     <OnboardingStack.Navigator
       screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
     >
-      <OnboardingStack.Screen name="Splash" component={SplashScreen} />
+      <OnboardingStack.Screen name="Splash" component={SplashScreen} options={{ animation: 'fade' }} />
       <OnboardingStack.Screen name="SignUp" component={SignUpScreen} />
       <OnboardingStack.Screen name="OTP" component={OTPScreen} />
+      <OnboardingStack.Screen name="PinSetup" component={PinSetupScreen} options={{ animation: 'fade_from_bottom' }} />
     </OnboardingStack.Navigator>
   );
 }
@@ -125,8 +138,8 @@ function SendTabNavigator() {
     >
       <SendFlowStack.Screen name="Recipient" component={RecipientScreen} />
       <SendFlowStack.Screen name="Amount" component={AmountScreen} />
-      <SendFlowStack.Screen name="Tracking" component={TrackingScreen} />
-      <SendFlowStack.Screen name="Success" component={SuccessScreen} />
+      <SendFlowStack.Screen name="DepositWaiting" component={DepositWaitingScreen} options={{ animation: 'fade_from_bottom', gestureEnabled: false }} />
+      <SendFlowStack.Screen name="Success" component={SuccessScreen} options={{ animation: 'fade_from_bottom', gestureEnabled: false }} />
     </SendFlowStack.Navigator>
   );
 }
@@ -191,7 +204,7 @@ function MainTabs() {
 
 export const AppNavigator: React.FC = () => {
   return (
-    <RootStack.Navigator screenOptions={{ headerShown: false }}>
+    <RootStack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
       <RootStack.Screen name="Onboarding" component={OnboardingNavigator} />
       <RootStack.Screen name="Main" component={MainTabs} />
     </RootStack.Navigator>
