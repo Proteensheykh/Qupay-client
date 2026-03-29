@@ -14,23 +14,15 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { ScreenHeader, GradientAvatar, CTAButton, BottomSheet, Numpad } from '../../components';
-import { coinLogos, networkLogos } from '../../data/cryptoIcons';
+import { networkLogos } from '../../data/cryptoIcons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'Amount'>;
 
-// ─── Stablecoins only ───
-const stablecoins = [
-  { code: 'USDT', name: 'Tether', icon: '\u{1FA99}', color: '#26A17B' },
-  { code: 'USDC', name: 'USD Coin', icon: '\u{1F535}', color: '#2775CA' },
-  { code: 'DAI',  name: 'Dai',      icon: '\u{1F7E1}', color: '#F5AC37' },
-  { code: 'BUSD', name: 'Binance USD', icon: '\u{1F7E1}', color: '#F0B90B' },
-  { code: 'TUSD', name: 'TrueUSD',  icon: '\u{1F535}', color: '#1A5AFF' },
-  { code: 'FRAX', name: 'Frax',     icon: '\u26AB',     color: '#000000' },
-];
-
-const receiveCurrencies = [
+// ─── Currencies (USDT as settlement currency) ───
+const currencies = [
+  { code: 'USDT', name: 'Tether',              icon: '\u{1FA99}', color: '#26A17B', symbol: '' },
   { code: 'NGN', name: 'Nigerian Naira',       icon: '\u{1F1F3}\u{1F1EC}', color: '#008751', symbol: '\u20A6' },
   { code: 'GHS', name: 'Ghanaian Cedi',        icon: '\u{1F1EC}\u{1F1ED}', color: '#CE1126', symbol: '\u20B5' },
   { code: 'KES', name: 'Kenyan Shilling',      icon: '\u{1F1F0}\u{1F1EA}', color: '#006600', symbol: 'KSh' },
@@ -41,13 +33,17 @@ const receiveCurrencies = [
   { code: 'ZAR', name: 'South African Rand',   icon: '\u{1F1FF}\u{1F1E6}', color: '#007749', symbol: 'R' },
 ];
 
-const rateMap: Record<string, Record<string, number>> = {
-  USDT: { NGN: 1645, GHS: 15.16, KES: 128.7, INR: 83.5, PHP: 56.78, MXN: 17.24, PKR: 278.5, ZAR: 18.9 },
-  USDC: { NGN: 1644, GHS: 15.15, KES: 128.6, INR: 83.4, PHP: 56.7,  MXN: 17.22, PKR: 278.3, ZAR: 18.88 },
-  DAI:  { NGN: 1643, GHS: 15.14, KES: 128.5, INR: 83.3, PHP: 56.6,  MXN: 17.2,  PKR: 278.0, ZAR: 18.85 },
-  BUSD: { NGN: 1644, GHS: 15.15, KES: 128.6, INR: 83.4, PHP: 56.7,  MXN: 17.22, PKR: 278.3, ZAR: 18.88 },
-  TUSD: { NGN: 1643, GHS: 15.14, KES: 128.5, INR: 83.3, PHP: 56.6,  MXN: 17.2,  PKR: 278.0, ZAR: 18.85 },
-  FRAX: { NGN: 1642, GHS: 15.13, KES: 128.4, INR: 83.2, PHP: 56.5,  MXN: 17.18, PKR: 277.8, ZAR: 18.83 },
+// Rate map: all rates are relative to USDT (1 USDT = X currency)
+const usdtRates: Record<string, number> = {
+  USDT: 1, NGN: 1645, GHS: 15.16, KES: 128.7, INR: 83.5, PHP: 56.78, MXN: 17.24, PKR: 278.5, ZAR: 18.9,
+};
+
+// Calculate rate between any two currencies via USDT
+const getRate = (from: string, to: string): number => {
+  if (from === to) return 1;
+  const fromToUsdt = 1 / (usdtRates[from] || 1);
+  const usdtToTo = usdtRates[to] || 1;
+  return fromToUsdt * usdtToTo;
 };
 
 const networks = [
@@ -69,16 +65,16 @@ export const AmountScreen: React.FC<Props> = ({ navigation, route }) => {
   } = route.params || {};
 
   // Currency state
-  const [selectedCoin, setSelectedCoin] = useState(stablecoins[0]);
-  const [selectedFiat, setSelectedFiat] = useState(
-    receiveCurrencies.find((c) => c.code === (dest?.code || 'NGN')) || receiveCurrencies[0]
+  const [selectedSendCurrency, setSelectedSendCurrency] = useState(currencies[0]);
+  const [selectedReceiveCurrency, setSelectedReceiveCurrency] = useState(
+    currencies.find((c) => c.code === (dest?.code || 'NGN')) || currencies[1]
   );
-  const [showCoinPicker, setShowCoinPicker] = useState(false);
-  const [showFiatPicker, setShowFiatPicker] = useState(false);
+  const [showSendPicker, setShowSendPicker] = useState(false);
+  const [showReceivePicker, setShowReceivePicker] = useState(false);
 
   // Amount
   const [amount, setAmount] = useState('');
-  const rate = rateMap[selectedCoin.code]?.[selectedFiat.code] || 1645;
+  const rate = getRate(selectedSendCurrency.code, selectedReceiveCurrency.code);
   const numAmount = parseFloat(amount) || 0;
   const fiatEquivalent = Math.round(numAmount * rate);
   const fee = Math.round(numAmount * rate * 0.01);
@@ -132,8 +128,8 @@ export const AmountScreen: React.FC<Props> = ({ navigation, route }) => {
             recipientFlag,
             amount: numAmount,
             receiveAmount: fiatEquivalent,
-            sendCurrency: selectedCoin.code,
-            recvCurrency: selectedFiat.code,
+            sendCurrency: selectedSendCurrency.code,
+            recvCurrency: selectedReceiveCurrency.code,
             walletAddress: selectedNetwork.address,
             network: selectedNetwork.name,
             dest,
@@ -141,7 +137,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation, route }) => {
         }, 400);
       }
     },
-    [pin, navigation, recipientName, recipientMethod, recipientFlag, numAmount, fiatEquivalent, selectedCoin.code, selectedFiat.code, selectedNetwork, dest]
+    [pin, navigation, recipientName, recipientMethod, recipientFlag, numAmount, fiatEquivalent, selectedSendCurrency.code, selectedReceiveCurrency.code, selectedNetwork, dest]
   );
 
   return (
@@ -170,7 +166,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation, route }) => {
           {/* Send row */}
           <View style={styles.acSection}>
             <Text style={styles.acLabel}>You send</Text>
-            <View style={styles.acRow}>
+            <View style={styles.acRowSpaced}>
               <TextInput
                 style={styles.amountInput}
                 value={amount}
@@ -179,12 +175,12 @@ export const AmountScreen: React.FC<Props> = ({ navigation, route }) => {
                 placeholder="0"
                 placeholderTextColor="rgba(255,255,245,0.25)"
               />
-              <TouchableOpacity style={styles.sendCurrPill} onPress={() => setShowCoinPicker(true)} activeOpacity={0.7}>
-                <Image source={{ uri: coinLogos[selectedCoin.code] }} style={styles.coinLogo} />
-                <Text style={styles.currText}>{selectedCoin.code}</Text>
-                <View style={styles.chevronWrap}>
-                  <Ionicons name="swap-vertical" size={14} color="#00E5A0" />
+              <TouchableOpacity style={styles.sendCurrPill} onPress={() => setShowSendPicker(true)} activeOpacity={0.7}>
+                <View style={[styles.cpIconWrapSmall, { backgroundColor: selectedSendCurrency.color + '20' }]}>
+                  <Text style={styles.currFlagIcon}>{selectedSendCurrency.icon}</Text>
                 </View>
+                <Text style={styles.currText}>{selectedSendCurrency.code}</Text>
+                <Ionicons name="chevron-down" size={14} color="rgba(255,255,245,0.5)" />
               </TouchableOpacity>
             </View>
           </View>
@@ -194,7 +190,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation, route }) => {
             <View style={styles.rateLine} />
             <View style={styles.ratePill}>
               <Text style={styles.ratePillText}>
-                1 {selectedCoin.code} = {selectedFiat.symbol}{rate.toLocaleString()}
+                1 {selectedSendCurrency.code} = {selectedReceiveCurrency.symbol}{rate.toLocaleString(undefined, { maximumFractionDigits: 2 })}
               </Text>
             </View>
             <View style={styles.rateLine} />
@@ -203,13 +199,15 @@ export const AmountScreen: React.FC<Props> = ({ navigation, route }) => {
           {/* Receive row */}
           <View style={styles.acSectionRecv}>
             <Text style={styles.acLabel}>They receive</Text>
-            <View style={styles.acRow}>
+            <View style={styles.acRowSpaced}>
               <Text style={styles.recvAmount}>
-                {numAmount > 0 ? `${selectedFiat.symbol}${fiatEquivalent.toLocaleString()}` : '\u2014'}
+                {numAmount > 0 ? `${selectedReceiveCurrency.symbol}${fiatEquivalent.toLocaleString()}` : '\u2014'}
               </Text>
-              <TouchableOpacity style={styles.recvCurrPill} onPress={() => setShowFiatPicker(true)} activeOpacity={0.7}>
-                <Text style={styles.currFlagIcon}>{selectedFiat.icon}</Text>
-                <Text style={styles.currText}>{selectedFiat.code}</Text>
+              <TouchableOpacity style={styles.recvCurrPill} onPress={() => setShowReceivePicker(true)} activeOpacity={0.7}>
+                <View style={[styles.cpIconWrapSmall, { backgroundColor: selectedReceiveCurrency.color + '20' }]}>
+                  <Text style={styles.currFlagIcon}>{selectedReceiveCurrency.icon}</Text>
+                </View>
+                <Text style={styles.currText}>{selectedReceiveCurrency.code}</Text>
                 <Ionicons name="chevron-down" size={14} color="rgba(255,255,245,0.5)" />
               </TouchableOpacity>
             </View>
@@ -222,7 +220,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation, route }) => {
             <View style={styles.feeRow}>
               <Text style={styles.feeLabel}>Fee included</Text>
               <Text style={styles.feeValue}>
-                {selectedFiat.symbol}{fee.toLocaleString()} <Text style={styles.feePct}>{feePct}%</Text>
+                {selectedReceiveCurrency.symbol}{fee.toLocaleString()} <Text style={styles.feePct}>{feePct}%</Text>
               </Text>
             </View>
             <View style={styles.feeRow}>
@@ -246,7 +244,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation, route }) => {
                 <View>
                   <Text style={styles.dcTitle}>Deposit Address</Text>
                   <Text style={styles.dcSubtitle}>
-                    Send exactly {numAmount} {selectedCoin.code} to this address
+                    Send exactly {numAmount} {selectedSendCurrency.code} to this address
                   </Text>
                 </View>
               </View>
@@ -298,7 +296,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation, route }) => {
             <View style={styles.warnRow}>
               <Ionicons name="alert-circle-outline" size={14} color="#FFD460" />
               <Text style={styles.warnText}>
-                Only send {selectedCoin.code} on {selectedNetwork.name}. Sending other tokens or using a different network may result in loss of funds.
+                Only send {selectedSendCurrency.code} on {selectedNetwork.name}. Sending other tokens or using a different network may result in loss of funds.
               </Text>
             </View>
           </View>
@@ -323,33 +321,13 @@ export const AmountScreen: React.FC<Props> = ({ navigation, route }) => {
         </View>
       </ScrollView>
 
-      {/* ─── Stablecoin Picker ─── */}
-      <BottomSheet visible={showCoinPicker} onClose={() => setShowCoinPicker(false)} title="Select Stablecoin">
-        {stablecoins.map((c) => (
+      {/* ─── Send Currency Picker ─── */}
+      <BottomSheet visible={showSendPicker} onClose={() => setShowSendPicker(false)} title="Send Currency">
+        {currencies.map((c) => (
           <TouchableOpacity
             key={c.code}
-            style={[styles.cpItem, selectedCoin.code === c.code && styles.cpItemSel]}
-            onPress={() => { setSelectedCoin(c); setShowCoinPicker(false); }}
-            activeOpacity={0.7}
-          >
-            <Image source={{ uri: coinLogos[c.code] }} style={styles.cpLogo} />
-            <View style={styles.cpInfo}>
-              <Text style={styles.cpName}>{c.code}</Text>
-              <Text style={styles.cpSub}>{c.name}</Text>
-            </View>
-            {selectedCoin.code === c.code && <Ionicons name="checkmark" size={18} color="#00E5A0" />}
-          </TouchableOpacity>
-        ))}
-        <View style={{ height: 40 }} />
-      </BottomSheet>
-
-      {/* ─── Fiat Currency Picker ─── */}
-      <BottomSheet visible={showFiatPicker} onClose={() => setShowFiatPicker(false)} title="Receive Currency">
-        {receiveCurrencies.map((c) => (
-          <TouchableOpacity
-            key={c.code}
-            style={[styles.cpItem, selectedFiat.code === c.code && styles.cpItemSel]}
-            onPress={() => { setSelectedFiat(c); setShowFiatPicker(false); }}
+            style={[styles.cpItem, selectedSendCurrency.code === c.code && styles.cpItemSel]}
+            onPress={() => { setSelectedSendCurrency(c); setShowSendPicker(false); }}
             activeOpacity={0.7}
           >
             <View style={[styles.cpIconWrap, { backgroundColor: c.color + '20' }]}>
@@ -359,7 +337,29 @@ export const AmountScreen: React.FC<Props> = ({ navigation, route }) => {
               <Text style={styles.cpName}>{c.code}</Text>
               <Text style={styles.cpSub}>{c.name}</Text>
             </View>
-            {selectedFiat.code === c.code && <Ionicons name="checkmark" size={18} color="#00E5A0" />}
+            {selectedSendCurrency.code === c.code && <Ionicons name="checkmark" size={18} color="#00E5A0" />}
+          </TouchableOpacity>
+        ))}
+        <View style={{ height: 40 }} />
+      </BottomSheet>
+
+      {/* ─── Receive Currency Picker ─── */}
+      <BottomSheet visible={showReceivePicker} onClose={() => setShowReceivePicker(false)} title="Receive Currency">
+        {currencies.map((c) => (
+          <TouchableOpacity
+            key={c.code}
+            style={[styles.cpItem, selectedReceiveCurrency.code === c.code && styles.cpItemSel]}
+            onPress={() => { setSelectedReceiveCurrency(c); setShowReceivePicker(false); }}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.cpIconWrap, { backgroundColor: c.color + '20' }]}>
+              <Text style={styles.cpIcon}>{c.icon}</Text>
+            </View>
+            <View style={styles.cpInfo}>
+              <Text style={styles.cpName}>{c.code}</Text>
+              <Text style={styles.cpSub}>{c.name}</Text>
+            </View>
+            {selectedReceiveCurrency.code === c.code && <Ionicons name="checkmark" size={18} color="#00E5A0" />}
           </TouchableOpacity>
         ))}
         <View style={{ height: 40 }} />
@@ -416,7 +416,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation, route }) => {
             <Text style={styles.qrCopyText}>{copied ? 'Copied!' : 'Copy address'}</Text>
           </TouchableOpacity>
           <Text style={styles.qrWarn}>
-            Send exactly {numAmount} {selectedCoin.code} on {selectedNetwork.name}
+            Send exactly {numAmount} {selectedSendCurrency.code} on {selectedNetwork.name}
           </Text>
         </View>
         <View style={{ height: 30 }} />
@@ -430,7 +430,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
           <Text style={styles.pinTitle}>Enter Transaction PIN</Text>
           <Text style={styles.pinSubtitle}>
-            Confirm sending {numAmount} {selectedCoin.code} to {recipientName.split(' ')[0]}
+            Confirm sending {numAmount} {selectedSendCurrency.code} to {recipientName.split(' ')[0]}
           </Text>
 
           {/* PIN dots */}
@@ -487,18 +487,20 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase', color: 'rgba(255,255,245,0.6)', marginBottom: 8,
   },
   acRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  acRowSpaced: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   amountInput: { flex: 1, fontFamily: 'Inter_800ExtraBold', fontSize: 36, color: '#FFFFF5', minWidth: 60, maxWidth: '55%' },
   recvAmount: { flex: 1, fontFamily: 'Inter_800ExtraBold', fontSize: 32, color: '#00E5A0' },
   sendCurrPill: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: '#2A2A42', borderWidth: 1.5, borderColor: 'rgba(0,229,160,0.3)',
     borderRadius: 24, paddingVertical: 10, paddingHorizontal: 14,
-    minWidth: 120,
+    minWidth: 125,
   },
   recvCurrPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: '#333350', borderWidth: 1.5, borderColor: 'rgba(0,229,160,0.25)',
     borderRadius: 24, paddingVertical: 8, paddingHorizontal: 12,
+    minWidth: 125,
   },
   chevronWrap: {
     width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(0,229,160,0.12)',
@@ -608,6 +610,7 @@ const styles = StyleSheet.create({
   },
   cpItemSel: { backgroundColor: 'rgba(0,229,160,0.08)' },
   cpIconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  cpIconWrapSmall: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   cpIcon: { fontSize: 18 },
   cpInfo: { flex: 1 },
   cpName: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#FFFFF5' },

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { CTAButton } from '../../components';
@@ -110,11 +110,13 @@ export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
             onPress={() => {}}
             style={styles.shareBtn}
           />
-          <CTAButton
-            title="Send another"
-            ghost
+          <TouchableOpacity
             onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Recipient' }] })}
-          />
+            style={styles.sendAgainLink}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.sendAgainText}>Send Again</Text>
+          </TouchableOpacity>
           </Animated.View>
         </View>
       </View>
@@ -205,6 +207,15 @@ const styles = StyleSheet.create({
   },
   shareBtn: {
     alignSelf: 'stretch',
-    marginBottom: 0,
+  },
+  sendAgainLink: {
+    marginTop: 20,
+    paddingVertical: 12,
+  },
+  sendAgainText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    color: '#00E5A0',
+    textAlign: 'center',
   },
 });
