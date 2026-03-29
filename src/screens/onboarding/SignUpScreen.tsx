@@ -20,6 +20,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [phoneFocused, setPhoneFocused] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState(countries[0]);
@@ -28,7 +32,9 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const nameValid = fullName.trim().length >= 2;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const phoneValid = phone.length >= 8;
-  const allFieldsValid = nameValid && emailValid && phoneValid;
+  const passwordValid = password.length >= 8;
+  const confirmPasswordValid = confirmPassword === password && confirmPassword.length > 0;
+  const allFieldsValid = nameValid && emailValid && phoneValid && passwordValid && confirmPasswordValid;
 
   const handleSendCode = useCallback(() => {
     if (!allFieldsValid) return;
@@ -119,6 +125,42 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             </View>
           </View>
 
+          <FormField
+            label="Password"
+            placeholder="Create a password (min 8 characters)"
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={password}
+            onChangeText={setPassword}
+            maxLength={64}
+            isValid={passwordValid}
+            accessibilityLabel="Password"
+            rightIcon={
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color="rgba(255,255,245,0.4)" />
+              </TouchableOpacity>
+            }
+          />
+
+          <FormField
+            label="Confirm Password"
+            placeholder="Confirm your password"
+            secureTextEntry={!showConfirmPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            maxLength={64}
+            isValid={confirmPasswordValid}
+            accessibilityLabel="Confirm password"
+            rightIcon={
+              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={20} color="rgba(255,255,245,0.4)" />
+              </TouchableOpacity>
+            }
+          />
+
           <View style={{ height: 8 }} />
         </View>
       </ScrollView>
@@ -136,6 +178,12 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={styles.termsLink}>Terms</Text> and{' '}
           <Text style={styles.termsLink}>Privacy Policy</Text>
         </Text>
+        <TouchableOpacity onPress={() => navigation.navigate('SignIn' as never)} activeOpacity={0.7}>
+          <Text style={styles.switchText}>
+            Already have an account?{' '}
+            <Text style={styles.switchLink}>Sign In</Text>
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Country Picker */}
@@ -261,6 +309,17 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   termsLink: {
+    color: '#00E5A0',
+    fontFamily: 'Inter_600SemiBold',
+  },
+  switchText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 13,
+    color: 'rgba(255,255,245,0.6)',
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  switchLink: {
     color: '#00E5A0',
     fontFamily: 'Inter_600SemiBold',
   },

@@ -6,12 +6,14 @@ interface FormFieldProps extends TextInputProps {
   label?: string;
   isValid?: boolean;
   showCheck?: boolean;
+  rightIcon?: React.ReactNode;
 }
 
 export const FormField: React.FC<FormFieldProps> = ({
   label,
   isValid = false,
   showCheck = true,
+  rightIcon,
   style,
   ...inputProps
 }) => {
@@ -40,9 +42,10 @@ export const FormField: React.FC<FormFieldProps> = ({
           }}
           {...inputProps}
         />
-        {isValid && showCheck && (
+        {isValid && showCheck && !rightIcon && (
           <Ionicons name="checkmark" size={16} color="#00E5A0" />
         )}
+        {rightIcon}
       </View>
     </View>
   );

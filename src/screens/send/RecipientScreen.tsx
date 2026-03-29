@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,12 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenHeader, GradientAvatar, CTAButton, BottomSheet } from '../../components';
-import { banks } from '../../data/mockData';
+import { banks, Bank } from '../../data/mockData';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
 
@@ -28,6 +29,8 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
   const [resolveState, setResolveState] = useState<'idle' | 'resolving' | 'resolved' | 'error'>('idle');
   const [resolvedContact, setResolvedContact] = useState<(typeof contacts)[0] | null>(null);
   const [showBankSheet, setShowBankSheet] = useState(false);
+  const [showBankListSheet, setShowBankListSheet] = useState(false);
+  const [bankSearch, setBankSearch] = useState('');
   const [bankName, setBankName] = useState('');
   const [bankAccountNumber, setBankAccountNumber] = useState('');
   const [bankAccountName, setBankAccountName] = useState('');
@@ -35,7 +38,20 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const destCountry = dest?.name || 'Nigeria';
   const countryBanks = banks[destCountry] || [];
+  const popularBanks = useMemo(() => countryBanks.filter((b) => b.popular), [countryBanks]);
+  const filteredBanks = useMemo(() => {
+    if (!bankSearch.trim()) return countryBanks;
+    const search = bankSearch.toLowerCase();
+    return countryBanks.filter((b) => b.name.toLowerCase().includes(search));
+  }, [countryBanks, bankSearch]);
   const bankFormValid = selectedBank && bankAccountNumber.length >= 8 && bankAccountName.trim().length >= 2;
+
+  const selectBank = useCallback((bank: Bank) => {
+    setSelectedBank(bank.id);
+    setBankName(bank.name);
+    setShowBankListSheet(false);
+    setBankSearch('');
+  }, []);
 
   const handleInput = useCallback(
     (val: string) => {
@@ -156,8 +172,8 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             <Ionicons name="business-outline" size={18} color="#00E5A0" />
           </View>
           <View style={styles.addBankInfo}>
-            <Text style={styles.addBankTitle}>No Qupay account?</Text>
-            <Text style={styles.addBankSub}>Enter bank account details to send directly</Text>
+            <Text style={styles.addBankTitle}>Bank Transfer</Text>
+            <Text style={styles.addBankSub}>Send directly to a bank account</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color="rgba(255,255,245,0.4)" />
         </TouchableOpacity>
@@ -201,36 +217,46 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
         title="Enter Bank Details"
       >
         <View style={styles.bankForm}>
-          <Text style={styles.bankFormNote}>
-            Send to a bank account — no Qupay account needed
-          </Text>
-
           <Text style={styles.bankLabel}>Select Bank</Text>
-          <View style={styles.bankPicker}>
-            {countryBanks.map((b) => (
-              <TouchableOpacity
-                key={b.id}
-                style={[
-                  styles.bankChip,
-                  selectedBank === b.id && styles.bankChipSelected,
-                ]}
-                onPress={() => {
-                  setSelectedBank(b.id);
-                  setBankName(b.name);
-                }}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[
-                    styles.bankChipText,
-                    selectedBank === b.id && styles.bankChipTextSelected,
-                  ]}
-                >
-                  {b.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <TouchableOpacity
+            style={[styles.bankDropdown, selectedBank && styles.bankDropdownSelected]}
+            onPress={() => setShowBankListSheet(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="business-outline" size={18} color={selectedBank ? '#00E5A0' : 'rgba(255,255,245,0.4)'} />
+            <Text style={[styles.bankDropdownText, !selectedBank && styles.bankDropdownPlaceholder]}>
+              {bankName || 'Choose a bank...'}
+            </Text>
+            <Ionicons name="chevron-down" size={16} color="rgba(255,255,245,0.4)" />
+          </TouchableOpacity>
+
+          {popularBanks.length > 0 && (
+            <>
+              <Text style={styles.bankSubLabel}>Quick Select</Text>
+              <View style={styles.bankPicker}>
+                {popularBanks.map((b) => (
+                  <TouchableOpacity
+                    key={b.id}
+                    style={[
+                      styles.bankChip,
+                      selectedBank === b.id && styles.bankChipSelected,
+                    ]}
+                    onPress={() => selectBank(b)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.bankChipText,
+                        selectedBank === b.id && styles.bankChipTextSelected,
+                      ]}
+                    >
+                      {b.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
 
           <Text style={styles.bankLabel}>Account Number</Text>
           <TextInput
@@ -280,6 +306,69 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
           />
         </View>
         <View style={{ height: 40 }} />
+      </BottomSheet>
+
+      {/* Bank Selection Sheet */}
+      <BottomSheet
+        visible={showBankListSheet}
+        onClose={() => {
+          setShowBankListSheet(false);
+          setBankSearch('');
+        }}
+        title="Select Bank"
+      >
+        <View style={styles.bankListContainer}>
+          <View style={styles.bankSearchWrap}>
+            <Ionicons name="search" size={18} color="rgba(255,255,245,0.4)" />
+            <TextInput
+              style={styles.bankSearchInput}
+              placeholder="Search banks..."
+              placeholderTextColor="rgba(255,255,245,0.4)"
+              value={bankSearch}
+              onChangeText={setBankSearch}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {bankSearch.length > 0 && (
+              <TouchableOpacity onPress={() => setBankSearch('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name="close-circle" size={18} color="rgba(255,255,245,0.4)" />
+              </TouchableOpacity>
+            )}
+          </View>
+          <FlatList
+            data={filteredBanks}
+            keyExtractor={(item) => item.id}
+            style={styles.bankList}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.bankListItem,
+                  selectedBank === item.id && styles.bankListItemSelected,
+                ]}
+                onPress={() => selectBank(item)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.bankListIcon}>
+                  <Ionicons name="business" size={16} color={selectedBank === item.id ? '#00E5A0' : 'rgba(255,255,245,0.5)'} />
+                </View>
+                <Text style={[styles.bankListName, selectedBank === item.id && styles.bankListNameSelected]}>
+                  {item.name}
+                </Text>
+                {selectedBank === item.id && (
+                  <Ionicons name="checkmark" size={18} color="#00E5A0" />
+                )}
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={
+              <View style={styles.emptyList}>
+                <Ionicons name="search-outline" size={32} color="rgba(255,255,245,0.3)" />
+                <Text style={styles.emptyListText}>No banks found</Text>
+              </View>
+            }
+          />
+        </View>
       </BottomSheet>
     </SafeAreaView>
   );
@@ -485,12 +574,6 @@ const styles = StyleSheet.create({
   bankForm: {
     paddingHorizontal: 24,
   },
-  bankFormNote: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    color: 'rgba(255,255,245,0.6)',
-    marginBottom: 16,
-  },
   bankLabel: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 11,
@@ -498,6 +581,38 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     color: 'rgba(255,255,245,0.6)',
     marginBottom: 8,
+  },
+  bankSubLabel: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 10,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    color: 'rgba(255,255,245,0.4)',
+    marginBottom: 8,
+  },
+  bankDropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#222236',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,245,0.08)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  bankDropdownSelected: {
+    borderColor: 'rgba(0,229,160,0.4)',
+  },
+  bankDropdownText: {
+    flex: 1,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
+    color: '#FFFFF5',
+  },
+  bankDropdownPlaceholder: {
+    color: 'rgba(255,255,245,0.4)',
   },
   bankPicker: {
     flexDirection: 'row',
@@ -536,5 +651,74 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#FFFFF5',
     marginBottom: 16,
+  },
+  // Bank list modal styles
+  bankListContainer: {
+    paddingHorizontal: 24,
+    maxHeight: 400,
+  },
+  bankSearchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#222236',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,245,0.08)',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+  },
+  bankSearchInput: {
+    flex: 1,
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    color: '#FFFFF5',
+  },
+  bankList: {
+    maxHeight: 320,
+  },
+  bankListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,245,0.06)',
+  },
+  bankListItemSelected: {
+    backgroundColor: 'rgba(0,229,160,0.06)',
+    marginHorizontal: -4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  bankListIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,245,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bankListName: {
+    flex: 1,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: '#FFFFF5',
+  },
+  bankListNameSelected: {
+    color: '#00E5A0',
+  },
+  emptyList: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    gap: 8,
+  },
+  emptyListText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 13,
+    color: 'rgba(255,255,245,0.4)',
   },
 });

@@ -106,13 +106,41 @@ export const destinationCountries = [
   'Nigeria', 'Ghana', 'Kenya', 'India', 'Philippines', 'Mexico', 'Pakistan', 'South Africa',
 ];
 
-export const banks: Record<string, Array<{ id: string; name: string }>> = {
+export interface Bank {
+  id: string;
+  name: string;
+  popular?: boolean;
+}
+
+export const banks: Record<string, Bank[]> = {
   Nigeria: [
-    { id: 'gtbank', name: 'GTBank' },
-    { id: 'access', name: 'Access Bank' },
-    { id: 'firstbank', name: 'First Bank' },
-    { id: 'zenith', name: 'Zenith Bank' },
-    { id: 'uba', name: 'UBA' },
+    { id: 'gtbank', name: 'GTBank', popular: true },
+    { id: 'access', name: 'Access Bank', popular: true },
+    { id: 'firstbank', name: 'First Bank', popular: true },
+    { id: 'zenith', name: 'Zenith Bank', popular: true },
+    { id: 'uba', name: 'UBA', popular: true },
+    { id: 'fcmb', name: 'FCMB' },
+    { id: 'fidelity_ng', name: 'Fidelity Bank' },
+    { id: 'union', name: 'Union Bank' },
+    { id: 'stanbic', name: 'Stanbic IBTC' },
+    { id: 'sterling', name: 'Sterling Bank' },
+    { id: 'wema', name: 'Wema Bank' },
+    { id: 'polaris', name: 'Polaris Bank' },
+    { id: 'keystone', name: 'Keystone Bank' },
+    { id: 'ecobank_ng', name: 'Ecobank Nigeria' },
+    { id: 'jaiz', name: 'Jaiz Bank' },
+    { id: 'providus', name: 'Providus Bank' },
+    { id: 'kuda', name: 'Kuda Bank' },
+    { id: 'opay', name: 'OPay' },
+    { id: 'palmpay', name: 'PalmPay' },
+    { id: 'moniepoint', name: 'Moniepoint' },
+    { id: 'globus', name: 'Globus Bank' },
+    { id: 'titan', name: 'Titan Trust Bank' },
+    { id: 'heritage', name: 'Heritage Bank' },
+    { id: 'unity', name: 'Unity Bank' },
+    { id: 'suntrust', name: 'SunTrust Bank' },
+    { id: 'citibank_ng', name: 'Citibank Nigeria' },
+    { id: 'standardchartered_ng', name: 'Standard Chartered' },
   ],
   Ghana: [
     { id: 'gcb', name: 'GCB Bank' },

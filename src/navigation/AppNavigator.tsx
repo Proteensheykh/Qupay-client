@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 // Screens
 import { SplashScreen } from '../screens/onboarding/SplashScreen';
 import { SignUpScreen } from '../screens/onboarding/SignUpScreen';
+import { SignInScreen } from '../screens/onboarding/SignInScreen';
 import { OTPScreen } from '../screens/onboarding/OTPScreen';
 import { PinSetupScreen } from '../screens/onboarding/PinSetupScreen';
 export interface DestInfo {
@@ -28,6 +29,7 @@ import { SuccessScreen } from '../screens/send/SuccessScreen';
 export type OnboardingStackParamList = {
   Splash: undefined;
   SignUp: undefined;
+  SignIn: undefined;
   OTP: { phone: string; name: string; email: string };
   PinSetup: undefined;
 };
@@ -104,6 +106,7 @@ function OnboardingNavigator() {
     >
       <OnboardingStack.Screen name="Splash" component={SplashScreen} options={{ animation: 'fade' }} />
       <OnboardingStack.Screen name="SignUp" component={SignUpScreen} />
+      <OnboardingStack.Screen name="SignIn" component={SignInScreen} />
       <OnboardingStack.Screen name="OTP" component={OTPScreen} />
       <OnboardingStack.Screen name="PinSetup" component={PinSetupScreen} options={{ animation: 'fade_from_bottom' }} />
     </OnboardingStack.Navigator>
