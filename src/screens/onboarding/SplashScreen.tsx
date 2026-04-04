@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { QupayLogo, CTAButton } from '../../components';
@@ -8,7 +8,31 @@ import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'Splash'>;
 
+const words = ['anyone', 'anywhere'];
+
 export const SplashScreen: React.FC<Props> = ({ navigation }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start(() => {
+        setCurrentIndex(prev => (prev + 1) % words.length);
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }).start();
+      });
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [fadeAnim]);
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
@@ -16,27 +40,28 @@ export const SplashScreen: React.FC<Props> = ({ navigation }) => {
           <QupayLogo size={28} />
           <View style={styles.spacer} />
           <Text style={styles.headline}>
-            Send crypto{'\n'}anywhere.{'\n'}
-            <Text style={styles.greenText}>They get cash.</Text>
+            Quick payments,{'\n'}in any currency,{'\n'}
+            <Text style={styles.greenText}>
+              to <Animated.Text style={{ opacity: fadeAnim }}>{words[currentIndex]}</Animated.Text>
+            </Text>
           </Text>
           <Text style={styles.description}>
-            USDT converts to mobile money or bank transfer in under 2 minutes. Recipients need no
-            crypto account.
+            Send or receive money, in any currency, to & from anyone, anywhere, with just a mobile number.
           </Text>
           {/* Stats row */}
           <View style={styles.statRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>40+</Text>
+              <Text style={styles.statVal}>54+</Text>
               <Text style={styles.statLabel}>Countries</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>&lt;2%</Text>
-              <Text style={styles.statLabel}>Avg. fee</Text>
+              <Text style={styles.statVal}>No fees</Text>
+              <Text style={styles.statLabel}>Zero cost</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>&lt;2 min</Text>
+              <Text style={styles.statVal}>Quick</Text>
               <Text style={styles.statLabel}>Delivery</Text>
             </View>
           </View>
