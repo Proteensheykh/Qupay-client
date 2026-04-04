@@ -8,7 +8,6 @@ import { SplashScreen } from '../screens/onboarding/SplashScreen';
 import { SignUpScreen } from '../screens/onboarding/SignUpScreen';
 import { SignInScreen } from '../screens/onboarding/SignInScreen';
 import { OTPScreen } from '../screens/onboarding/OTPScreen';
-import { PinSetupScreen } from '../screens/onboarding/PinSetupScreen';
 export interface DestInfo {
   flag: string;
   name: string;
@@ -22,6 +21,7 @@ import { TransactionDetailScreen } from '../screens/transaction/TransactionDetai
 import { ProfileScreen } from '../screens/settings/SettingsScreen';
 import { RecipientScreen } from '../screens/send/RecipientScreen';
 import { AmountScreen } from '../screens/send/AmountScreen';
+import { ConfirmScreen } from '../screens/send/ConfirmScreen';
 import { DepositWaitingScreen } from '../screens/send/DepositWaitingScreen';
 import { SuccessScreen } from '../screens/send/SuccessScreen';
 
@@ -31,7 +31,6 @@ export type OnboardingStackParamList = {
   SignUp: undefined;
   SignIn: undefined;
   OTP: { phone: string; name: string; email: string };
-  PinSetup: undefined;
 };
 
 export type HistoryStackParamList = {
@@ -44,16 +43,24 @@ export type ProfileStackParamList = {
 };
 
 export type SendFlowParamList = {
-  Recipient: { dest?: DestInfo };
-  Amount: {
-    recipientName?: string;
-    recipientInitials?: string;
-    recipientColors?: [string, string];
-    recipientMethod?: string;
+  Amount: undefined;
+  Recipient: {
+    amount: number;
+    sendCurrency: string;
+    receiveCurrency: string;
+    receiveAmount: number;
+  };
+  Confirm: {
+    amount: number;
+    sendCurrency: string;
+    receiveCurrency: string;
+    receiveAmount: number;
+    recipientName: string;
+    recipientInitials: string;
+    recipientColors: [string, string];
+    recipientMethod: string;
     recipientPhone?: string;
-    recipientFlag?: string;
-    lastAmount?: number;
-    dest?: DestInfo;
+    recipientFlag: string;
   };
   DepositWaiting: {
     recipientName?: string;
@@ -66,7 +73,6 @@ export type SendFlowParamList = {
     recvCurrency?: string;
     walletAddress?: string;
     network?: string;
-    dest?: DestInfo;
   };
   Success: {
     recipientName?: string;
@@ -75,7 +81,7 @@ export type SendFlowParamList = {
     recipientFlag?: string;
     amount?: number;
     receiveAmount?: number;
-    dest?: DestInfo;
+    recvCurrency?: string;
   };
 };
 
@@ -108,7 +114,6 @@ function OnboardingNavigator() {
       <OnboardingStack.Screen name="SignUp" component={SignUpScreen} />
       <OnboardingStack.Screen name="SignIn" component={SignInScreen} />
       <OnboardingStack.Screen name="OTP" component={OTPScreen} />
-      <OnboardingStack.Screen name="PinSetup" component={PinSetupScreen} options={{ animation: 'fade_from_bottom' }} />
     </OnboardingStack.Navigator>
   );
 }
@@ -139,8 +144,9 @@ function SendTabNavigator() {
     <SendFlowStack.Navigator
       screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
     >
-      <SendFlowStack.Screen name="Recipient" component={RecipientScreen} />
       <SendFlowStack.Screen name="Amount" component={AmountScreen} />
+      <SendFlowStack.Screen name="Recipient" component={RecipientScreen} />
+      <SendFlowStack.Screen name="Confirm" component={ConfirmScreen} />
       <SendFlowStack.Screen name="DepositWaiting" component={DepositWaitingScreen} options={{ animation: 'fade_from_bottom', gestureEnabled: false }} />
       <SendFlowStack.Screen name="Success" component={SuccessScreen} options={{ animation: 'fade_from_bottom', gestureEnabled: false }} />
     </SendFlowStack.Navigator>

@@ -41,7 +41,10 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      navigation.navigate('PinSetup');
+      navigation.getParent()?.reset({
+        index: 0,
+        routes: [{ name: 'Main' as never }],
+      });
     }, 800);
   }, [navigation]);
 
