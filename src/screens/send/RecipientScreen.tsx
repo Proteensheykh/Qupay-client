@@ -17,6 +17,10 @@ import type { SendFlowParamList } from '../../navigation/AppNavigator';
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'Recipient'>;
 
+const currencySymbols: Record<string, string> = {
+  USDT: '', NGN: '\u20A6', GHS: '\u20B5', KES: 'KSh', INR: '\u20B9', PHP: '\u20B1', MXN: '$', PKR: 'Rs', ZAR: 'R',
+};
+
 const contacts = [
   { name: 'Emeka Johnson', initials: 'EJ', colors: ['#1a6fff', '#00e5a0'] as [string, string], method: 'OPay', phone: '0812 456 7890', flag: '\u{1F1F3}\u{1F1EC}', country: 'Nigeria' },
   { name: 'Kofi Mensah', initials: 'KM', colors: ['#ff9f43', '#00e5a0'] as [string, string], method: 'MTN Momo', phone: '0541 234 567', flag: '\u{1F1EC}\u{1F1ED}', country: 'Ghana' },
@@ -24,7 +28,8 @@ const contacts = [
 ];
 
 export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
-  const dest = route.params?.dest;
+  const { amount, sendCurrency, receiveCurrency, receiveAmount } = route.params;
+  const recvSymbol = currencySymbols[receiveCurrency] || '';
   const [inputVal, setInputVal] = useState('');
   const [resolveState, setResolveState] = useState<'idle' | 'resolving' | 'resolved' | 'error'>('idle');
   const [resolvedContact, setResolvedContact] = useState<(typeof contacts)[0] | null>(null);
@@ -36,8 +41,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
   const [bankAccountName, setBankAccountName] = useState('');
   const [selectedBank, setSelectedBank] = useState<string | null>(null);
 
-  const destCountry = dest?.name || 'Nigeria';
-  const countryBanks = banks[destCountry] || [];
+  const countryBanks = banks['Nigeria'] || [];
   const popularBanks = useMemo(() => countryBanks.filter((b) => b.popular), [countryBanks]);
   const filteredBanks = useMemo(() => {
     if (!bankSearch.trim()) return countryBanks;
@@ -78,27 +82,45 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const selectContact = useCallback(
     (c: (typeof contacts)[0]) => {
-      navigation.navigate('Amount', {
+      navigation.navigate('Confirm', {
+        amount,
+        sendCurrency,
+        receiveCurrency,
+        receiveAmount,
         recipientName: c.name,
         recipientInitials: c.initials,
         recipientColors: c.colors,
         recipientMethod: c.method,
         recipientPhone: c.phone,
         recipientFlag: c.flag,
-        dest,
       });
     },
-    [navigation, dest]
+    [navigation, amount, sendCurrency, receiveCurrency, receiveAmount]
   );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScreenHeader title="Who are you sending to?" />
+      <ScreenHeader title="Who are you sending to?" onBack={() => navigation.goBack()} />
       <ScrollView
         style={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* Swap summary card */}
+        <View style={styles.swapSummary}>
+          <View style={styles.swapRow}>
+            <Text style={styles.swapLabel}>Sending</Text>
+            <Text style={styles.swapValue}>{amount} {sendCurrency}</Text>
+          </View>
+          <View style={styles.swapArrow}>
+            <Ionicons name="arrow-down" size={14} color="#00E5A0" />
+          </View>
+          <View style={styles.swapRow}>
+            <Text style={styles.swapLabel}>They receive</Text>
+            <Text style={styles.swapValueGreen}>{recvSymbol}{receiveAmount.toLocaleString()} {receiveCurrency}</Text>
+          </View>
+        </View>
+
         {/* Smart input card */}
         <View style={[styles.sendInputCard, resolveState !== 'idle' && styles.sendInputCardActive]}>
           <View style={styles.sicField}>
@@ -292,14 +314,17 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                 .join('')
                 .slice(0, 2)
                 .toUpperCase();
-              navigation.navigate('Amount', {
+              navigation.navigate('Confirm', {
+                amount,
+                sendCurrency,
+                receiveCurrency,
+                receiveAmount,
                 recipientName: bankAccountName.trim(),
                 recipientInitials: initials,
                 recipientColors: ['#1a6fff', '#00e5a0'],
                 recipientMethod: bankName,
                 recipientPhone: bankAccountNumber,
-                recipientFlag: dest?.flag || '\u{1F1F3}\u{1F1EC}',
-                dest,
+                recipientFlag: '\u{1F1F3}\u{1F1EC}',
               });
             }}
             style={{ marginTop: 16 }}
@@ -377,6 +402,40 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#111118' },
   scroll: { flex: 1 },
+  swapSummary: {
+    marginHorizontal: 24,
+    marginBottom: 16,
+    backgroundColor: 'rgba(0,229,160,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,229,160,0.15)',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  swapRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  swapArrow: {
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  swapLabel: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: 'rgba(255,255,245,0.6)',
+  },
+  swapValue: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    color: '#FFFFF5',
+  },
+  swapValueGreen: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    color: '#00E5A0',
+  },
   sendInputCard: {
     marginHorizontal: 24,
     marginBottom: 16,

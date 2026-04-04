@@ -195,7 +195,7 @@ export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
           <CTAButton
             title="Back to Home"
             ghost
-            onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Recipient' }] })}
+            onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Amount' }] })}
           />
         </View>
       </ScrollView>

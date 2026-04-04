@@ -17,10 +17,13 @@ export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
     recipientMethod = 'OPay',
     amount = 200,
     receiveAmount = 329000,
-    dest,
+    recvCurrency = 'NGN',
   } = route.params || {};
 
-  const symbol = dest?.symbol || '\u20A6';
+  const currencySymbols: Record<string, string> = {
+    USDT: '', NGN: '\u20A6', GHS: '\u20B5', KES: 'KSh', INR: '\u20B9', PHP: '\u20B1', MXN: '$', PKR: 'Rs', ZAR: 'R',
+  };
+  const symbol = currencySymbols[recvCurrency] || '\u20A6';
   const firstName = recipientName.split(' ')[0];
 
   const iconScale = useRef(new Animated.Value(0)).current;
@@ -50,7 +53,7 @@ export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
       CommonActions.reset({
         index: 0,
         routes: [{
-          name: 'Recipient' as any,
+          name: 'Amount' as any,
         }],
       })
     );
@@ -111,7 +114,7 @@ export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
             style={styles.shareBtn}
           />
           <TouchableOpacity
-            onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Recipient' }] })}
+            onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Amount' }] })}
             style={styles.sendAgainLink}
             activeOpacity={0.7}
           >
