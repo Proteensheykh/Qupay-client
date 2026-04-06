@@ -1,13 +1,22 @@
 import React from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '../store/authStore';
+import type { InitiateRegistrationRequest } from '../types/auth';
 
 // Screens
 import { SplashScreen } from '../screens/onboarding/SplashScreen';
 import { SignUpScreen } from '../screens/onboarding/SignUpScreen';
 import { SignInScreen } from '../screens/onboarding/SignInScreen';
 import { OTPScreen } from '../screens/onboarding/OTPScreen';
+import { PinSetupScreen } from '../screens/onboarding/PinSetupScreen';
+import { PinVerifyScreen } from '../screens/onboarding/PinVerifyScreen';
+import { PinResetScreen } from '../screens/onboarding/PinResetScreen';
+import { ForgotPasswordScreen } from '../screens/onboarding/ForgotPasswordScreen';
+import { ResetPasswordScreen } from '../screens/onboarding/ResetPasswordScreen';
+
 export interface DestInfo {
   flag: string;
   name: string;
@@ -30,7 +39,16 @@ export type OnboardingStackParamList = {
   Splash: undefined;
   SignUp: undefined;
   SignIn: undefined;
-  OTP: { phone: string; name: string; email: string };
+  OTP: {
+    phoneNumber: string;
+    cooldownSeconds: number;
+    registrationPayload: InitiateRegistrationRequest;
+  };
+  ForgotPassword: undefined;
+  ResetPassword: {
+    email: string;
+    cooldownSeconds: number;
+  };
 };
 
 export type HistoryStackParamList = {
@@ -93,6 +111,9 @@ export type MainTabParamList = {
 
 export type RootStackParamList = {
   Onboarding: undefined;
+  PinSetup: undefined;
+  PinVerify: undefined;
+  PinReset: { cooldownSeconds: number };
   Main: undefined;
 };
 
@@ -114,6 +135,8 @@ function OnboardingNavigator() {
       <OnboardingStack.Screen name="SignUp" component={SignUpScreen} />
       <OnboardingStack.Screen name="SignIn" component={SignInScreen} />
       <OnboardingStack.Screen name="OTP" component={OTPScreen} />
+      <OnboardingStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <OnboardingStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
     </OnboardingStack.Navigator>
   );
 }
@@ -211,11 +234,49 @@ function MainTabs() {
   );
 }
 
+function LoadingScreen() {
+  return (
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" color="#00E5A0" />
+    </View>
+  );
+}
+
 export const AppNavigator: React.FC = () => {
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
+  const isPinLocked = useAuthStore((state) => state.isPinLocked);
+  
+  const hasPin = user?.pinSet ?? false;
+
+  if (!isHydrated) {
+    return <LoadingScreen />;
+  }
+
   return (
     <RootStack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
-      <RootStack.Screen name="Onboarding" component={OnboardingNavigator} />
-      <RootStack.Screen name="Main" component={MainTabs} />
+      {!isAuthenticated ? (
+        <RootStack.Screen name="Onboarding" component={OnboardingNavigator} />
+      ) : isPinLocked ? (
+        <>
+          <RootStack.Screen name="PinVerify" component={PinVerifyScreen} />
+          <RootStack.Screen name="PinReset" component={PinResetScreen} />
+        </>
+      ) : !hasPin ? (
+        <RootStack.Screen name="PinSetup" component={PinSetupScreen} />
+      ) : (
+        <RootStack.Screen name="Main" component={MainTabs} />
+      )}
     </RootStack.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#111118',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

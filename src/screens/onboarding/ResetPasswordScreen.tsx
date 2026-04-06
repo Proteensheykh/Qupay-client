@@ -1,26 +1,38 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Easing, TextInput, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  Easing,
+  TextInput,
+  ScrollView,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { QupayLogo, CTAButton } from '../../components';
-import { completeRegistration, resendOtp, getProfile } from '../../api/auth';
+import { Ionicons } from '@expo/vector-icons';
+import { QupayLogo, CTAButton, FormField } from '../../components';
+import { completePasswordReset, resendOtp } from '../../api/auth';
 import { isApiError } from '../../api/client';
-import { useAuthStore } from '../../store/authStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
 
-type Props = NativeStackScreenProps<OnboardingStackParamList, 'OTP'>;
+type Props = NativeStackScreenProps<OnboardingStackParamList, 'ResetPassword'>;
 
 const OTP_LENGTH = 6;
 
-export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { phoneNumber, cooldownSeconds: initialCooldown, registrationPayload } = route.params;
+export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
+  const { email, cooldownSeconds: initialCooldown } = route.params;
   const [code, setCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [resendTimer, setResendTimer] = useState(initialCooldown);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null);
-  const setTokens = useAuthStore((state) => state.setTokens);
-  const setUser = useAuthStore((state) => state.setUser);
 
   const blinkAnim = useRef(new Animated.Value(1)).current;
   useEffect(() => {
@@ -50,8 +62,8 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
     if (resendTimer > 0) return;
     try {
       const response = await resendOtp({
-        email: registrationPayload.email,
-        purpose: 'REGISTRATION',
+        email,
+        purpose: 'PASSWORD_RESET',
       });
       setResendTimer(response.cooldownSeconds);
       setCode('');
@@ -60,36 +72,36 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
       const message = isApiError(err) ? err.message : 'Failed to resend code';
       Alert.alert('Error', message);
     }
-  }, [resendTimer, registrationPayload.email]);
+  }, [resendTimer, email]);
 
-  const handleVerify = useCallback(async () => {
-    if (code.length !== OTP_LENGTH) return;
+  const codeComplete = code.length === OTP_LENGTH;
+  const passwordValid = newPassword.length >= 8;
+  const passwordsMatch = newPassword === confirmPassword && confirmPassword.length > 0;
+  const allFieldsValid = codeComplete && passwordValid && passwordsMatch;
+
+  const handleSubmit = useCallback(async () => {
+    if (!allFieldsValid) return;
     setLoading(true);
     setError(null);
 
     try {
-      const response = await completeRegistration({
-        phoneNumber,
+      await completePasswordReset({
+        email,
         otp: code,
+        newPassword,
       });
-      await setTokens(response);
-      
-      const profile = await getProfile();
-      setUser(profile);
-
-      navigation.getParent()?.reset({
-        index: 0,
-        routes: [{ name: 'PinSetup' as never }],
-      });
+      Alert.alert(
+        'Password Reset',
+        'Your password has been reset successfully.',
+        [{ text: 'OK', onPress: () => navigation.navigate('SignIn') }]
+      );
     } catch (err) {
-      const message = isApiError(err) ? err.message : 'Verification failed. Please try again.';
+      const message = isApiError(err) ? err.message : 'Failed to reset password. Please try again.';
       setError(message);
     } finally {
       setLoading(false);
     }
-  }, [code, phoneNumber, navigation, setTokens, setUser]);
-
-  const codeComplete = code.length === OTP_LENGTH;
+  }, [allFieldsValid, email, code, newPassword, navigation]);
 
   const focusInput = useCallback(() => {
     inputRef.current?.focus();
@@ -97,15 +109,21 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.form}>
           <QupayLogo size={22} />
           <View style={{ height: 28 }} />
           <Text style={styles.headline}>
-            Enter the{'\n'}
-            <Text style={styles.greenText}>code</Text>
+            Create new{'\n'}
+            <Text style={styles.greenText}>password</Text>
           </Text>
-          <Text style={styles.desc}>We sent a 6-digit code to {registrationPayload.email}</Text>
+          <Text style={styles.desc}>
+            Enter the 6-digit code sent to {email} and your new password.
+          </Text>
 
           <TextInput
             ref={inputRef}
@@ -117,6 +135,7 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
             autoFocus
           />
 
+          <Text style={styles.label}>Verification Code</Text>
           <TouchableOpacity
             style={styles.otpGrid}
             onPress={focusInput}
@@ -141,10 +160,6 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
             ))}
           </TouchableOpacity>
 
-          {error && (
-            <Text style={styles.errorText}>{error}</Text>
-          )}
-
           <View style={styles.resendRow}>
             <Text style={styles.resendText}>
               Didn't get it?{' '}
@@ -162,16 +177,64 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
               )}
             </Text>
           </View>
-        </View>
 
-        <View style={styles.bottom}>
-          <CTAButton
-            title="Verify & Continue"
-            onPress={handleVerify}
-            disabled={!codeComplete}
-            loading={loading}
+          <FormField
+            label="New Password"
+            placeholder="Enter new password"
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={newPassword}
+            onChangeText={setNewPassword}
+            maxLength={64}
+            isValid={passwordValid}
+            accessibilityLabel="New password"
+            rightIcon={
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color="rgba(255,255,245,0.4)" />
+              </TouchableOpacity>
+            }
           />
+
+          <FormField
+            label="Confirm Password"
+            placeholder="Confirm new password"
+            secureTextEntry={!showConfirmPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            maxLength={64}
+            isValid={passwordsMatch}
+            accessibilityLabel="Confirm password"
+            rightIcon={
+              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={20} color="rgba(255,255,245,0.4)" />
+              </TouchableOpacity>
+            }
+          />
+
+          {error && (
+            <Text style={styles.errorText}>{error}</Text>
+          )}
+
+          <View style={{ height: 8 }} />
         </View>
+      </ScrollView>
+
+      <View style={styles.bottomArea}>
+        <CTAButton
+          title="Reset Password"
+          onPress={handleSubmit}
+          disabled={!allFieldsValid}
+          loading={loading}
+          style={styles.cta}
+        />
+        <CTAButton
+          title="Back"
+          onPress={() => navigation.goBack()}
+          ghost
+        />
       </View>
     </SafeAreaView>
   );
@@ -179,7 +242,8 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#111118' },
-  container: { flex: 1, justifyContent: 'space-between' },
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: 20 },
   form: { paddingHorizontal: 28, paddingTop: 36 },
   headline: {
     fontFamily: 'Inter_800ExtraBold',
@@ -193,9 +257,15 @@ const styles = StyleSheet.create({
   desc: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
+    lineHeight: 21,
     color: 'rgba(255,255,245,0.6)',
     marginBottom: 24,
-    lineHeight: 21,
+  },
+  label: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    color: 'rgba(255,255,245,0.6)',
+    marginBottom: 8,
   },
   hiddenInput: {
     position: 'absolute',
@@ -205,7 +275,7 @@ const styles = StyleSheet.create({
   otpGrid: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 16,
+    marginBottom: 8,
   },
   otpCell: {
     flex: 1,
@@ -242,11 +312,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#FF4D6A',
     textAlign: 'center',
-    marginBottom: 8,
+    marginTop: 8,
   },
   resendRow: {
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 16,
   },
   resendText: {
     fontFamily: 'Inter_400Regular',
@@ -263,8 +333,10 @@ const styles = StyleSheet.create({
   resendTimer: {
     color: 'rgba(255,255,245,0.4)',
   },
-  bottom: {
+  bottomArea: {
     paddingHorizontal: 24,
     paddingBottom: 12,
+    gap: 12,
   },
+  cta: { marginBottom: 0 },
 });

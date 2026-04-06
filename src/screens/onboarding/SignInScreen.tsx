@@ -5,10 +5,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { QupayLogo, CTAButton, FormField } from '../../components';
+import { login, getProfile } from '../../api/auth';
+import { isApiError } from '../../api/client';
+import { useAuthStore } from '../../store/authStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
 
@@ -20,18 +24,38 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const setTokens = useAuthStore((state) => state.setTokens);
+  const setUser = useAuthStore((state) => state.setUser);
+
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const passwordValid = password.length >= 8;
   const allFieldsValid = emailValid && passwordValid;
 
-  const handleSignIn = useCallback(() => {
+  const handleSignIn = useCallback(async () => {
     if (!allFieldsValid) return;
     setLoading(true);
-    setTimeout(() => {
+
+    try {
+      if (__DEV__) console.log('🔐 [SignIn] Starting login...');
+      const response = await login({ email: email.trim(), password });
+      if (__DEV__) console.log('🔐 [SignIn] Login successful, setting tokens...');
+      
+      await setTokens(response);
+      if (__DEV__) console.log('🔐 [SignIn] Tokens stored, fetching profile...');
+      
+      const profile = await getProfile();
+      if (__DEV__) console.log('🔐 [SignIn] Profile fetched, pinSet:', profile.pinSet);
+      
+      setUser(profile, true);
+      if (__DEV__) console.log('🔐 [SignIn] User set with lock, navigation will update automatically');
+    } catch (error) {
+      if (__DEV__) console.error('🔐 [SignIn] Error:', error);
+      const message = isApiError(error) ? error.message : 'Invalid email or password';
+      Alert.alert('Login Failed', message);
+    } finally {
       setLoading(false);
-      navigation.navigate('PinSetup');
-    }, 800);
-  }, [allFieldsValid, navigation]);
+    }
+  }, [allFieldsValid, email, password, setTokens, setUser]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -82,7 +106,11 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
             }
           />
 
-          <TouchableOpacity style={styles.forgotBtn} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.forgotBtn}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('ForgotPassword')}
+          >
             <Text style={styles.forgotText}>Forgot password?</Text>
           </TouchableOpacity>
 

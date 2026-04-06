@@ -6,18 +6,23 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { QupayLogo, CTAButton, FormField, BottomSheet } from '../../components';
 import { countries } from '../../data/mockData';
+import { initiateRegistration } from '../../api/auth';
+import { isApiError } from '../../api/client';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
+import type { InitiateRegistrationRequest } from '../../types/auth';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'SignUp'>;
 
 export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -29,21 +34,42 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const [selectedCountry, setSelectedCountry] = useState(countries[0]);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
 
-  const nameValid = fullName.trim().length >= 2;
+  const firstNameValid = firstName.trim().length >= 2;
+  const lastNameValid = lastName.trim().length >= 2;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const phoneValid = phone.length >= 8;
   const passwordValid = password.length >= 8;
   const confirmPasswordValid = confirmPassword === password && confirmPassword.length > 0;
-  const allFieldsValid = nameValid && emailValid && phoneValid && passwordValid && confirmPasswordValid;
+  const allFieldsValid = firstNameValid && lastNameValid && emailValid && phoneValid && passwordValid && confirmPasswordValid;
 
-  const handleSendCode = useCallback(() => {
+  const handleSendCode = useCallback(async () => {
     if (!allFieldsValid) return;
     setLoading(true);
-    setTimeout(() => {
+
+    const phoneNumber = `${selectedCountry.code}${phone}`;
+    const registrationPayload: InitiateRegistrationRequest = {
+      phoneNumber,
+      role: 'PAYER',
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim(),
+      password,
+    };
+
+    try {
+      const response = await initiateRegistration(registrationPayload);
+      navigation.navigate('OTP', {
+        phoneNumber,
+        cooldownSeconds: response.cooldownSeconds,
+        registrationPayload,
+      });
+    } catch (error) {
+      const message = isApiError(error) ? error.message : 'Something went wrong. Please try again.';
+      Alert.alert('Registration Failed', message);
+    } finally {
       setLoading(false);
-      navigation.navigate('OTP', { phone: `${selectedCountry.code} ${phone}`, name: fullName.trim(), email: email.trim() });
-    }, 800);
-  }, [phone, allFieldsValid, selectedCountry, navigation, fullName, email]);
+    }
+  }, [allFieldsValid, phone, selectedCountry, navigation, firstName, lastName, email, password]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -63,16 +89,32 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             Takes 30 seconds. Start sending crypto to cash instantly.
           </Text>
 
-          <FormField
-            label="Full Name"
-            placeholder="Enter your full name"
-            autoCapitalize="words"
-            value={fullName}
-            onChangeText={setFullName}
-            maxLength={60}
-            isValid={nameValid}
-            accessibilityLabel="Full name"
-          />
+          <View style={styles.nameRow}>
+            <View style={styles.nameField}>
+              <FormField
+                label="First Name"
+                placeholder="First name"
+                autoCapitalize="words"
+                value={firstName}
+                onChangeText={setFirstName}
+                maxLength={30}
+                isValid={firstNameValid}
+                accessibilityLabel="First name"
+              />
+            </View>
+            <View style={styles.nameField}>
+              <FormField
+                label="Last Name"
+                placeholder="Last name"
+                autoCapitalize="words"
+                value={lastName}
+                onChangeText={setLastName}
+                maxLength={30}
+                isValid={lastNameValid}
+                accessibilityLabel="Last name"
+              />
+            </View>
+          </View>
 
           <FormField
             label="Email Address"
@@ -178,7 +220,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={styles.termsLink}>Terms</Text> and{' '}
           <Text style={styles.termsLink}>Privacy Policy</Text>
         </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('SignIn' as never)} activeOpacity={0.7}>
+        <TouchableOpacity onPress={() => navigation.navigate('SignIn')} activeOpacity={0.7}>
           <Text style={styles.switchText}>
             Already have an account?{' '}
             <Text style={styles.switchLink}>Sign In</Text>
@@ -186,7 +228,6 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Country Picker */}
       <BottomSheet
         visible={showCountryPicker}
         onClose={() => setShowCountryPicker(false)}
@@ -241,6 +282,13 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     color: 'rgba(255,255,245,0.6)',
     marginBottom: 24,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  nameField: {
+    flex: 1,
   },
   phoneLabel: {
     fontFamily: 'Inter_600SemiBold',
@@ -323,7 +371,6 @@ const styles = StyleSheet.create({
     color: '#00E5A0',
     fontFamily: 'Inter_600SemiBold',
   },
-  // Country picker items
   countryItem: {
     flexDirection: 'row',
     alignItems: 'center',
