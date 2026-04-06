@@ -13,6 +13,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { View } from 'react-native';
 
 import { ThemeProvider } from './src/theme';
+import { AuthProvider } from './src/providers/AuthProvider';
 import { AppNavigator } from './src/navigation/AppNavigator';
 
 SplashScreen.preventAutoHideAsync();
@@ -51,12 +52,14 @@ export default function App() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#111118' }} onLayout={onLayoutRootView}>
-      <ThemeProvider>
-        <NavigationContainer theme={navigationTheme}>
-          <StatusBar style="light" />
-          <AppNavigator />
-        </NavigationContainer>
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <NavigationContainer theme={navigationTheme}>
+            <StatusBar style="light" />
+            <AppNavigator />
+          </NavigationContainer>
+        </ThemeProvider>
+      </AuthProvider>
     </View>
   );
 }

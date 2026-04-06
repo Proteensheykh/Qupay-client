@@ -1,13 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { QupayLogo, GradientAvatar, CTAButton } from '../../components';
 import { userProfile } from '../../data/mockData';
+import { useAuthStore } from '../../store/authStore';
 
 export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const [notifOn, setNotifOn] = useState(true);
+  const logout = useAuthStore((state) => state.logout);
+  const user = useAuthStore((state) => state.user);
+
+  const handleLogout = useCallback(async () => {
+    await logout();
+  }, [logout]);
+
+  const displayName = user ? `${user.firstName} ${user.lastName}` : userProfile.name;
+  const displayEmail = user?.email || userProfile.email;
+  const displayPhone = user?.phoneNumber || userProfile.phone;
+  const initials = user
+    ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
+    : userProfile.initials;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -27,16 +41,16 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
           >
             <View style={styles.phTop}>
               <GradientAvatar
-                initials={userProfile.initials}
+                initials={initials}
                 size={60}
                 borderWidth={2}
                 borderColor="rgba(255,255,255,0.1)"
                 fontSize={20}
               />
               <View style={styles.phInfo}>
-                <Text style={styles.phName}>{userProfile.name}</Text>
-                <Text style={styles.phEmail}>{userProfile.email}</Text>
-                <Text style={styles.phPhone}>{userProfile.phone}</Text>
+                <Text style={styles.phName}>{displayName}</Text>
+                <Text style={styles.phEmail}>{displayEmail}</Text>
+                <Text style={styles.phPhone}>{displayPhone}</Text>
               </View>
             </View>
             <View style={styles.phStats}>
@@ -108,7 +122,7 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
         {/* Log Out */}
         <CTAButton
           title="Log Out"
-          onPress={() => {}}
+          onPress={handleLogout}
           danger
           style={styles.logoutBtn}
         />

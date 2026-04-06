@@ -73,7 +73,7 @@ export const SplashScreen: React.FC<Props> = ({ navigation }) => {
             onPress={() => navigation.navigate('SignUp')}
             style={styles.ctaBtn}
           />
-          <TouchableOpacity onPress={() => navigation.navigate('SignUp')} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => navigation.navigate('SignIn')} activeOpacity={0.7}>
             <Text style={styles.loginText}>
               Already have an account? <Text style={styles.loginLink}>Log in</Text>
             </Text>
