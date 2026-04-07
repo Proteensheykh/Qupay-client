@@ -115,7 +115,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.recvAmount}>
                 {numAmount > 0
                   ? receivingCrypto
-                    ? `${receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`
+                    ? receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                     : `${selectedReceiveCurrency.symbol}${receiveAmount.toLocaleString()}`
                   : '\u2014'}
               </Text>
