@@ -78,7 +78,8 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     setLoading(true);
     setShowError(false);
 
-    const phoneNumber = `${selectedCountry.code}${phone}`;
+    const normalizedPhone = phone.replace(/^0+/, '');
+    const phoneNumber = `${selectedCountry.code}${normalizedPhone}`;
     const registrationPayload: InitiateRegistrationRequest = {
       phoneNumber,
       role: 'PAYER',

@@ -154,7 +154,7 @@ apiClient.interceptors.response.use(
       }
 
       try {
-        if (__DEV__) console.log('🔄 [Auth] Attempting token refresh...');
+        if (__DEV__) console.log('🔄 [Auth] Attempting token refresh with token:', refreshToken?.substring(0, 20) + '...');
         const response = await refreshClient.post<ApiResponse<AuthTokenResponse>>(
           '/v1/auth/token/refresh',
           { refreshToken }
