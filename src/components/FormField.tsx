@@ -7,6 +7,7 @@ interface FormFieldProps extends TextInputProps {
   isValid?: boolean;
   showCheck?: boolean;
   rightIcon?: React.ReactNode;
+  error?: string;
 }
 
 export const FormField: React.FC<FormFieldProps> = ({
@@ -14,10 +15,12 @@ export const FormField: React.FC<FormFieldProps> = ({
   isValid = false,
   showCheck = true,
   rightIcon,
+  error,
   style,
   ...inputProps
 }) => {
   const [focused, setFocused] = useState(false);
+  const hasError = !!error;
 
   return (
     <View>
@@ -26,7 +29,8 @@ export const FormField: React.FC<FormFieldProps> = ({
         style={[
           styles.field,
           focused && styles.fieldFocused,
-          isValid && styles.fieldValid,
+          isValid && !hasError && styles.fieldValid,
+          hasError && styles.fieldError,
         ]}
       >
         <TextInput
@@ -42,11 +46,15 @@ export const FormField: React.FC<FormFieldProps> = ({
           }}
           {...inputProps}
         />
-        {isValid && showCheck && !rightIcon && (
+        {isValid && showCheck && !rightIcon && !hasError && (
           <Ionicons name="checkmark" size={16} color="#00E5A0" />
+        )}
+        {hasError && !rightIcon && (
+          <Ionicons name="alert-circle" size={16} color="#FF6B6B" />
         )}
         {rightIcon}
       </View>
+      {hasError && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };
@@ -69,7 +77,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 4,
   },
   fieldFocused: {
     borderColor: 'rgba(0,229,160,0.4)',
@@ -77,11 +85,21 @@ const styles = StyleSheet.create({
   fieldValid: {
     borderColor: 'rgba(0,229,160,0.5)',
   },
+  fieldError: {
+    borderColor: 'rgba(255,107,107,0.6)',
+  },
   input: {
     flex: 1,
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
     color: '#FFFFF5',
     paddingVertical: 14,
+  },
+  errorText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: '#FF6B6B',
+    marginBottom: 12,
+    marginTop: 2,
   },
 });

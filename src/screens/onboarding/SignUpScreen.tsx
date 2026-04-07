@@ -6,11 +6,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { QupayLogo, CTAButton, FormField, BottomSheet } from '../../components';
+import { QupayLogo, CTAButton, FormField, BottomSheet, Toast } from '../../components';
 import { countries } from '../../data/mockData';
 import { initiateRegistration } from '../../api/auth';
 import { isApiError } from '../../api/client';
@@ -33,6 +32,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const [phoneFocused, setPhoneFocused] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState(countries[0]);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showError, setShowError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const firstNameValid = firstName.trim().length >= 2;
   const lastNameValid = lastName.trim().length >= 2;
@@ -42,9 +45,38 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const confirmPasswordValid = confirmPassword === password && confirmPassword.length > 0;
   const allFieldsValid = firstNameValid && lastNameValid && emailValid && phoneValid && passwordValid && confirmPasswordValid;
 
+  const getFieldError = (field: string): string | undefined => {
+    if (fieldErrors[field]) return fieldErrors[field];
+    if (!touched[field]) return undefined;
+    
+    switch (field) {
+      case 'firstName':
+        return !firstNameValid ? 'First name must be at least 2 characters' : undefined;
+      case 'lastName':
+        return !lastNameValid ? 'Last name must be at least 2 characters' : undefined;
+      case 'email':
+        return !emailValid ? 'Please enter a valid email address' : undefined;
+      case 'phone':
+        return !phoneValid ? 'Please enter a valid phone number' : undefined;
+      case 'password':
+        return !passwordValid ? 'Password must be at least 8 characters' : undefined;
+      case 'confirmPassword':
+        if (!confirmPassword) return 'Please confirm your password';
+        return !confirmPasswordValid ? 'Passwords do not match' : undefined;
+      default:
+        return undefined;
+    }
+  };
+
+  const markTouched = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    setFieldErrors((prev) => ({ ...prev, [field]: '' }));
+  };
+
   const handleSendCode = useCallback(async () => {
     if (!allFieldsValid) return;
     setLoading(true);
+    setShowError(false);
 
     const phoneNumber = `${selectedCountry.code}${phone}`;
     const registrationPayload: InitiateRegistrationRequest = {
@@ -65,7 +97,16 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       });
     } catch (error) {
       const message = isApiError(error) ? error.message : 'Something went wrong. Please try again.';
-      Alert.alert('Registration Failed', message);
+      const lowerMessage = message.toLowerCase();
+      
+      if (lowerMessage.includes('phone')) {
+        setFieldErrors((prev) => ({ ...prev, phone: message }));
+      } else if (lowerMessage.includes('email')) {
+        setFieldErrors((prev) => ({ ...prev, email: message }));
+      } else {
+        setErrorMessage(message);
+        setShowError(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -73,6 +114,12 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <Toast
+        visible={showError}
+        message={errorMessage}
+        type="error"
+        onDismiss={() => setShowError(false)}
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -97,8 +144,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 autoCapitalize="words"
                 value={firstName}
                 onChangeText={setFirstName}
+                onBlur={() => markTouched('firstName')}
                 maxLength={30}
                 isValid={firstNameValid}
+                error={getFieldError('firstName')}
                 accessibilityLabel="First name"
               />
             </View>
@@ -109,8 +158,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 autoCapitalize="words"
                 value={lastName}
                 onChangeText={setLastName}
+                onBlur={() => markTouched('lastName')}
                 maxLength={30}
                 isValid={lastNameValid}
+                error={getFieldError('lastName')}
                 accessibilityLabel="Last name"
               />
             </View>
@@ -124,8 +175,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             autoCorrect={false}
             value={email}
             onChangeText={setEmail}
+            onBlur={() => markTouched('email')}
             maxLength={80}
             isValid={emailValid}
+            error={getFieldError('email')}
             accessibilityLabel="Email address"
           />
 
@@ -146,7 +199,8 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
               style={[
                 styles.phoneField,
                 phoneFocused && styles.phoneFieldFocused,
-                phoneValid && styles.phoneFieldOk,
+                phoneValid && !getFieldError('phone') && styles.phoneFieldOk,
+                getFieldError('phone') && styles.phoneFieldError,
               ]}
             >
               <TextInput
@@ -155,17 +209,29 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 placeholderTextColor="rgba(255,255,245,0.4)"
                 keyboardType="phone-pad"
                 value={phone}
-                onChangeText={setPhone}
+                onChangeText={(text) => {
+                  setPhone(text);
+                  setFieldErrors((prev) => ({ ...prev, phone: '' }));
+                }}
                 maxLength={12}
                 onFocus={() => setPhoneFocused(true)}
-                onBlur={() => setPhoneFocused(false)}
+                onBlur={() => {
+                  setPhoneFocused(false);
+                  markTouched('phone');
+                }}
                 accessibilityLabel="Phone number"
               />
-              {phoneValid && (
+              {phoneValid && !getFieldError('phone') && (
                 <Ionicons name="checkmark" size={16} color="#00E5A0" />
+              )}
+              {getFieldError('phone') && (
+                <Ionicons name="alert-circle" size={16} color="#FF6B6B" />
               )}
             </View>
           </View>
+          {getFieldError('phone') && (
+            <Text style={styles.phoneError}>{getFieldError('phone')}</Text>
+          )}
 
           <FormField
             label="Password"
@@ -175,8 +241,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             autoCorrect={false}
             value={password}
             onChangeText={setPassword}
+            onBlur={() => markTouched('password')}
             maxLength={64}
             isValid={passwordValid}
+            error={getFieldError('password')}
             accessibilityLabel="Password"
             rightIcon={
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -193,8 +261,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             autoCorrect={false}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
+            onBlur={() => markTouched('confirmPassword')}
             maxLength={64}
             isValid={confirmPasswordValid}
+            error={getFieldError('confirmPassword')}
             accessibilityLabel="Confirm password"
             rightIcon={
               <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -335,6 +405,16 @@ const styles = StyleSheet.create({
   },
   phoneFieldOk: {
     borderColor: 'rgba(0,229,160,0.5)',
+  },
+  phoneFieldError: {
+    borderColor: 'rgba(255,107,107,0.6)',
+  },
+  phoneError: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: '#FF6B6B',
+    marginBottom: 12,
+    marginTop: -6,
   },
   phoneInput: {
     flex: 1,
