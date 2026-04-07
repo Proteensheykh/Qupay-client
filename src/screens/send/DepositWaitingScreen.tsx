@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { CTAButton } from '../../components';
 import * as Haptics from 'expo-haptics';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
@@ -17,6 +16,15 @@ interface Step {
   state: StepState;
 }
 
+const currencySymbols: Record<string, string> = {
+  USDT: '', NGN: '\u20A6', GHS: '\u20B5', KES: 'KSh', INR: '\u20B9', PHP: '\u20B1', MXN: '$', PKR: 'Rs', ZAR: 'R',
+};
+
+const truncateAddress = (addr: string): string => {
+  if (!addr || addr.length <= 14) return addr || '';
+  return `${addr.slice(0, 8)}\u2026${addr.slice(-6)}`;
+};
+
 export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => {
   const {
     recipientName = 'Emeka Johnson',
@@ -27,21 +35,36 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
     sendCurrency = 'USDT',
     recvCurrency = 'NGN',
     network = 'Polygon',
-    dest,
+    recipientWalletAddress,
+    recipientNetwork,
   } = route.params || {};
 
-  const symbol = dest?.symbol || '\u20A6';
+  const isCryptoOut = recvCurrency === 'USDT';
+  const sendSymbol = currencySymbols[sendCurrency] || '';
+  const recvSymbol = currencySymbols[recvCurrency] || '';
 
-  const [steps, setSteps] = useState<Step[]>([
-    { label: 'Listening for deposit', desc: `Watching ${network} for your ${sendCurrency} transfer`, state: 'active' },
-    { label: 'Deposit confirmed',     desc: `${amount} ${sendCurrency} received and locked`,           state: 'waiting' },
-    { label: 'Converting & sending',  desc: `Releasing ${symbol}${receiveAmount.toLocaleString()} to ${recipientMethod}`, state: 'waiting' },
-    { label: 'Delivered',             desc: `${recipientName.split(' ')[0]} received the funds`,      state: 'waiting' },
-  ]);
+  const formatUSDT = (val: number) => val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+  const initialSteps: Step[] = useMemo(() => {
+    if (isCryptoOut) {
+      return [
+        { label: 'Processing payment', desc: `Confirming your ${sendSymbol}${amount.toLocaleString()} ${sendCurrency} payment`, state: 'active' },
+        { label: 'Payment confirmed', desc: `${sendSymbol}${amount.toLocaleString()} ${sendCurrency} received`, state: 'waiting' },
+        { label: 'Converting & sending', desc: `Sending ${formatUSDT(receiveAmount)} USDT to ${truncateAddress(recipientWalletAddress || '')}`, state: 'waiting' },
+        { label: 'Delivered', desc: `USDT sent to recipient's wallet on ${recipientNetwork}`, state: 'waiting' },
+      ];
+    }
+    return [
+      { label: 'Listening for deposit', desc: `Watching ${network} for your ${sendCurrency} transfer`, state: 'active' },
+      { label: 'Deposit confirmed', desc: `${amount} ${sendCurrency} received and locked`, state: 'waiting' },
+      { label: 'Converting & sending', desc: `Releasing ${recvSymbol}${receiveAmount.toLocaleString()} to ${recipientMethod}`, state: 'waiting' },
+      { label: 'Delivered', desc: `${recipientName.split(' ')[0]} received the funds`, state: 'waiting' },
+    ];
+  }, [isCryptoOut, sendSymbol, amount, sendCurrency, receiveAmount, recipientWalletAddress, recipientNetwork, network, recvSymbol, recipientMethod, recipientName]);
+
+  const [steps, setSteps] = useState<Step[]>(initialSteps);
   const [detected, setDetected] = useState(false);
 
-  // Pulse animation for the scanning ring
   const pulseAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const loop = Animated.loop(
@@ -54,7 +77,6 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
     return () => loop.stop();
   }, [pulseAnim]);
 
-  // Simulate deposit detection after 4 seconds
   useEffect(() => {
     const t1 = setTimeout(() => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -86,15 +108,36 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
         recipientFlag,
         amount,
         receiveAmount,
-        dest,
+        recvCurrency,
+        sendCurrency,
+        recipientWalletAddress,
+        recipientNetwork,
       });
     }, 9500);
 
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [navigation, recipientName, recipientMethod, recipientFlag, amount, receiveAmount, dest, symbol, sendCurrency, network]);
+  }, [navigation, recipientName, recipientMethod, recipientFlag, amount, receiveAmount, recvCurrency, sendCurrency, recipientWalletAddress, recipientNetwork]);
 
   const pulseScale = pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.4] });
   const pulseOpacity = pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0] });
+
+  const getTitle = () => {
+    if (isCryptoOut) {
+      return detected ? 'Payment confirmed' : 'Processing payment';
+    }
+    return detected ? 'Deposit received' : 'Waiting for deposit';
+  };
+
+  const getSubtitle = () => {
+    if (isCryptoOut) {
+      return detected
+        ? `${sendSymbol}${amount.toLocaleString()} ${sendCurrency} confirmed`
+        : `Processing your ${sendSymbol}${amount.toLocaleString()} ${sendCurrency} payment`;
+    }
+    return detected
+      ? `${amount} ${sendCurrency} confirmed on ${network}`
+      : `Send ${amount} ${sendCurrency} to complete this transfer`;
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -115,24 +158,18 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
               {detected ? (
                 <Ionicons name="checkmark" size={32} color="#00E5A0" />
               ) : (
-                <Ionicons name="radio-outline" size={32} color="#00E5A0" />
+                <Ionicons name={isCryptoOut ? 'card-outline' : 'radio-outline'} size={32} color="#00E5A0" />
               )}
             </View>
           </View>
 
-          <Text style={styles.title}>
-            {detected ? 'Deposit received' : 'Waiting for deposit'}
-          </Text>
-          <Text style={styles.subtitle}>
-            {detected
-              ? `${amount} ${sendCurrency} confirmed on ${network}`
-              : `Send ${amount} ${sendCurrency} to complete this transfer`}
-          </Text>
+          <Text style={styles.title}>{getTitle()}</Text>
+          <Text style={styles.subtitle}>{getSubtitle()}</Text>
 
           {/* Amount badge */}
           <View style={styles.amountBadge}>
             <Text style={styles.amountBadgeText}>
-              {amount} {sendCurrency} {'\u2192'} {symbol}{receiveAmount.toLocaleString()} {recvCurrency}
+              {sendSymbol}{amount.toLocaleString()} {sendCurrency} {'\u2192'} {isCryptoOut ? `${formatUSDT(receiveAmount)} USDT` : `${recvSymbol}${receiveAmount.toLocaleString()} ${recvCurrency}`}
             </Text>
           </View>
         </View>
@@ -141,7 +178,6 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
         <View style={styles.timeline}>
           {steps.map((step, i) => (
             <View key={i} style={styles.timelineStep}>
-              {/* Connector line */}
               {i > 0 && (
                 <View
                   style={[
@@ -151,7 +187,6 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
                 />
               )}
               <View style={styles.stepRow}>
-                {/* Dot */}
                 <View style={[
                   styles.stepDot,
                   step.state === 'active' && styles.stepDotActive,
@@ -164,7 +199,6 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
                     <View style={styles.stepDotPulse} />
                   )}
                 </View>
-                {/* Text */}
                 <View style={styles.stepText}>
                   <Text style={[
                     styles.stepLabel,
@@ -185,7 +219,9 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
           <Text style={styles.bottomNote}>
             {detected
               ? 'Processing your transfer\u2026'
-              : 'You can leave the app \u2014 we\u2019ll notify you when we detect your deposit'}
+              : isCryptoOut
+                ? 'Please wait while we process your payment'
+                : 'You can leave the app \u2014 we\u2019ll notify you when we detect your deposit'}
           </Text>
         </View>
       </View>
@@ -197,7 +233,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#111118' },
   container: { flex: 1, justifyContent: 'space-between' },
   top: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 24 },
-  // Scan indicator
   scanWrap: { width: 100, height: 100, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
   pulseRing: {
     position: 'absolute', width: 100, height: 100, borderRadius: 50,
@@ -224,7 +259,6 @@ const styles = StyleSheet.create({
     borderRadius: 20, paddingVertical: 8, paddingHorizontal: 18,
   },
   amountBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#00E5A0' },
-  // Timeline
   timeline: { paddingHorizontal: 32, paddingVertical: 8 },
   timelineStep: { position: 'relative' },
   connector: {
@@ -248,7 +282,6 @@ const styles = StyleSheet.create({
   stepLabelActive: { color: '#FFFFF5', fontFamily: 'Inter_600SemiBold' },
   stepLabelDone: { color: '#00E5A0', fontFamily: 'Inter_600SemiBold' },
   stepDesc: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.4)', marginTop: 2 },
-  // Bottom
   bottom: { paddingHorizontal: 24, paddingBottom: 36 },
   bottomNote: {
     fontFamily: 'Inter_400Regular', fontSize: 12, color: 'rgba(255,255,245,0.35)',

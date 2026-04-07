@@ -31,6 +31,19 @@ const networks = [
   { id: 'bsc', name: 'BNB Chain', icon: '\u{1F7E1}', gas: '~$0.10', address: '0x2f9A3e8B1c4D7a6E5f0B8c1D9e3F2a4B6c5D7e' },
 ];
 
+const networkIconMap: Record<string, string> = {
+  Polygon: 'triangle-outline',
+  Ethereum: 'logo-electron',
+  Base: 'layers-outline',
+  Arbitrum: 'git-branch-outline',
+  'BNB Chain': 'logo-bitcoin',
+};
+
+const truncateAddress = (addr: string): string => {
+  if (!addr || addr.length <= 14) return addr || '';
+  return `${addr.slice(0, 8)}\u2026${addr.slice(-6)}`;
+};
+
 export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
   const {
     amount,
@@ -42,11 +55,19 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
     recipientColors,
     recipientMethod,
     recipientFlag,
+    recipientWalletAddress,
+    recipientNetwork,
   } = route.params;
 
+  const isCryptoOut = receiveCurrency === 'USDT';
   const recvSymbol = currencySymbols[receiveCurrency] || '';
-  const fee = Math.round(receiveAmount * 0.01);
-  const feePct = ((fee / receiveAmount) * 100).toFixed(2);
+  const sendSymbol = currencySymbols[sendCurrency] || '';
+  const fee = isCryptoOut
+    ? Math.round(amount * 0.01)
+    : Math.round(receiveAmount * 0.01);
+  const feePct = isCryptoOut
+    ? ((fee / amount) * 100).toFixed(2)
+    : ((fee / receiveAmount) * 100).toFixed(2);
 
   const [selectedNetwork, setSelectedNetwork] = useState(networks[0]);
   const [showNetworkPicker, setShowNetworkPicker] = useState(false);
@@ -56,11 +77,14 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
   const shortAddr = `${selectedNetwork.address.slice(0, 8)}\u2026${selectedNetwork.address.slice(-6)}`;
 
   const handleCopy = useCallback(async () => {
-    await Clipboard.setStringAsync(selectedNetwork.address);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  }, [selectedNetwork.address]);
+    const addressToCopy = isCryptoOut ? recipientWalletAddress : selectedNetwork.address;
+    if (addressToCopy) {
+      await Clipboard.setStringAsync(addressToCopy);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }
+  }, [isCryptoOut, recipientWalletAddress, selectedNetwork.address]);
 
   const handleProceed = useCallback(() => {
     navigation.navigate('DepositWaiting', {
@@ -73,8 +97,10 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
       recvCurrency: receiveCurrency,
       walletAddress: selectedNetwork.address,
       network: selectedNetwork.name,
+      recipientWalletAddress,
+      recipientNetwork,
     });
-  }, [navigation, recipientName, recipientMethod, recipientFlag, amount, receiveAmount, sendCurrency, receiveCurrency, selectedNetwork]);
+  }, [navigation, recipientName, recipientMethod, recipientFlag, amount, receiveAmount, sendCurrency, receiveCurrency, selectedNetwork, recipientWalletAddress, recipientNetwork]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -89,7 +115,17 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
           <GradientAvatar initials={recipientInitials} size={34} colors={recipientColors} fontSize={11} />
           <View style={styles.rsInfo}>
             <Text style={styles.rsName}>{recipientName}</Text>
-            <Text style={styles.rsSub}>{recipientMethod} {'\u00B7'} No Qupay account needed</Text>
+            {isCryptoOut ? (
+              <View style={styles.rsWalletRow}>
+                <Text style={styles.rsWalletAddr}>{truncateAddress(recipientWalletAddress || '')}</Text>
+                <View style={styles.rsNetworkBadge}>
+                  <Ionicons name={(networkIconMap[recipientNetwork || ''] || 'layers-outline') as any} size={10} color="#00E5A0" />
+                  <Text style={styles.rsNetworkText}>{recipientNetwork}</Text>
+                </View>
+              </View>
+            ) : (
+              <Text style={styles.rsSub}>{recipientMethod} {'\u00B7'} No Qupay account needed</Text>
+            )}
           </View>
           <View style={styles.vtag}>
             <Ionicons name="checkmark" size={10} color="#00E5A0" />
@@ -101,12 +137,16 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
         <View style={styles.swapCard}>
           <View style={styles.swapRow}>
             <Text style={styles.swapLabel}>You send</Text>
-            <Text style={styles.swapValue}>{amount} {sendCurrency}</Text>
+            <Text style={styles.swapValue}>{sendSymbol}{amount.toLocaleString()} {sendCurrency}</Text>
           </View>
           <View style={styles.swapDivider} />
           <View style={styles.swapRow}>
             <Text style={styles.swapLabel}>They receive</Text>
-            <Text style={styles.swapValueGreen}>{recvSymbol}{receiveAmount.toLocaleString()} {receiveCurrency}</Text>
+            <Text style={styles.swapValueGreen}>
+              {isCryptoOut
+                ? `${receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`
+                : `${recvSymbol}${receiveAmount.toLocaleString()} ${receiveCurrency}`}
+            </Text>
           </View>
         </View>
 
@@ -115,98 +155,197 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
           <View style={styles.feeRow}>
             <Text style={styles.feeLabel}>Fee included</Text>
             <Text style={styles.feeValue}>
-              {recvSymbol}{fee.toLocaleString()} <Text style={styles.feePct}>{feePct}%</Text>
+              {isCryptoOut ? `${sendSymbol}${fee.toLocaleString()}` : `${recvSymbol}${fee.toLocaleString()}`} <Text style={styles.feePct}>{feePct}%</Text>
             </Text>
           </View>
           <View style={styles.feeRow}>
             <Text style={styles.feeLabel}>Delivery</Text>
             <View style={styles.deliveryPill}>
               <Ionicons name="flash" size={11} color="#00E5A0" />
-              <Text style={styles.deliveryText}>~2 min via {recipientMethod}</Text>
+              <Text style={styles.deliveryText}>~2 min via {isCryptoOut ? recipientNetwork : recipientMethod}</Text>
             </View>
           </View>
         </View>
 
-        {/* Deposit Address Card */}
-        <View style={styles.depositCard}>
-          <View style={styles.dcHeader}>
-            <View style={styles.dcHeaderLeft}>
-              <View style={styles.dcIcon}>
-                <Ionicons name="wallet-outline" size={18} color="#00E5A0" />
+        {isCryptoOut ? (
+          <>
+            {/* Recipient Wallet Card - for crypto out */}
+            <View style={styles.walletCard}>
+              <View style={styles.wcHeader}>
+                <View style={styles.wcHeaderLeft}>
+                  <View style={styles.wcIcon}>
+                    <Ionicons name="wallet-outline" size={18} color="#00E5A0" />
+                  </View>
+                  <View>
+                    <Text style={styles.wcTitle}>Recipient Wallet</Text>
+                    <Text style={styles.wcSubtitle}>
+                      {receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT will be sent to this address
+                    </Text>
+                  </View>
+                </View>
               </View>
-              <View>
-                <Text style={styles.dcTitle}>Deposit Address</Text>
-                <Text style={styles.dcSubtitle}>
-                  Send exactly {amount} {sendCurrency} to this address
+
+              {/* Network display */}
+              <View style={styles.wcNetworkRow}>
+                <Text style={styles.wcNetworkLabel}>Network</Text>
+                <View style={styles.wcNetworkPill}>
+                  <Ionicons name={(networkIconMap[recipientNetwork || ''] || 'layers-outline') as any} size={14} color="#00E5A0" />
+                  <Text style={styles.wcNetworkName}>{recipientNetwork}</Text>
+                </View>
+              </View>
+
+              {/* Address display */}
+              <View style={styles.wcAddressBox}>
+                <Text style={styles.wcAddrMono} selectable>{recipientWalletAddress}</Text>
+              </View>
+
+              {/* Copy button */}
+              <TouchableOpacity style={styles.copyBtn} onPress={handleCopy} activeOpacity={0.7}>
+                <Ionicons
+                  name={copied ? 'checkmark-circle' : 'copy-outline'}
+                  size={16}
+                  color={copied ? '#00E5A0' : '#FFFFF5'}
+                />
+                <Text style={[styles.copyText, copied && styles.copyTextGreen]}>
+                  {copied ? 'Copied!' : 'Copy address'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Info */}
+              <View style={styles.infoRow}>
+                <Ionicons name="information-circle-outline" size={14} color="#00E5A0" />
+                <Text style={styles.infoText}>
+                  Funds will be sent as USDT on {recipientNetwork} to the recipient's wallet
                 </Text>
               </View>
             </View>
-          </View>
 
-          {/* Network selector */}
-          <TouchableOpacity
-            style={styles.networkRow}
-            onPress={() => setShowNetworkPicker(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.networkLabel}>Network</Text>
-            <View style={styles.networkPill}>
-              <Text style={styles.networkIcon}>{selectedNetwork.icon}</Text>
-              <Text style={styles.networkName}>{selectedNetwork.name}</Text>
-              <Text style={styles.networkGas}>{selectedNetwork.gas} gas</Text>
-              <Ionicons name="chevron-down" size={12} color="rgba(255,255,245,0.5)" />
+            {/* Pay with section */}
+            <View style={styles.payWithCard}>
+              <View style={styles.pwHeader}>
+                <View style={styles.pwIcon}>
+                  <Ionicons name="card-outline" size={18} color="#1a6fff" />
+                </View>
+                <View>
+                  <Text style={styles.pwTitle}>Pay with</Text>
+                  <Text style={styles.pwSubtitle}>Select a payment method</Text>
+                </View>
+              </View>
+
+              {/* Mock payment method */}
+              <View style={styles.paymentMethod}>
+                <View style={styles.pmLeft}>
+                  <View style={styles.pmIconWrap}>
+                    <Ionicons name="business" size={16} color="#FFFFF5" />
+                  </View>
+                  <View>
+                    <Text style={styles.pmTitle}>GTBank</Text>
+                    <Text style={styles.pmSub}>Account ending ****4521</Text>
+                  </View>
+                </View>
+                <Ionicons name="checkmark-circle" size={20} color="#00E5A0" />
+              </View>
+
+              <View style={styles.paymentMethodAlt}>
+                <View style={styles.pmLeft}>
+                  <View style={[styles.pmIconWrap, { backgroundColor: 'rgba(255,255,245,0.08)' }]}>
+                    <Ionicons name="card" size={16} color="rgba(255,255,245,0.5)" />
+                  </View>
+                  <View>
+                    <Text style={styles.pmTitleAlt}>Debit Card</Text>
+                    <Text style={styles.pmSubAlt}>Visa ending ****8912</Text>
+                  </View>
+                </View>
+                <View style={styles.pmRadio} />
+              </View>
             </View>
-          </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            {/* Deposit Address Card - for crypto in */}
+            <View style={styles.depositCard}>
+              <View style={styles.dcHeader}>
+                <View style={styles.dcHeaderLeft}>
+                  <View style={styles.dcIcon}>
+                    <Ionicons name="wallet-outline" size={18} color="#00E5A0" />
+                  </View>
+                  <View>
+                    <Text style={styles.dcTitle}>Deposit Address</Text>
+                    <Text style={styles.dcSubtitle}>
+                      Send exactly {amount} {sendCurrency} to this address
+                    </Text>
+                  </View>
+                </View>
+              </View>
 
-          {/* Address display */}
-          <TouchableOpacity
-            style={styles.addressBox}
-            onPress={() => setShowQR(true)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.addrLeft}>
-              <Text style={styles.addrMono}>{shortAddr}</Text>
-              <Text style={styles.addrHint}>Tap to show QR code</Text>
+              {/* Network selector */}
+              <TouchableOpacity
+                style={styles.networkRow}
+                onPress={() => setShowNetworkPicker(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.networkLabel}>Network</Text>
+                <View style={styles.networkPill}>
+                  <Text style={styles.networkIcon}>{selectedNetwork.icon}</Text>
+                  <Text style={styles.networkName}>{selectedNetwork.name}</Text>
+                  <Text style={styles.networkGas}>{selectedNetwork.gas} gas</Text>
+                  <Ionicons name="chevron-down" size={12} color="rgba(255,255,245,0.5)" />
+                </View>
+              </TouchableOpacity>
+
+              {/* Address display */}
+              <TouchableOpacity
+                style={styles.addressBox}
+                onPress={() => setShowQR(true)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.addrLeft}>
+                  <Text style={styles.addrMono}>{shortAddr}</Text>
+                  <Text style={styles.addrHint}>Tap to show QR code</Text>
+                </View>
+                <View style={styles.qrMini}>
+                  <Ionicons name="qr-code-outline" size={28} color="#00E5A0" />
+                </View>
+              </TouchableOpacity>
+
+              {/* Copy button */}
+              <TouchableOpacity style={styles.copyBtn} onPress={handleCopy} activeOpacity={0.7}>
+                <Ionicons
+                  name={copied ? 'checkmark-circle' : 'copy-outline'}
+                  size={16}
+                  color={copied ? '#00E5A0' : '#FFFFF5'}
+                />
+                <Text style={[styles.copyText, copied && styles.copyTextGreen]}>
+                  {copied ? 'Copied!' : 'Copy address'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Warning */}
+              <View style={styles.warnRow}>
+                <Ionicons name="alert-circle-outline" size={14} color="#FFD460" />
+                <Text style={styles.warnText}>
+                  Only send {sendCurrency} on {selectedNetwork.name}. Sending other tokens or using a different network may result in loss of funds.
+                </Text>
+              </View>
             </View>
-            <View style={styles.qrMini}>
-              <Ionicons name="qr-code-outline" size={28} color="#00E5A0" />
-            </View>
-          </TouchableOpacity>
-
-          {/* Copy button */}
-          <TouchableOpacity style={styles.copyBtn} onPress={handleCopy} activeOpacity={0.7}>
-            <Ionicons
-              name={copied ? 'checkmark-circle' : 'copy-outline'}
-              size={16}
-              color={copied ? '#00E5A0' : '#FFFFF5'}
-            />
-            <Text style={[styles.copyText, copied && styles.copyTextGreen]}>
-              {copied ? 'Copied!' : 'Copy address'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Warning */}
-          <View style={styles.warnRow}>
-            <Ionicons name="alert-circle-outline" size={14} color="#FFD460" />
-            <Text style={styles.warnText}>
-              Only send {sendCurrency} on {selectedNetwork.name}. Sending other tokens or using a different network may result in loss of funds.
-            </Text>
-          </View>
-        </View>
+          </>
+        )}
 
         {/* CTA */}
         <View style={styles.ctaWrap}>
           <CTAButton
-            title="Proceed"
+            title={isCryptoOut ? 'Pay Now' : 'Proceed'}
             onPress={handleProceed}
           />
           <Text style={styles.ctaNote}>
-            Make sure to copy the deposit address before proceeding
+            {isCryptoOut
+              ? `You will be charged ${sendSymbol}${amount.toLocaleString()} ${sendCurrency}`
+              : 'Make sure to copy the deposit address before proceeding'}
           </Text>
         </View>
       </ScrollView>
 
-      {/* Network Picker */}
+      {/* Network Picker - only for crypto in */}
       <BottomSheet visible={showNetworkPicker} onClose={() => setShowNetworkPicker(false)} title="Select Network">
         {networks.map((n) => (
           <TouchableOpacity
@@ -226,7 +365,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
         <View style={{ height: 40 }} />
       </BottomSheet>
 
-      {/* QR Code Sheet */}
+      {/* QR Code Sheet - only for crypto in */}
       <BottomSheet visible={showQR} onClose={() => setShowQR(false)} title="Scan to Deposit">
         <View style={styles.qrSheet}>
           <View style={styles.qrBox}>
@@ -274,6 +413,21 @@ const styles = StyleSheet.create({
   rsInfo: { flex: 1 },
   rsName: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#FFFFF5' },
   rsSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.6)' },
+  rsWalletRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2,
+  },
+  rsWalletAddr: {
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontSize: 10, color: 'rgba(255,255,245,0.5)',
+  },
+  rsNetworkBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: 'rgba(0,229,160,0.1)', borderRadius: 6,
+    paddingVertical: 2, paddingHorizontal: 6,
+  },
+  rsNetworkText: {
+    fontFamily: 'Inter_600SemiBold', fontSize: 9, color: '#00E5A0',
+  },
   vtag: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: 'rgba(0,229,160,0.12)', borderRadius: 20, paddingVertical: 3, paddingHorizontal: 8,
@@ -313,6 +467,85 @@ const styles = StyleSheet.create({
   feeLabel: { fontFamily: 'Inter_400Regular', fontSize: 12, color: 'rgba(255,255,245,0.6)' },
   feeValue: { fontFamily: 'Inter_500Medium', fontSize: 12, color: '#FFFFF5', fontVariant: ['tabular-nums'] },
   feePct: { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#00E5A0' },
+  // Wallet card for crypto-out
+  walletCard: {
+    marginHorizontal: 24, marginBottom: 16, backgroundColor: '#1A1A2E',
+    borderWidth: 1.5, borderColor: 'rgba(0,229,160,0.2)', borderRadius: 20, overflow: 'hidden',
+  },
+  wcHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    padding: 16, paddingBottom: 12,
+  },
+  wcHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  wcIcon: {
+    width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(0,229,160,0.12)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  wcTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#FFFFF5' },
+  wcSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.5)', marginTop: 1 },
+  wcNetworkRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingBottom: 14,
+  },
+  wcNetworkLabel: { fontFamily: 'Inter_500Medium', fontSize: 12, color: 'rgba(255,255,245,0.5)' },
+  wcNetworkPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: 'rgba(0,229,160,0.1)', borderWidth: 1, borderColor: 'rgba(0,229,160,0.25)',
+    borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12,
+  },
+  wcNetworkName: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#FFFFF5' },
+  wcAddressBox: {
+    marginHorizontal: 16, marginBottom: 12, backgroundColor: '#111118',
+    borderWidth: 1, borderColor: 'rgba(255,255,245,0.08)', borderRadius: 14, padding: 14,
+  },
+  wcAddrMono: {
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontSize: 12, color: '#FFFFF5', letterSpacing: 0.3, lineHeight: 20,
+  },
+  infoRow: {
+    flexDirection: 'row', gap: 8, alignItems: 'flex-start',
+    marginHorizontal: 16, marginBottom: 16,
+  },
+  infoText: {
+    flex: 1, fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(0,229,160,0.7)', lineHeight: 16,
+  },
+  // Pay with card
+  payWithCard: {
+    marginHorizontal: 24, marginBottom: 16, backgroundColor: '#222236',
+    borderWidth: 1, borderColor: 'rgba(255,255,245,0.08)', borderRadius: 16, padding: 16,
+  },
+  pwHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16,
+  },
+  pwIcon: {
+    width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(26,111,255,0.15)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  pwTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#FFFFF5' },
+  pwSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.5)', marginTop: 1 },
+  paymentMethod: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: 'rgba(0,229,160,0.08)', borderWidth: 1.5, borderColor: 'rgba(0,229,160,0.3)',
+    borderRadius: 12, padding: 14, marginBottom: 10,
+  },
+  paymentMethodAlt: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,245,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,245,0.08)',
+    borderRadius: 12, padding: 14,
+  },
+  pmLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  pmIconWrap: {
+    width: 36, height: 36, borderRadius: 10, backgroundColor: '#008751',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  pmTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#FFFFF5' },
+  pmSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.5)', marginTop: 1 },
+  pmTitleAlt: { fontFamily: 'Inter_500Medium', fontSize: 13, color: 'rgba(255,255,245,0.6)' },
+  pmSubAlt: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.35)', marginTop: 1 },
+  pmRadio: {
+    width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: 'rgba(255,255,245,0.2)',
+  },
+  // Deposit card for crypto-in (existing)
   depositCard: {
     marginHorizontal: 24, marginBottom: 16, backgroundColor: '#1A1A2E',
     borderWidth: 1.5, borderColor: 'rgba(0,229,160,0.2)', borderRadius: 20, overflow: 'hidden',

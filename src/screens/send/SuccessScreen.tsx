@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { CTAButton } from '../../components';
@@ -11,6 +11,15 @@ import type { SendFlowParamList } from '../../navigation/AppNavigator';
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'Success'>;
 
+const currencySymbols: Record<string, string> = {
+  USDT: '', NGN: '\u20A6', GHS: '\u20B5', KES: 'KSh', INR: '\u20B9', PHP: '\u20B1', MXN: '$', PKR: 'Rs', ZAR: 'R',
+};
+
+const truncateAddress = (addr: string): string => {
+  if (!addr || addr.length <= 14) return addr || '';
+  return `${addr.slice(0, 8)}\u2026${addr.slice(-6)}`;
+};
+
 export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
   const {
     recipientName = 'Emeka Johnson',
@@ -18,12 +27,13 @@ export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
     amount = 200,
     receiveAmount = 329000,
     recvCurrency = 'NGN',
+    sendCurrency,
+    recipientWalletAddress,
+    recipientNetwork,
   } = route.params || {};
 
-  const currencySymbols: Record<string, string> = {
-    USDT: '', NGN: '\u20A6', GHS: '\u20B5', KES: 'KSh', INR: '\u20B9', PHP: '\u20B1', MXN: '$', PKR: 'Rs', ZAR: 'R',
-  };
-  const symbol = currencySymbols[recvCurrency] || '\u20A6';
+  const isCryptoOut = recvCurrency === 'USDT';
+  const symbol = currencySymbols[recvCurrency] || '';
   const firstName = recipientName.split(' ')[0];
 
   const iconScale = useRef(new Animated.Value(0)).current;
@@ -48,7 +58,6 @@ export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
   }, [iconScale, contentOpacity]);
 
   const goToReceipt = () => {
-    // Navigate to History tab → TransferDetail screen
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
@@ -57,7 +66,6 @@ export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
         }],
       })
     );
-    // Jump to History tab and open the transfer detail
     const tabNav = navigation.getParent();
     if (tabNav) {
       tabNav.navigate('HistoryTab', {
@@ -79,27 +87,51 @@ export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
           <Animated.View style={{ opacity: contentOpacity, alignItems: 'center', alignSelf: 'stretch' }}>
           <Text style={styles.sucTitle}>Delivered {'\u{1F389}'}</Text>
           <Text style={styles.sucSub}>
-            {firstName} received {symbol}
-            {receiveAmount.toLocaleString()}
+            {isCryptoOut
+              ? `${receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT sent to ${truncateAddress(recipientWalletAddress || '')}`
+              : `${firstName} received ${symbol}${receiveAmount.toLocaleString()}`}
           </Text>
 
-          {/* Notification card */}
-          <View style={styles.notifCard}>
-            <View style={styles.notifIcon}>
-              <Text style={styles.notifIconText}>{'\u{1F4AC}'}</Text>
-            </View>
-            <View style={styles.notifBody}>
-              <Text style={styles.notifTitle}>{firstName} was notified</Text>
-              <Text style={styles.notifMsg}>
-                "{userProfile.name} sent you {symbol}
-                {receiveAmount.toLocaleString()} via Qupay. Check your {recipientMethod} now."
-              </Text>
-              <View style={styles.notifTag}>
-                <Ionicons name="checkmark" size={10} color="#25d366" />
-                <Text style={styles.notifTagText}>SMS delivered</Text>
+          {isCryptoOut ? (
+            /* On-chain confirmation card for crypto-out */
+            <View style={styles.cryptoCard}>
+              <View style={styles.cryptoIcon}>
+                <Ionicons name="checkmark-circle" size={20} color="#00E5A0" />
+              </View>
+              <View style={styles.cryptoBody}>
+                <Text style={styles.cryptoTitle}>Transaction confirmed</Text>
+                <Text style={styles.cryptoMsg}>
+                  {receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT has been sent to the wallet on {recipientNetwork}
+                </Text>
+                <View style={styles.cryptoAddrRow}>
+                  <Text style={styles.cryptoAddrLabel}>To:</Text>
+                  <Text style={styles.cryptoAddr}>{truncateAddress(recipientWalletAddress || '')}</Text>
+                </View>
+                <View style={styles.cryptoTag}>
+                  <Ionicons name="checkmark" size={10} color="#00E5A0" />
+                  <Text style={styles.cryptoTagText}>On-chain confirmed</Text>
+                </View>
               </View>
             </View>
-          </View>
+          ) : (
+            /* Notification card for fiat-out */
+            <View style={styles.notifCard}>
+              <View style={styles.notifIcon}>
+                <Text style={styles.notifIconText}>{'\u{1F4AC}'}</Text>
+              </View>
+              <View style={styles.notifBody}>
+                <Text style={styles.notifTitle}>{firstName} was notified</Text>
+                <Text style={styles.notifMsg}>
+                  "{userProfile.name} sent you {symbol}
+                  {receiveAmount.toLocaleString()} via Qupay. Check your {recipientMethod} now."
+                </Text>
+                <View style={styles.notifTag}>
+                  <Ionicons name="checkmark" size={10} color="#25d366" />
+                  <Text style={styles.notifTagText}>SMS delivered</Text>
+                </View>
+              </View>
+            </View>
+          )}
 
           {/* Buttons */}
           <CTAButton
@@ -159,6 +191,68 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
   },
+  // Crypto confirmation card
+  cryptoCard: {
+    backgroundColor: '#222236',
+    borderWidth: 1,
+    borderColor: 'rgba(0,229,160,0.2)',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'flex-start',
+    alignSelf: 'stretch',
+    marginBottom: 20,
+  },
+  cryptoIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,229,160,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cryptoBody: { flex: 1 },
+  cryptoTitle: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
+    color: '#FFFFF5',
+  },
+  cryptoMsg: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: 'rgba(255,255,245,0.6)',
+    marginTop: 2,
+    lineHeight: 18,
+  },
+  cryptoAddrRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  cryptoAddrLabel: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 11,
+    color: 'rgba(255,255,245,0.4)',
+  },
+  cryptoAddr: {
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontSize: 11,
+    color: '#00E5A0',
+  },
+  cryptoTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 8,
+  },
+  cryptoTagText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 10,
+    color: '#00E5A0',
+  },
+  // Fiat notification card
   notifCard: {
     backgroundColor: '#222236',
     borderWidth: 1,

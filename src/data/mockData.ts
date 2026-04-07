@@ -22,9 +22,11 @@ export interface Recipient {
   phone: string;
   country: string;
   flag: string;
-  accountType: 'mobile_money' | 'bank';
+  accountType: 'mobile_money' | 'bank' | 'wallet';
   accountLabel: string;
   recent: boolean;
+  walletAddress?: string;
+  walletNetwork?: string;
 }
 
 export interface Transfer {
@@ -203,6 +205,22 @@ export const networks: Network[] = [
   { id: 'polygon', name: 'Polygon', icon: 'triangle-outline', gasEstimate: '~$0.01', address: '0x4c2A9f8E3d7B6a1C0e5F2d8A9b4C7e6F3a1D5b' },
   { id: 'arbitrum', name: 'Arbitrum', icon: 'git-branch-outline', gasEstimate: '~$0.15', address: '0x9d5F2e8A1b3C7d6E0f4A8B9c2D5e7F1a3B6c4d' },
   { id: 'base', name: 'Base', icon: 'layers-outline', gasEstimate: '~$0.05', address: '0x1e8B4f7A2c9D3e6F5a0B8c1D4e7F9a2B5c3D6e' },
+];
+
+export interface WalletContact {
+  id: string;
+  name: string;
+  initials: string;
+  colors: [string, string];
+  walletAddress: string;
+  network: string;
+  networkIcon: string;
+}
+
+export const walletContacts: WalletContact[] = [
+  { id: 'w1', name: 'Alex Chen', initials: 'AC', colors: ['#1a6fff', '#00e5a0'], walletAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18', network: 'Polygon', networkIcon: 'triangle-outline' },
+  { id: 'w2', name: 'Sarah Kim', initials: 'SK', colors: ['#ff9f43', '#ff4d6a'], walletAddress: '0x8Ba1f109551bD432803012645Ac136ddd64DBA72', network: 'Base', networkIcon: 'layers-outline' },
+  { id: 'w3', name: 'Mike Johnson', initials: 'MJ', colors: ['#a855f7', '#1a6fff'], walletAddress: '0x1CBd3b2770909D4e10f157cABC84C7264073C9Ec', network: 'Ethereum', networkIcon: 'logo-electron' },
 ];
 
 export function formatCurrency(value: number, decimals = 2): string {

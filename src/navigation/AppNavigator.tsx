@@ -79,6 +79,8 @@ export type SendFlowParamList = {
     recipientMethod: string;
     recipientPhone?: string;
     recipientFlag: string;
+    recipientWalletAddress?: string;
+    recipientNetwork?: string;
   };
   DepositWaiting: {
     recipientName?: string;
@@ -91,6 +93,8 @@ export type SendFlowParamList = {
     recvCurrency?: string;
     walletAddress?: string;
     network?: string;
+    recipientWalletAddress?: string;
+    recipientNetwork?: string;
   };
   Success: {
     recipientName?: string;
@@ -100,6 +104,9 @@ export type SendFlowParamList = {
     amount?: number;
     receiveAmount?: number;
     recvCurrency?: string;
+    sendCurrency?: string;
+    recipientWalletAddress?: string;
+    recipientNetwork?: string;
   };
 };
 

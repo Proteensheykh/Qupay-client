@@ -31,12 +31,18 @@ const usdtRates: Record<string, number> = {
   USDT: 1, NGN: 1645, GHS: 15.16, KES: 128.7, INR: 83.5, PHP: 56.78, MXN: 17.24, PKR: 278.5, ZAR: 18.9,
 };
 
+const currencySymbols: Record<string, string> = {
+  USDT: '', NGN: '\u20A6', GHS: '\u20B5', KES: 'KSh', INR: '\u20B9', PHP: '\u20B1', MXN: '$', PKR: 'Rs', ZAR: 'R',
+};
+
 const getRate = (from: string, to: string): number => {
   if (from === to) return 1;
   const fromToUsdt = 1 / (usdtRates[from] || 1);
   const usdtToTo = usdtRates[to] || 1;
   return fromToUsdt * usdtToTo;
 };
+
+const isCrypto = (code: string): boolean => code === 'USDT';
 
 export const AmountScreen: React.FC<Props> = ({ navigation }) => {
   const [selectedSendCurrency, setSelectedSendCurrency] = useState(currencies[0]);
@@ -47,14 +53,17 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
 
   const rate = getRate(selectedSendCurrency.code, selectedReceiveCurrency.code);
   const numAmount = parseFloat(amount) || 0;
-  const fiatEquivalent = Math.round(numAmount * rate);
+  const receivingCrypto = isCrypto(selectedReceiveCurrency.code);
+  const receiveAmount = receivingCrypto
+    ? parseFloat((numAmount * rate).toFixed(2))
+    : Math.round(numAmount * rate);
 
   const handleContinue = () => {
     navigation.navigate('Recipient', {
       amount: numAmount,
       sendCurrency: selectedSendCurrency.code,
       receiveCurrency: selectedReceiveCurrency.code,
-      receiveAmount: fiatEquivalent,
+      receiveAmount,
     });
   };
 
@@ -92,7 +101,9 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
             <View style={styles.rateLine} />
             <View style={styles.ratePill}>
               <Text style={styles.ratePillText}>
-                1 {selectedSendCurrency.code} = {selectedReceiveCurrency.symbol}{rate.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                {receivingCrypto
+                  ? `1 USDT = ${currencySymbols[selectedSendCurrency.code] || ''}${usdtRates[selectedSendCurrency.code]?.toLocaleString() || '1'} ${selectedSendCurrency.code}`
+                  : `1 ${selectedSendCurrency.code} = ${selectedReceiveCurrency.symbol}${rate.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
               </Text>
             </View>
             <View style={styles.rateLine} />
@@ -102,7 +113,11 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.acLabel}>They receive</Text>
             <View style={styles.acRowSpaced}>
               <Text style={styles.recvAmount}>
-                {numAmount > 0 ? `${selectedReceiveCurrency.symbol}${fiatEquivalent.toLocaleString()}` : '\u2014'}
+                {numAmount > 0
+                  ? receivingCrypto
+                    ? `${receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`
+                    : `${selectedReceiveCurrency.symbol}${receiveAmount.toLocaleString()}`
+                  : '\u2014'}
               </Text>
               <TouchableOpacity style={styles.recvCurrPill} onPress={() => setShowReceivePicker(true)} activeOpacity={0.7}>
                 <View style={[styles.cpIconWrapSmall, { backgroundColor: selectedReceiveCurrency.color + '20' }]}>
