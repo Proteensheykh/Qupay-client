@@ -32,6 +32,8 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
   textStyle,
 }) => {
   const { theme } = useTheme();
+  const disabledBg = theme.background.surface;
+  const disabledText = theme.text.disabled;
 
   if (danger) {
     return (
@@ -79,7 +81,11 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
 
   return (
     <TouchableOpacity
-      style={[styles.cta, { backgroundColor: theme.secondary.main }, disabled && styles.disabled, style]}
+      style={[
+        styles.cta,
+        { backgroundColor: disabled ? disabledBg : theme.secondary.main },
+        style,
+      ]}
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.85}
@@ -90,7 +96,7 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
       {loading ? (
         <ActivityIndicator size="small" color={theme.background.default} />
       ) : (
-        <Text style={[styles.ctaText, { color: theme.background.default }, textStyle]}>{title}</Text>
+        <Text style={[styles.ctaText, { color: disabled ? disabledText : theme.background.default }, textStyle]}>{title}</Text>
       )}
     </TouchableOpacity>
   );

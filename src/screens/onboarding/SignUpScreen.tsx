@@ -21,20 +21,23 @@ import { useTheme } from '../../theme';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'SignUp'>;
 
-type Step = 1 | 2;
+type Step = 'personal' | 'security' | 'payment';
+
+const TOTAL_STEPS = 3;
+const STEP_INDEX: Record<Step, number> = { personal: 0, security: 1, payment: 2 };
 
 export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
-  const [step, setStep] = useState<Step>(1);
+  const [step, setStep] = useState<Step>('personal');
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [username, setUsernameLocal] = useState('');
+  const [usernameManuallyEdited, setUsernameManuallyEdited] = useState(false);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [phoneFocused, setPhoneFocused] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState(countries[0]);
@@ -53,20 +56,37 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
 
   const { setBankDetails, setWalletDetails, setUsername } = useAuthStore();
 
-  const generatedUsername = useMemo(() => {
+  const autoUsername = useMemo(() => {
     const first = firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
     const last = lastName.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
     if (!first && !last) return '';
     return `${first}${last}`;
   }, [firstName, lastName]);
 
+  // Keep username in sync with name fields until the user edits it themselves
+  React.useEffect(() => {
+    if (!usernameManuallyEdited) {
+      setUsernameLocal(autoUsername);
+    }
+  }, [autoUsername, usernameManuallyEdited]);
+
+  const handleUsernameChange = (text: string) => {
+    const sanitized = text.toLowerCase().replace(/[^a-z0-9._]/g, '');
+    setUsernameLocal(sanitized);
+    setUsernameManuallyEdited(true);
+  };
+
+  const usernameValid = username.length >= 3;
+
   const firstNameValid = firstName.trim().length >= 2;
   const lastNameValid = lastName.trim().length >= 2;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const phoneValid = phone.length >= 8;
   const passwordValid = password.length >= 8;
-  const confirmPasswordValid = confirmPassword === password && confirmPassword.length > 0;
-  const allFieldsValid = firstNameValid && lastNameValid && emailValid && phoneValid && passwordValid && confirmPasswordValid;
+
+  const personalStepValid = firstNameValid && lastNameValid && usernameValid && emailValid;
+  const securityStepValid = phoneValid && passwordValid;
+  const allFieldsValid = personalStepValid && securityStepValid;
 
   const bankAccountValid = selectedBank && accountNumber.length >= 10;
   const walletValid = walletAddress.length >= 26 && selectedNetwork;
@@ -76,7 +96,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const getFieldError = (field: string): string | undefined => {
     if (fieldErrors[field]) return fieldErrors[field];
     if (!touched[field]) return undefined;
-    
+
     switch (field) {
       case 'firstName':
         return !firstNameValid ? 'First name must be at least 2 characters' : undefined;
@@ -86,11 +106,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         return !emailValid ? 'Please enter a valid email address' : undefined;
       case 'phone':
         return !phoneValid ? 'Please enter a valid phone number' : undefined;
+      case 'username':
+        return !usernameValid ? 'Username must be at least 3 characters' : undefined;
       case 'password':
         return !passwordValid ? 'Password must be at least 8 characters' : undefined;
-      case 'confirmPassword':
-        if (!confirmPassword) return 'Please confirm your password';
-        return !confirmPasswordValid ? 'Passwords do not match' : undefined;
       default:
         return undefined;
     }
@@ -101,18 +120,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     setFieldErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
-  const handleContinueToFinancial = () => {
-    if (allFieldsValid) {
-      setStep(2);
-    }
-  };
-
   const handleBack = () => {
-    if (step === 2) {
-      setStep(1);
-    } else {
-      navigation.goBack();
-    }
+    if (step === 'payment') setStep('security');
+    else if (step === 'security') setStep('personal');
+    else navigation.goBack();
   };
 
   const handleSubmitRegistration = useCallback(async (saveFinancialDetails: boolean) => {
@@ -129,7 +140,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       }
     }
 
-    setUsername(generatedUsername);
+    setUsername(username);
 
     const normalizedPhone = phone.replace(/^0+/, '');
     const phoneNumber = `${selectedCountry.code}${normalizedPhone}`;
@@ -152,13 +163,13 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     } catch (error) {
       const message = isApiError(error) ? error.message : 'Something went wrong. Please try again.';
       const lowerMessage = message.toLowerCase();
-      
+
       if (lowerMessage.includes('phone')) {
         setFieldErrors((prev) => ({ ...prev, phone: message }));
-        setStep(1);
+        setStep('security');
       } else if (lowerMessage.includes('email')) {
         setFieldErrors((prev) => ({ ...prev, email: message }));
-        setStep(1);
+        setStep('personal');
       } else {
         setErrorMessage(message);
         setShowError(true);
@@ -170,10 +181,28 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     allFieldsValid, phone, selectedCountry, navigation,
     firstName, lastName, email, password, bankAccountValid, walletValid,
     selectedBank, accountNumber, walletAddress, selectedNetwork,
-    setBankDetails, setWalletDetails, setUsername, generatedUsername
+    setBankDetails, setWalletDetails, setUsername, username,
   ]);
 
-  const renderStep1 = () => (
+  const renderProgressDots = () => {
+    const currentIndex = STEP_INDEX[step];
+    return (
+      <View style={styles.progressDots}>
+        {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.dot,
+              { backgroundColor: i <= currentIndex ? theme.secondary.main : `${theme.secondary.main}30` },
+            ]}
+          />
+        ))}
+      </View>
+    );
+  };
+
+  // ─── Step 1: Personal info ───────────────────────────────────────────
+  const renderPersonalStep = () => (
     <>
       <ScrollView
         style={styles.scroll}
@@ -186,7 +215,9 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           </TouchableOpacity>
 
           <QupayLogo size={22} />
-          <View style={{ height: 28 }} />
+          <View style={{ height: 20 }} />
+          {renderProgressDots()}
+
           <Text style={[styles.headline, { color: theme.text.primary }]}>
             Create your{'\n'}
             <Text style={{ color: theme.secondary.main }}>account</Text>
@@ -195,10 +226,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             Takes 30 seconds. Start sending crypto to cash instantly.
           </Text>
 
+          <Text style={[styles.sectionLabel, { color: theme.text.muted }]}>Your name</Text>
           <View style={styles.nameRow}>
             <View style={styles.nameField}>
               <FormField
-                label="First Name"
                 placeholder="First name"
                 autoCapitalize="words"
                 value={firstName}
@@ -212,7 +243,6 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             </View>
             <View style={styles.nameField}>
               <FormField
-                label="Last Name"
                 placeholder="Last name"
                 autoCapitalize="words"
                 value={lastName}
@@ -226,31 +256,32 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             </View>
           </View>
 
-          {generatedUsername.length > 0 && (
-            <View
-              style={[
-                styles.usernamePreview,
-                {
-                  backgroundColor: theme.info.bg,
-                  borderColor: theme.secondary.main,
-                },
-              ]}
-            >
-              <View style={[styles.usernameIconWrap, { backgroundColor: theme.info.bg }]}>
-                <Ionicons name="at" size={16} color={theme.secondary.main} />
-              </View>
-              <View style={styles.usernameTextWrap}>
-                <Text style={[styles.usernameLabel, { color: theme.text.muted }]}>Your username</Text>
-                <Text style={[styles.usernameValue, { color: theme.secondary.main }]}>@{generatedUsername}</Text>
-              </View>
-              <View style={[styles.usernameBadge, { backgroundColor: theme.info.bg }]}>
-                <Text style={[styles.usernameBadgeText, { color: theme.secondary.main }]}>Auto-generated</Text>
-              </View>
-            </View>
-          )}
-
+          <Text style={[styles.sectionLabel, { color: theme.text.muted }]}>Username</Text>
           <FormField
-            label="Email Address"
+            placeholder="Choose a username"
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={username}
+            onChangeText={handleUsernameChange}
+            onBlur={() => markTouched('username')}
+            maxLength={30}
+            isValid={usernameValid}
+            error={getFieldError('username')}
+            accessibilityLabel="Username"
+            leftIcon={
+              <Text style={[styles.atPrefix, { color: theme.text.muted }]}>@</Text>
+            }
+            rightIcon={
+              !usernameManuallyEdited && username.length > 0 ? (
+                <View style={[styles.autoTag, { backgroundColor: theme.info.bg }]}>
+                  <Text style={[styles.autoTagText, { color: theme.secondary.main }]}>Auto</Text>
+                </View>
+              ) : undefined
+            }
+          />
+
+          <Text style={[styles.sectionLabel, { color: theme.text.muted }]}>Email</Text>
+          <FormField
             placeholder="Enter your email"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -264,40 +295,84 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             accessibilityLabel="Email address"
           />
 
-          <Text style={[styles.phoneLabel, { color: theme.text.secondary }]}>Phone Number</Text>
-          <View style={styles.phoneGroup}>
+          <View style={{ height: 8 }} />
+        </View>
+      </ScrollView>
+
+      <View style={styles.bottomArea}>
+        <CTAButton
+          title="Continue"
+          onPress={() => setStep('security')}
+          disabled={!personalStepValid}
+          style={styles.cta}
+        />
+        <TouchableOpacity onPress={() => navigation.navigate('SignIn')} activeOpacity={0.7}>
+          <Text style={[styles.switchText, { color: theme.text.secondary }]}>
+            Already have an account?{' '}
+            <Text style={[styles.switchLink, { color: theme.secondary.main }]}>Sign In</Text>
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </>
+  );
+
+  // ─── Step 2: Security ───────────────────────────────────────────────
+  const renderSecurityStep = () => (
+    <>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.form}>
+          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { backgroundColor: theme.background.surface }]} activeOpacity={0.7}>
+            <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
+          </TouchableOpacity>
+
+          <QupayLogo size={22} />
+          <View style={{ height: 20 }} />
+          {renderProgressDots()}
+
+          <Text style={[styles.headline, { color: theme.text.primary }]}>
+            Secure your{'\n'}
+            <Text style={{ color: theme.secondary.main }}>account</Text>
+          </Text>
+          <Text style={[styles.desc, { color: theme.text.secondary }]}>
+            We'll use your phone number for verification and recovery.
+          </Text>
+
+          <Text style={[styles.sectionLabel, { color: theme.text.muted }]}>Phone number</Text>
+          <View
+            style={[
+              styles.phoneCard,
+              {
+                backgroundColor: theme.background.paper,
+                borderColor: phoneFocused ? `${theme.secondary.main}66` : 'transparent',
+              },
+              phoneValid && !getFieldError('phone') && { borderColor: `${theme.secondary.main}80` },
+              getFieldError('phone') ? { borderColor: `${theme.error.main}99` } : {},
+            ]}
+          >
             <TouchableOpacity
-              style={[
-                styles.prefixBtn,
-                {
-                  backgroundColor: theme.background.surface,
-                  borderColor: theme.inputBorder,
-                },
-              ]}
+              style={styles.countryRow}
               onPress={() => setShowCountryPicker(true)}
               activeOpacity={0.7}
               accessibilityLabel={`Country: ${selectedCountry.name}. Tap to change`}
               accessibilityRole="button"
             >
               <Text style={styles.prefixFlag}>{selectedCountry.flag}</Text>
-              <Text style={[styles.prefixCode, { color: theme.text.primary }]}>{selectedCountry.code}</Text>
-              <Ionicons name="chevron-down" size={12} color={theme.text.muted} />
+              <Text style={[styles.countryNameInCard, { color: theme.text.primary }]}>{selectedCountry.name}</Text>
+              <Text style={[styles.countryCodeInCard, { color: theme.text.secondary }]}>{selectedCountry.code}</Text>
+              <Ionicons name="chevron-down" size={14} color={theme.text.muted} />
             </TouchableOpacity>
-            <View
-              style={[
-                styles.phoneField,
-                {
-                  backgroundColor: theme.background.surface,
-                  borderColor: theme.inputBorder,
-                },
-                phoneFocused && { borderColor: theme.secondary.main },
-                phoneValid && !getFieldError('phone') && { borderColor: theme.secondary.main },
-                getFieldError('phone') && { borderColor: theme.error.main },
-              ]}
-            >
+
+            <View style={[styles.phoneDivider, { backgroundColor: theme.divider }]} />
+
+            <View style={styles.phoneInputRow}>
+              <Text style={[styles.phonePrefix, { color: theme.text.secondary }]}>{selectedCountry.code}</Text>
               <TextInput
                 style={[styles.phoneInput, { color: theme.text.primary }]}
-                placeholder="Enter number"
+                placeholder="Phone number"
                 placeholderTextColor={theme.text.muted}
                 keyboardType="phone-pad"
                 value={phone}
@@ -314,7 +389,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 accessibilityLabel="Phone number"
               />
               {phoneValid && !getFieldError('phone') && (
-                <Ionicons name="checkmark" size={16} color={theme.secondary.main} />
+                <Ionicons name="checkmark-circle" size={20} color={theme.success.main} />
               )}
               {getFieldError('phone') && (
                 <Ionicons name="alert-circle" size={16} color={theme.error.light} />
@@ -325,8 +400,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={[styles.phoneError, { color: theme.error.light }]}>{getFieldError('phone')}</Text>
           )}
 
+          <View style={{ height: 8 }} />
+
+          <Text style={[styles.sectionLabel, { color: theme.text.muted }]}>Password</Text>
           <FormField
-            label="Password"
             placeholder="Create a password (min 8 characters)"
             secureTextEntry={!showPassword}
             autoCapitalize="none"
@@ -345,26 +422,6 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             }
           />
 
-          <FormField
-            label="Confirm Password"
-            placeholder="Confirm your password"
-            secureTextEntry={!showConfirmPassword}
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            onBlur={() => markTouched('confirmPassword')}
-            maxLength={64}
-            isValid={confirmPasswordValid}
-            error={getFieldError('confirmPassword')}
-            accessibilityLabel="Confirm password"
-            rightIcon={
-              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={20} color={theme.text.muted} />
-              </TouchableOpacity>
-            }
-          />
-
           <View style={{ height: 8 }} />
         </View>
       </ScrollView>
@@ -372,8 +429,8 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.bottomArea}>
         <CTAButton
           title="Continue"
-          onPress={handleContinueToFinancial}
-          disabled={!allFieldsValid}
+          onPress={() => setStep('payment')}
+          disabled={!securityStepValid}
           style={styles.cta}
         />
         <Text style={[styles.termsText, { color: theme.text.secondary }]}>
@@ -381,12 +438,6 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={[styles.termsLink, { color: theme.secondary.main }]}>Terms</Text> and{' '}
           <Text style={[styles.termsLink, { color: theme.secondary.main }]}>Privacy Policy</Text>
         </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('SignIn')} activeOpacity={0.7}>
-          <Text style={[styles.switchText, { color: theme.text.secondary }]}>
-            Already have an account?{' '}
-            <Text style={[styles.switchLink, { color: theme.secondary.main }]}>Sign In</Text>
-          </Text>
-        </TouchableOpacity>
       </View>
 
       <BottomSheet
@@ -424,7 +475,8 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     </>
   );
 
-  const renderStep2 = () => (
+  // ─── Step 3: Payment details ────────────────────────────────────────
+  const renderPaymentStep = () => (
     <>
       <ScrollView
         style={styles.scroll}
@@ -437,7 +489,9 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           </TouchableOpacity>
 
           <QupayLogo size={22} />
-          <View style={{ height: 28 }} />
+          <View style={{ height: 20 }} />
+          {renderProgressDots()}
+
           <Text style={[styles.headline, { color: theme.text.primary }]}>
             Almost done!{'\n'}
             <Text style={{ color: theme.secondary.main }}>Payment details</Text>
@@ -638,8 +692,9 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         type="error"
         onDismiss={() => setShowError(false)}
       />
-      {step === 1 && renderStep1()}
-      {step === 2 && renderStep2()}
+      {step === 'personal' && renderPersonalStep()}
+      {step === 'security' && renderSecurityStep()}
+      {step === 'payment' && renderPaymentStep()}
     </SafeAreaView>
   );
 };
@@ -648,7 +703,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
-  form: { paddingHorizontal: 28, paddingTop: 16 },
+  form: { paddingHorizontal: 24, paddingTop: 16 },
   backBtn: {
     width: 40,
     height: 40,
@@ -657,18 +712,37 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 16,
   },
+
+  progressDots: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 24,
+  },
+  dot: {
+    width: 24,
+    height: 4,
+    borderRadius: 2,
+  },
+
   headline: {
     fontFamily: 'Inter_800ExtraBold',
-    fontSize: 26,
+    fontSize: 28,
     letterSpacing: -0.3,
     marginBottom: 8,
-    lineHeight: 31,
+    lineHeight: 34,
   },
   desc: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 13,
-    lineHeight: 21,
-    marginBottom: 24,
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 28,
+  },
+  sectionLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 10,
   },
   nameRow: {
     flexDirection: 'row',
@@ -677,90 +751,72 @@ const styles = StyleSheet.create({
   nameField: {
     flex: 1,
   },
-  usernamePreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-    gap: 10,
-  },
-  usernameIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  usernameTextWrap: {
-    flex: 1,
-  },
-  usernameLabel: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
-    marginBottom: 2,
-  },
-  usernameValue: {
+  atPrefix: {
     fontFamily: 'Inter_600SemiBold',
-    fontSize: 15,
+    fontSize: 16,
   },
-  usernameBadge: {
+  autoTag: {
     borderRadius: 6,
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
   },
-  usernameBadgeText: {
+  autoTagText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 10,
   },
-  phoneLabel: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 11,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    marginBottom: 8,
+
+  // Unified phone card (country + input in one container)
+  phoneCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 12,
   },
-  phoneGroup: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 10,
-  },
-  prefixBtn: {
+  countryRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    borderWidth: 1.5,
-    borderRadius: 12,
-    paddingHorizontal: 14,
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
-  prefixFlag: { fontSize: 16 },
-  prefixCode: {
-    fontFamily: 'Inter_600SemiBold',
+  prefixFlag: { fontSize: 20 },
+  countryNameInCard: {
+    flex: 1,
+    fontFamily: 'Inter_500Medium',
     fontSize: 14,
   },
-  phoneField: {
-    flex: 1,
+  countryCodeInCard: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+  },
+  phoneDivider: {
+    height: 1,
+    marginHorizontal: 16,
+  },
+  phoneInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderRadius: 12,
-    paddingHorizontal: 16,
     gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  phonePrefix: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+  },
+  phoneInput: {
+    flex: 1,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 18,
+    padding: 0,
   },
   phoneError: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
     marginBottom: 12,
-    marginTop: -6,
+    marginTop: -8,
   },
-  phoneInput: {
-    flex: 1,
-    fontFamily: 'Inter_500Medium',
-    fontSize: 16,
-    paddingVertical: 14,
-    letterSpacing: 1,
-  },
+
   bottomArea: {
     paddingHorizontal: 24,
     paddingBottom: 12,
@@ -768,16 +824,17 @@ const styles = StyleSheet.create({
   cta: { marginBottom: 12 },
   termsText: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
     paddingBottom: 8,
+    lineHeight: 18,
   },
   termsLink: {
     fontFamily: 'Inter_600SemiBold',
   },
   switchText: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     textAlign: 'center',
     marginTop: 8,
   },

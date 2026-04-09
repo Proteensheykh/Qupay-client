@@ -7,6 +7,7 @@ interface FormFieldProps extends TextInputProps {
   label?: string;
   isValid?: boolean;
   showCheck?: boolean;
+  leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   error?: string;
 }
@@ -15,6 +16,7 @@ export const FormField: React.FC<FormFieldProps> = ({
   label,
   isValid = false,
   showCheck = true,
+  leftIcon,
   rightIcon,
   error,
   style,
@@ -40,6 +42,7 @@ export const FormField: React.FC<FormFieldProps> = ({
           { backgroundColor: theme.background.surface, borderColor },
         ]}
       >
+        {leftIcon}
         <TextInput
           style={[styles.input, { color: theme.text.primary }, style]}
           placeholderTextColor={theme.text.muted}
@@ -86,7 +89,7 @@ const styles = StyleSheet.create({
     borderRadius: 12, // R.md
     paddingHorizontal: 16,
     gap: 8,
-    marginBottom: 4,
+    marginBottom: 12,
   },
   input: {
     flex: 1,
