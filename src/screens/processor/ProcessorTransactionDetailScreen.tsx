@@ -15,7 +15,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { ScreenHeader, CTAButton, FormField, BottomSheet, Toast, GradientAvatar } from '../../components';
 import { useTransactionStore } from '../../store/transactionStore';
 import { useAuthStore } from '../../store/authStore';
-import { acceptTransaction, uploadSettlementProof } from '../../api/transactions';
+import { acceptTransaction, uploadSettlementProof, updateTransactionStatus } from '../../api/transactions';
 import type { TransactionStatus, ProofType } from '../../types/transaction';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ProcessorStackParamList } from '../../navigation/AppNavigator';
@@ -104,8 +104,10 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
 
   const status = statusConfig[transaction.status];
   const recvSymbol = currencySymbols[transaction.receiveCurrency] || '';
-  const canAccept = transaction.status === 'DEPOSIT_CONFIRMED' || transaction.status === 'MATCHED';
-  const canUploadProof = transaction.status === 'SETTLEMENT_IN_PROGRESS';
+  const isMyTransaction = transaction.processorId === currentUser?.id;
+  const canAccept = transaction.status === 'DEPOSIT_CONFIRMED' && !transaction.processorId;
+  const canUploadProof = transaction.status === 'SETTLEMENT_IN_PROGRESS' && isMyTransaction;
+  const canConfirmSettlement = transaction.status === 'SETTLEMENT_PROOF_UPLOADED' && isMyTransaction;
   const isComplete = transaction.status === 'COMPLETED';
   const hasProof = transaction.status === 'SETTLEMENT_PROOF_UPLOADED' || isComplete;
 
@@ -181,6 +183,23 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
       setLoading(false);
     }
   }, [transaction.id, selectedProofType, proofData, proofNotes]);
+
+  const handleConfirmSettlement = useCallback(async () => {
+    setLoading(true);
+    try {
+      await updateTransactionStatus(transaction.id, 'COMPLETED');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setToastType('success');
+      setToastMessage('Settlement confirmed! Transaction completed.');
+      setShowToast(true);
+    } catch {
+      setToastType('error');
+      setToastMessage('Failed to confirm settlement');
+      setShowToast(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [transaction.id]);
 
   const clearSelectedFile = () => {
     setSelectedFile(null);
@@ -366,11 +385,11 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
             loading={loading}
           />
         )}
-        {transaction.status === 'SETTLEMENT_PROOF_UPLOADED' && (
+        {canConfirmSettlement && (
           <CTAButton
-            title="Awaiting Confirmation"
-            onPress={() => {}}
-            disabled
+            title="Confirm Settlement"
+            onPress={handleConfirmSettlement}
+            loading={loading}
           />
         )}
         {isComplete && (

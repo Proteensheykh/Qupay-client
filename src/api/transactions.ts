@@ -3,6 +3,7 @@ import {
   generateSlug,
   generateId,
 } from '../store/transactionStore';
+import { useAuthStore } from '../store/authStore';
 import type {
   CreateTransactionRequest,
   CreateTransactionResponse,
@@ -25,6 +26,7 @@ export const createTransaction = async (
   const slug = generateSlug();
   const now = new Date();
   const expiresAt = new Date(now.getTime() + 30 * 60 * 1000).toISOString();
+  const currentUserId = useAuthStore.getState().user?.id || 'anonymous';
 
   const corridorFlags: Record<string, string> = {
     'sg-ng': '🇸🇬→🇳🇬',
@@ -57,7 +59,7 @@ export const createTransaction = async (
     depositNetwork: data.depositNetwork,
     corridorId: data.corridorId,
     corridorDisplay: corridorFlags[data.corridorId] || '🌍→🌍',
-    payerId: 'current_user',
+    payerId: currentUserId,
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
     expiresAt,
@@ -133,7 +135,13 @@ export const acceptTransaction = async (
   data: AcceptTransactionRequest
 ): Promise<TransactionDetail | null> => {
   const store = useTransactionStore.getState();
-  store.setProcessorId(data.transactionId, 'current_processor');
+  const currentUserId = useAuthStore.getState().user?.id;
+  
+  if (!currentUserId) {
+    throw new Error('User not authenticated');
+  }
+  
+  store.setProcessorId(data.transactionId, currentUserId);
   store.updateStatus(data.transactionId, 'SETTLEMENT_IN_PROGRESS');
 
   const tx = store.getTransaction(data.transactionId);
