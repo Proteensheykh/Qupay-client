@@ -19,9 +19,9 @@ export const AnimatedSuccess: React.FC<AnimatedSuccessProps> = ({
   color,
   children,
 }) => {
-  const { theme, brand } = useTheme();
+  const { theme } = useTheme();
   const haptics = useHaptics();
-  const iconColor = color || brand.green;
+  const iconColor = color || theme.success.main;
 
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;

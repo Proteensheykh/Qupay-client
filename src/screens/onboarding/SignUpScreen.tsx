@@ -17,12 +17,14 @@ import { useAuthStore } from '../../store/authStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
 import type { InitiateRegistrationRequest } from '../../types/auth';
+import { useTheme } from '../../theme';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'SignUp'>;
 
 type Step = 1 | 2;
 
 export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
+  const { theme } = useTheme();
   const [step, setStep] = useState<Step>(1);
 
   const [firstName, setFirstName] = useState('');
@@ -179,17 +181,17 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.form}>
-          <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { backgroundColor: theme.background.surface }]} activeOpacity={0.7}>
+            <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
           </TouchableOpacity>
 
           <QupayLogo size={22} />
           <View style={{ height: 28 }} />
-          <Text style={styles.headline}>
+          <Text style={[styles.headline, { color: theme.text.primary }]}>
             Create your{'\n'}
-            <Text style={styles.greenText}>account</Text>
+            <Text style={{ color: theme.secondary.main }}>account</Text>
           </Text>
-          <Text style={styles.desc}>
+          <Text style={[styles.desc, { color: theme.text.secondary }]}>
             Takes 30 seconds. Start sending crypto to cash instantly.
           </Text>
 
@@ -225,16 +227,24 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           {generatedUsername.length > 0 && (
-            <View style={styles.usernamePreview}>
-              <View style={styles.usernameIconWrap}>
-                <Ionicons name="at" size={16} color="#38BDF8" />
+            <View
+              style={[
+                styles.usernamePreview,
+                {
+                  backgroundColor: theme.info.bg,
+                  borderColor: theme.secondary.main,
+                },
+              ]}
+            >
+              <View style={[styles.usernameIconWrap, { backgroundColor: theme.info.bg }]}>
+                <Ionicons name="at" size={16} color={theme.secondary.main} />
               </View>
               <View style={styles.usernameTextWrap}>
-                <Text style={styles.usernameLabel}>Your username</Text>
-                <Text style={styles.usernameValue}>@{generatedUsername}</Text>
+                <Text style={[styles.usernameLabel, { color: theme.text.muted }]}>Your username</Text>
+                <Text style={[styles.usernameValue, { color: theme.secondary.main }]}>@{generatedUsername}</Text>
               </View>
-              <View style={styles.usernameBadge}>
-                <Text style={styles.usernameBadgeText}>Auto-generated</Text>
+              <View style={[styles.usernameBadge, { backgroundColor: theme.info.bg }]}>
+                <Text style={[styles.usernameBadgeText, { color: theme.secondary.main }]}>Auto-generated</Text>
               </View>
             </View>
           )}
@@ -254,31 +264,41 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             accessibilityLabel="Email address"
           />
 
-          <Text style={styles.phoneLabel}>Phone Number</Text>
+          <Text style={[styles.phoneLabel, { color: theme.text.secondary }]}>Phone Number</Text>
           <View style={styles.phoneGroup}>
             <TouchableOpacity
-              style={styles.prefixBtn}
+              style={[
+                styles.prefixBtn,
+                {
+                  backgroundColor: theme.background.surface,
+                  borderColor: theme.inputBorder,
+                },
+              ]}
               onPress={() => setShowCountryPicker(true)}
               activeOpacity={0.7}
               accessibilityLabel={`Country: ${selectedCountry.name}. Tap to change`}
               accessibilityRole="button"
             >
               <Text style={styles.prefixFlag}>{selectedCountry.flag}</Text>
-              <Text style={styles.prefixCode}>{selectedCountry.code}</Text>
-              <Ionicons name="chevron-down" size={12} color="rgba(255,255,255,0.4)" />
+              <Text style={[styles.prefixCode, { color: theme.text.primary }]}>{selectedCountry.code}</Text>
+              <Ionicons name="chevron-down" size={12} color={theme.text.muted} />
             </TouchableOpacity>
             <View
               style={[
                 styles.phoneField,
-                phoneFocused && styles.phoneFieldFocused,
-                phoneValid && !getFieldError('phone') && styles.phoneFieldOk,
-                getFieldError('phone') && styles.phoneFieldError,
+                {
+                  backgroundColor: theme.background.surface,
+                  borderColor: theme.inputBorder,
+                },
+                phoneFocused && { borderColor: theme.secondary.main },
+                phoneValid && !getFieldError('phone') && { borderColor: theme.secondary.main },
+                getFieldError('phone') && { borderColor: theme.error.main },
               ]}
             >
               <TextInput
-                style={styles.phoneInput}
+                style={[styles.phoneInput, { color: theme.text.primary }]}
                 placeholder="Enter number"
-                placeholderTextColor="rgba(255,255,255,0.4)"
+                placeholderTextColor={theme.text.muted}
                 keyboardType="phone-pad"
                 value={phone}
                 onChangeText={(text) => {
@@ -294,15 +314,15 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 accessibilityLabel="Phone number"
               />
               {phoneValid && !getFieldError('phone') && (
-                <Ionicons name="checkmark" size={16} color="#38BDF8" />
+                <Ionicons name="checkmark" size={16} color={theme.secondary.main} />
               )}
               {getFieldError('phone') && (
-                <Ionicons name="alert-circle" size={16} color="#F87171" />
+                <Ionicons name="alert-circle" size={16} color={theme.error.light} />
               )}
             </View>
           </View>
           {getFieldError('phone') && (
-            <Text style={styles.phoneError}>{getFieldError('phone')}</Text>
+            <Text style={[styles.phoneError, { color: theme.error.light }]}>{getFieldError('phone')}</Text>
           )}
 
           <FormField
@@ -320,7 +340,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             accessibilityLabel="Password"
             rightIcon={
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color="rgba(255,255,255,0.4)" />
+                <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color={theme.text.muted} />
               </TouchableOpacity>
             }
           />
@@ -340,7 +360,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             accessibilityLabel="Confirm password"
             rightIcon={
               <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={20} color="rgba(255,255,255,0.4)" />
+                <Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={20} color={theme.text.muted} />
               </TouchableOpacity>
             }
           />
@@ -356,15 +376,15 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           disabled={!allFieldsValid}
           style={styles.cta}
         />
-        <Text style={styles.termsText}>
+        <Text style={[styles.termsText, { color: theme.text.secondary }]}>
           By continuing you agree to our{' '}
-          <Text style={styles.termsLink}>Terms</Text> and{' '}
-          <Text style={styles.termsLink}>Privacy Policy</Text>
+          <Text style={[styles.termsLink, { color: theme.secondary.main }]}>Terms</Text> and{' '}
+          <Text style={[styles.termsLink, { color: theme.secondary.main }]}>Privacy Policy</Text>
         </Text>
         <TouchableOpacity onPress={() => navigation.navigate('SignIn')} activeOpacity={0.7}>
-          <Text style={styles.switchText}>
+          <Text style={[styles.switchText, { color: theme.text.secondary }]}>
             Already have an account?{' '}
-            <Text style={styles.switchLink}>Sign In</Text>
+            <Text style={[styles.switchLink, { color: theme.secondary.main }]}>Sign In</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -379,7 +399,8 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             key={c.code}
             style={[
               styles.countryItem,
-              selectedCountry.code === c.code && styles.countryItemSel,
+              { borderBottomColor: theme.inputBorder },
+              selectedCountry.code === c.code && { backgroundColor: theme.info.bg },
             ]}
             onPress={() => {
               setSelectedCountry(c);
@@ -390,11 +411,11 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           >
             <Text style={styles.countryFlag}>{c.flag}</Text>
             <View style={styles.countryInfo}>
-              <Text style={styles.countryName}>{c.name}</Text>
-              <Text style={styles.countrySub}>{c.reg} {'\u00B7'} {c.code}</Text>
+              <Text style={[styles.countryName, { color: theme.text.primary }]}>{c.name}</Text>
+              <Text style={[styles.countrySub, { color: theme.text.secondary }]}>{c.reg} {'\u00B7'} {c.code}</Text>
             </View>
             {selectedCountry.code === c.code && (
-              <Ionicons name="checkmark" size={18} color="#38BDF8" />
+              <Ionicons name="checkmark" size={18} color={theme.secondary.main} />
             )}
           </TouchableOpacity>
         ))}
@@ -411,41 +432,55 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.form}>
-          <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { backgroundColor: theme.background.surface }]} activeOpacity={0.7}>
+            <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
           </TouchableOpacity>
 
           <QupayLogo size={22} />
           <View style={{ height: 28 }} />
-          <Text style={styles.headline}>
+          <Text style={[styles.headline, { color: theme.text.primary }]}>
             Almost done!{'\n'}
-            <Text style={styles.greenText}>Payment details</Text>
+            <Text style={{ color: theme.secondary.main }}>Payment details</Text>
           </Text>
-          <Text style={styles.desc}>
+          <Text style={[styles.desc, { color: theme.text.secondary }]}>
             Add your payment details for faster transfers via @username. This is optional — you can add them later.
           </Text>
 
-          <View style={styles.sectionCard}>
+          <View
+            style={[
+              styles.sectionCard,
+              {
+                backgroundColor: theme.background.paper,
+                borderColor: theme.inputBorder,
+              },
+            ]}
+          >
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionIconWrap}>
-                <Ionicons name="business-outline" size={18} color="#1A6FFF" />
+              <View style={[styles.sectionIconWrap, { backgroundColor: theme.info.bg }]}>
+                <Ionicons name="business-outline" size={18} color={theme.secondary.main} />
               </View>
               <View>
-                <Text style={styles.sectionTitle}>Bank Account</Text>
-                <Text style={styles.sectionSubtitle}>For receiving local currency</Text>
+                <Text style={[styles.sectionTitle, { color: theme.text.primary }]}>Bank Account</Text>
+                <Text style={[styles.sectionSubtitle, { color: theme.text.muted }]}>For receiving local currency</Text>
               </View>
             </View>
 
-            <Text style={styles.fieldLabel}>Bank</Text>
+            <Text style={[styles.fieldLabel, { color: theme.text.secondary }]}>Bank</Text>
             <TouchableOpacity
-              style={styles.selectField}
+              style={[
+                styles.selectField,
+                {
+                  backgroundColor: theme.background.surface,
+                  borderColor: theme.inputBorder,
+                },
+              ]}
               onPress={() => setShowBankPicker(true)}
               activeOpacity={0.7}
             >
-              <Text style={selectedBank ? styles.selectValue : styles.selectPlaceholder}>
+              <Text style={selectedBank ? [styles.selectValue, { color: theme.text.primary }] : [styles.selectPlaceholder, { color: theme.text.muted }]}>
                 {selectedBank || 'Select your bank'}
               </Text>
-              <Ionicons name="chevron-down" size={16} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="chevron-down" size={16} color={theme.text.muted} />
             </TouchableOpacity>
 
             <FormField
@@ -460,14 +495,22 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             />
           </View>
 
-          <View style={styles.sectionCard}>
+          <View
+            style={[
+              styles.sectionCard,
+              {
+                backgroundColor: theme.background.paper,
+                borderColor: theme.inputBorder,
+              },
+            ]}
+          >
             <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconWrap, { backgroundColor: 'rgba(56,189,248,0.12)' }]}>
-                <Ionicons name="wallet-outline" size={18} color="#38BDF8" />
+              <View style={[styles.sectionIconWrap, { backgroundColor: theme.info.bg }]}>
+                <Ionicons name="wallet-outline" size={18} color={theme.secondary.main} />
               </View>
               <View>
-                <Text style={styles.sectionTitle}>USDT Wallet</Text>
-                <Text style={styles.sectionSubtitle}>For receiving crypto payments</Text>
+                <Text style={[styles.sectionTitle, { color: theme.text.primary }]}>USDT Wallet</Text>
+                <Text style={[styles.sectionSubtitle, { color: theme.text.muted }]}>For receiving crypto payments</Text>
               </View>
             </View>
 
@@ -483,16 +526,22 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
               accessibilityLabel="Wallet address"
             />
 
-            <Text style={styles.fieldLabel}>Network</Text>
+            <Text style={[styles.fieldLabel, { color: theme.text.secondary }]}>Network</Text>
             <TouchableOpacity
-              style={styles.selectField}
+              style={[
+                styles.selectField,
+                {
+                  backgroundColor: theme.background.surface,
+                  borderColor: theme.inputBorder,
+                },
+              ]}
               onPress={() => setShowNetworkPicker(true)}
               activeOpacity={0.7}
             >
-              <Text style={selectedNetwork ? styles.selectValue : styles.selectPlaceholder}>
+              <Text style={selectedNetwork ? [styles.selectValue, { color: theme.text.primary }] : [styles.selectPlaceholder, { color: theme.text.muted }]}>
                 {selectedNetwork || 'Select network'}
               </Text>
-              <Ionicons name="chevron-down" size={16} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="chevron-down" size={16} color={theme.text.muted} />
             </TouchableOpacity>
           </View>
 
@@ -512,7 +561,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           activeOpacity={0.7}
           disabled={loading}
         >
-          <Text style={styles.skipText}>Skip for now</Text>
+          <Text style={[styles.skipText, { color: theme.text.secondary }]}>Skip for now</Text>
         </TouchableOpacity>
       </View>
 
@@ -526,7 +575,8 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             key={bank.id}
             style={[
               styles.pickerItem,
-              selectedBank === bank.name && styles.pickerItemSel,
+              { borderBottomColor: theme.inputBorder },
+              selectedBank === bank.name && { backgroundColor: theme.info.bg },
             ]}
             onPress={() => {
               setSelectedBank(bank.name);
@@ -534,10 +584,12 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             }}
             activeOpacity={0.7}
           >
-            <Text style={styles.pickerItemText}>{bank.name}</Text>
-            {bank.popular && <Text style={styles.popularBadge}>Popular</Text>}
+            <Text style={[styles.pickerItemText, { color: theme.text.primary }]}>{bank.name}</Text>
+            {bank.popular && (
+              <Text style={[styles.popularBadge, { color: theme.secondary.main, backgroundColor: theme.info.bg }]}>Popular</Text>
+            )}
             {selectedBank === bank.name && (
-              <Ionicons name="checkmark" size={18} color="#38BDF8" />
+              <Ionicons name="checkmark" size={18} color={theme.secondary.main} />
             )}
           </TouchableOpacity>
         ))}
@@ -554,7 +606,8 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             key={network.id}
             style={[
               styles.pickerItem,
-              selectedNetwork === network.name && styles.pickerItemSel,
+              { borderBottomColor: theme.inputBorder },
+              selectedNetwork === network.name && { backgroundColor: theme.info.bg },
             ]}
             onPress={() => {
               setSelectedNetwork(network.name);
@@ -562,13 +615,13 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             }}
             activeOpacity={0.7}
           >
-            <Ionicons name={network.icon as any} size={20} color="#38BDF8" style={{ marginRight: 12 }} />
+            <Ionicons name={network.icon as any} size={20} color={theme.secondary.main} style={{ marginRight: 12 }} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.pickerItemText}>{network.name}</Text>
-              <Text style={styles.pickerItemSub}>Gas: {network.gasEstimate}</Text>
+              <Text style={[styles.pickerItemText, { color: theme.text.primary }]}>{network.name}</Text>
+              <Text style={[styles.pickerItemSub, { color: theme.text.muted }]}>Gas: {network.gasEstimate}</Text>
             </View>
             {selectedNetwork === network.name && (
-              <Ionicons name="checkmark" size={18} color="#38BDF8" />
+              <Ionicons name="checkmark" size={18} color={theme.secondary.main} />
             )}
           </TouchableOpacity>
         ))}
@@ -578,7 +631,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]}>
       <Toast
         visible={showError}
         message={errorMessage}
@@ -592,7 +645,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0C' },
+  safe: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
   form: { paddingHorizontal: 28, paddingTop: 16 },
@@ -600,7 +653,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#1F1F23',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -609,16 +661,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 26,
     letterSpacing: -0.3,
-    color: '#FFFFFF',
     marginBottom: 8,
     lineHeight: 31,
   },
-  greenText: { color: '#38BDF8' },
   desc: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
     lineHeight: 21,
-    color: 'rgba(255,255,255,0.6)',
     marginBottom: 24,
   },
   nameRow: {
@@ -631,9 +680,7 @@ const styles = StyleSheet.create({
   usernamePreview: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(56,189,248,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(56,189,248,0.2)',
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
@@ -643,7 +690,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: 'rgba(56,189,248,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -653,16 +699,13 @@ const styles = StyleSheet.create({
   usernameLabel: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.5)',
     marginBottom: 2,
   },
   usernameValue: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 15,
-    color: '#38BDF8',
   },
   usernameBadge: {
-    backgroundColor: 'rgba(56,189,248,0.15)',
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -670,14 +713,12 @@ const styles = StyleSheet.create({
   usernameBadgeText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 10,
-    color: '#38BDF8',
   },
   phoneLabel: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 11,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.6)',
     marginBottom: 8,
   },
   phoneGroup: {
@@ -689,9 +730,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#1F1F23',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     paddingHorizontal: 14,
   },
@@ -699,32 +738,19 @@ const styles = StyleSheet.create({
   prefixCode: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
-    color: '#FFFFFF',
   },
   phoneField: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1F1F23',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     paddingHorizontal: 16,
     gap: 8,
   },
-  phoneFieldFocused: {
-    borderColor: 'rgba(56,189,248,0.4)',
-  },
-  phoneFieldOk: {
-    borderColor: 'rgba(56,189,248,0.5)',
-  },
-  phoneFieldError: {
-    borderColor: 'rgba(255,107,107,0.6)',
-  },
   phoneError: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: '#F87171',
     marginBottom: 12,
     marginTop: -6,
   },
@@ -732,7 +758,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
-    color: '#FFFFFF',
     paddingVertical: 14,
     letterSpacing: 1,
   },
@@ -744,29 +769,24 @@ const styles = StyleSheet.create({
   termsText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
     paddingBottom: 8,
   },
   termsLink: {
-    color: '#38BDF8',
     fontFamily: 'Inter_600SemiBold',
   },
   switchText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
     marginTop: 8,
   },
   switchLink: {
-    color: '#38BDF8',
     fontFamily: 'Inter_600SemiBold',
   },
   skipText: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
     paddingVertical: 12,
   },
@@ -777,28 +797,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
-  },
-  countryItemSel: {
-    backgroundColor: 'rgba(56,189,248,0.08)',
   },
   countryFlag: { fontSize: 24 },
   countryInfo: { flex: 1 },
   countryName: {
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
-    color: '#FFFFFF',
   },
   countrySub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
     marginTop: 1,
   },
   sectionCard: {
-    backgroundColor: '#1A1A2E',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -813,19 +825,16 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: 'rgba(26,111,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   sectionTitle: {
     fontFamily: 'Inter_700Bold',
     fontSize: 15,
-    color: '#FFFFFF',
   },
   sectionSubtitle: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
     marginTop: 2,
   },
   fieldLabel: {
@@ -833,16 +842,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.6)',
     marginBottom: 8,
   },
   selectField: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#1F1F23',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -851,12 +857,10 @@ const styles = StyleSheet.create({
   selectValue: {
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
-    color: '#FFFFFF',
   },
   selectPlaceholder: {
     fontFamily: 'Inter_400Regular',
     fontSize: 16,
-    color: 'rgba(255,255,255,0.4)',
   },
   pickerItem: {
     flexDirection: 'row',
@@ -864,28 +868,20 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
-  },
-  pickerItemSel: {
-    backgroundColor: 'rgba(56,189,248,0.08)',
   },
   pickerItemText: {
     flex: 1,
     fontFamily: 'Inter_500Medium',
     fontSize: 15,
-    color: '#FFFFFF',
   },
   pickerItemSub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
     marginTop: 2,
   },
   popularBadge: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 10,
-    color: '#38BDF8',
-    backgroundColor: 'rgba(56,189,248,0.12)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,

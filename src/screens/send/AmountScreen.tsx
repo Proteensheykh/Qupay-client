@@ -16,6 +16,7 @@ import * as storage from '../../store/secureStorage';
 import { StorageKeys } from '../../store/secureStorage';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
+import { useTheme } from '../../theme';
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'Amount'>;
 
@@ -49,6 +50,7 @@ const getRate = (from: string, to: string): number => {
 const isCrypto = (code: string): boolean => code === 'USDT';
 
 export const AmountScreen: React.FC<Props> = ({ navigation }) => {
+  const { theme } = useTheme();
   const [selectedSendCurrency, setSelectedSendCurrency] = useState(currencies[0]);
   const [selectedReceiveCurrency, setSelectedReceiveCurrency] = useState(currencies[1]);
   const [showSendPicker, setShowSendPicker] = useState(false);
@@ -128,7 +130,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]} edges={['top']}>
       <ScreenHeader title="Send" />
       <ScrollView
         style={styles.scroll}
@@ -137,83 +139,125 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
       >
         {showProcessorPromo && (
           <TouchableOpacity
-            style={styles.promoBanner}
+            style={[
+              styles.promoBanner,
+              {
+                backgroundColor: theme.info.bg,
+                borderColor: `${theme.secondary.main}33`,
+              },
+            ]}
             onPress={navigateToProcessorOnboarding}
             activeOpacity={0.8}
           >
-            <View style={styles.promoIconWrap}>
-              <Ionicons name="swap-horizontal" size={16} color="#38BDF8" />
+            <View style={[styles.promoIconWrap, { backgroundColor: theme.info.bg }]}>
+              <Ionicons name="swap-horizontal" size={16} color={theme.secondary.main} />
             </View>
             <View style={styles.promoTextWrap}>
-              <Text style={styles.promoTitle}>Earn with Qupay</Text>
-              <Text style={styles.promoSub}>Settle transactions as a Processor</Text>
+              <Text style={[styles.promoTitle, { color: theme.secondary.main }]}>Earn with Qupay</Text>
+              <Text style={[styles.promoSub, { color: theme.text.secondary }]}>Settle transactions as a Processor</Text>
             </View>
             <TouchableOpacity
               onPress={dismissProcessorPromo}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               style={styles.promoDismiss}
             >
-              <Ionicons name="close" size={16} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="close" size={16} color={theme.text.muted} />
             </TouchableOpacity>
           </TouchableOpacity>
         )}
 
-        <View style={styles.amountCard}>
+        <View
+          style={[
+            styles.amountCard,
+            {
+              backgroundColor: theme.background.surface,
+              borderColor: theme.inputBorder,
+            },
+          ]}
+        >
           <View style={styles.acSection}>
-            <Text style={styles.acLabel}>You send</Text>
+            <Text style={[styles.acLabel, { color: theme.text.secondary }]}>You send</Text>
             <View style={styles.acRowSpaced}>
               <TextInput
-                style={styles.amountInput}
+                style={[styles.amountInput, { color: theme.text.primary }]}
                 value={amount}
                 onChangeText={handleAmountChange}
                 keyboardType="decimal-pad"
                 placeholder="0"
-                placeholderTextColor="rgba(255,255,255,0.25)"
-                selectionColor="#38BDF8"
-                cursorColor="#38BDF8"
+                placeholderTextColor={theme.text.disabled}
+                selectionColor={theme.secondary.main}
+                cursorColor={theme.secondary.main}
                 underlineColorAndroid="transparent"
                 autoCorrect={false}
                 autoCapitalize="none"
                 inputMode="decimal"
               />
-              <TouchableOpacity style={styles.sendCurrPill} onPress={() => setShowSendPicker(true)} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={[
+                  styles.sendCurrPill,
+                  {
+                    backgroundColor: theme.background.paper,
+                    borderColor: `${theme.secondary.main}4D`,
+                  },
+                ]}
+                onPress={() => setShowSendPicker(true)}
+                activeOpacity={0.7}
+              >
                 <View style={[styles.cpIconWrapSmall, { backgroundColor: selectedSendCurrency.color + '20' }]}>
                   <Text style={styles.currFlagIcon}>{selectedSendCurrency.icon}</Text>
                 </View>
-                <Text style={styles.currText}>{selectedSendCurrency.code}</Text>
-                <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.5)" />
+                <Text style={[styles.currText, { color: theme.text.primary }]}>{selectedSendCurrency.code}</Text>
+                <Ionicons name="chevron-down" size={14} color={theme.text.secondary} />
               </TouchableOpacity>
             </View>
           </View>
 
           <View style={styles.rateDivider}>
-            <View style={styles.rateLine} />
-            <View style={styles.ratePill}>
-              <Text style={styles.ratePillText}>
+            <View style={[styles.rateLine, { backgroundColor: theme.inputBorder }]} />
+            <View
+              style={[
+                styles.ratePill,
+                {
+                  backgroundColor: theme.background.default,
+                  borderColor: `${theme.secondary.main}40`,
+                },
+              ]}
+            >
+              <Text style={[styles.ratePillText, { color: theme.secondary.main }]}>
                 {receivingCrypto
                   ? `1 USDT = ${currencySymbols[selectedSendCurrency.code] || ''}${usdtRates[selectedSendCurrency.code]?.toLocaleString() || '1'} ${selectedSendCurrency.code}`
                   : `1 ${selectedSendCurrency.code} = ${selectedReceiveCurrency.symbol}${rate.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
               </Text>
             </View>
-            <View style={styles.rateLine} />
+            <View style={[styles.rateLine, { backgroundColor: theme.inputBorder }]} />
           </View>
 
-          <View style={styles.acSectionRecv}>
-            <Text style={styles.acLabel}>They receive</Text>
+          <View style={[styles.acSectionRecv, { backgroundColor: theme.background.paper }]}>
+            <Text style={[styles.acLabel, { color: theme.text.secondary }]}>They receive</Text>
             <View style={styles.acRowSpaced}>
-              <Text style={styles.recvAmount}>
+              <Text style={[styles.recvAmount, { color: theme.secondary.main }]}>
                 {numAmount > 0
                   ? receivingCrypto
                     ? receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                     : `${selectedReceiveCurrency.symbol}${receiveAmount.toLocaleString()}`
                   : '—'}
               </Text>
-              <TouchableOpacity style={styles.recvCurrPill} onPress={() => setShowReceivePicker(true)} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={[
+                  styles.recvCurrPill,
+                  {
+                    backgroundColor: theme.background.surface2,
+                    borderColor: `${theme.secondary.main}40`,
+                  },
+                ]}
+                onPress={() => setShowReceivePicker(true)}
+                activeOpacity={0.7}
+              >
                 <View style={[styles.cpIconWrapSmall, { backgroundColor: selectedReceiveCurrency.color + '20' }]}>
                   <Text style={styles.currFlagIcon}>{selectedReceiveCurrency.icon}</Text>
                 </View>
-                <Text style={styles.currText}>{selectedReceiveCurrency.code}</Text>
-                <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.5)" />
+                <Text style={[styles.currText, { color: theme.text.primary }]}>{selectedReceiveCurrency.code}</Text>
+                <Ionicons name="chevron-down" size={14} color={theme.text.secondary} />
               </TouchableOpacity>
             </View>
           </View>
@@ -232,7 +276,11 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
         {currencies.map((c) => (
           <TouchableOpacity
             key={c.code}
-            style={[styles.cpItem, selectedSendCurrency.code === c.code && styles.cpItemSel]}
+            style={[
+              styles.cpItem,
+              { borderBottomColor: theme.inputBorder },
+              selectedSendCurrency.code === c.code && { backgroundColor: theme.info.bg },
+            ]}
             onPress={() => { setSelectedSendCurrency(c); setShowSendPicker(false); }}
             activeOpacity={0.7}
           >
@@ -240,10 +288,10 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.cpIcon}>{c.icon}</Text>
             </View>
             <View style={styles.cpInfo}>
-              <Text style={styles.cpName}>{c.code}</Text>
-              <Text style={styles.cpSub}>{c.name}</Text>
+              <Text style={[styles.cpName, { color: theme.text.primary }]}>{c.code}</Text>
+              <Text style={[styles.cpSub, { color: theme.text.secondary }]}>{c.name}</Text>
             </View>
-            {selectedSendCurrency.code === c.code && <Ionicons name="checkmark" size={18} color="#38BDF8" />}
+            {selectedSendCurrency.code === c.code && <Ionicons name="checkmark" size={18} color={theme.secondary.main} />}
           </TouchableOpacity>
         ))}
         <View style={{ height: 40 }} />
@@ -253,7 +301,11 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
         {currencies.map((c) => (
           <TouchableOpacity
             key={c.code}
-            style={[styles.cpItem, selectedReceiveCurrency.code === c.code && styles.cpItemSel]}
+            style={[
+              styles.cpItem,
+              { borderBottomColor: theme.inputBorder },
+              selectedReceiveCurrency.code === c.code && { backgroundColor: theme.info.bg },
+            ]}
             onPress={() => { setSelectedReceiveCurrency(c); setShowReceivePicker(false); }}
             activeOpacity={0.7}
           >
@@ -261,10 +313,10 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.cpIcon}>{c.icon}</Text>
             </View>
             <View style={styles.cpInfo}>
-              <Text style={styles.cpName}>{c.code}</Text>
-              <Text style={styles.cpSub}>{c.name}</Text>
+              <Text style={[styles.cpName, { color: theme.text.primary }]}>{c.code}</Text>
+              <Text style={[styles.cpSub, { color: theme.text.secondary }]}>{c.name}</Text>
             </View>
-            {selectedReceiveCurrency.code === c.code && <Ionicons name="checkmark" size={18} color="#38BDF8" />}
+            {selectedReceiveCurrency.code === c.code && <Ionicons name="checkmark" size={18} color={theme.secondary.main} />}
           </TouchableOpacity>
         ))}
         <View style={{ height: 40 }} />
@@ -274,7 +326,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0C' },
+  safe: { flex: 1 },
   scroll: { flex: 1 },
   promoBanner: {
     flexDirection: 'row',
@@ -282,9 +334,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     marginTop: 8,
     marginBottom: 4,
-    backgroundColor: 'rgba(56,189,248,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(56,189,248,0.2)',
     borderRadius: 12,
     padding: 12,
     gap: 10,
@@ -293,7 +343,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: 'rgba(56,189,248,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -303,33 +352,30 @@ const styles = StyleSheet.create({
   promoTitle: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 13,
-    color: '#38BDF8',
   },
   promoSub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
     marginTop: 1,
   },
   promoDismiss: {
     padding: 4,
   },
   amountCard: {
-    marginHorizontal: 24, marginTop: 8, marginBottom: 12, backgroundColor: '#1F1F23',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderRadius: 20, overflow: 'hidden',
+    marginHorizontal: 24, marginTop: 8, marginBottom: 12,
+    borderWidth: 1, borderRadius: 20, overflow: 'hidden',
   },
   acSection: { paddingVertical: 20, paddingHorizontal: 20 },
-  acSectionRecv: { paddingVertical: 16, paddingHorizontal: 20, paddingBottom: 20, backgroundColor: '#17171A' },
+  acSectionRecv: { paddingVertical: 16, paddingHorizontal: 20, paddingBottom: 20 },
   acLabel: {
     fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 1,
-    textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 8,
+    textTransform: 'uppercase', marginBottom: 8,
   },
   acRowSpaced: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   amountInput: {
     flex: 1,
     fontFamily: 'Inter_700Bold',
     fontSize: 36,
-    color: '#FFFFFF',
     minWidth: 60,
     maxWidth: '55%',
     padding: 0,
@@ -337,39 +383,38 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     outlineStyle: 'none',
   } as any,
-  recvAmount: { flex: 1, fontFamily: 'Inter_700Bold', fontSize: 32, color: '#38BDF8' },
+  recvAmount: { flex: 1, fontFamily: 'Inter_700Bold', fontSize: 32 },
   sendCurrPill: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#17171A', borderWidth: 1.5, borderColor: 'rgba(56,189,248,0.3)',
+    borderWidth: 1.5,
     borderRadius: 24, paddingVertical: 10, paddingHorizontal: 14,
     minWidth: 125,
   },
   recvCurrPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#26262A', borderWidth: 1.5, borderColor: 'rgba(56,189,248,0.25)',
+    borderWidth: 1.5,
     borderRadius: 24, paddingVertical: 8, paddingHorizontal: 12,
     minWidth: 125,
   },
   cpIconWrapSmall: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   currFlagIcon: { fontSize: 16 },
-  currText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#FFFFFF' },
+  currText: { fontFamily: 'Inter_700Bold', fontSize: 14 },
   rateDivider: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, gap: 10 },
-  rateLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' },
+  rateLine: { flex: 1, height: 1 },
   ratePill: {
-    backgroundColor: '#0A0A0C', borderWidth: 1, borderColor: 'rgba(56,189,248,0.25)',
+    borderWidth: 1,
     borderRadius: 24, paddingVertical: 5, paddingHorizontal: 12,
   },
-  ratePillText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#38BDF8', fontVariant: ['tabular-nums'] },
+  ratePillText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, fontVariant: ['tabular-nums'] },
   ctaWrap: { paddingHorizontal: 24, paddingBottom: 24 },
   cpItem: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingVertical: 12, paddingHorizontal: 24,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)',
+    borderBottomWidth: 1,
   },
-  cpItemSel: { backgroundColor: 'rgba(56,189,248,0.08)' },
   cpIconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   cpIcon: { fontSize: 18 },
   cpInfo: { flex: 1 },
-  cpName: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#FFFFFF' },
-  cpSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.6)' },
+  cpName: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
+  cpSub: { fontFamily: 'Inter_400Regular', fontSize: 11 },
 });

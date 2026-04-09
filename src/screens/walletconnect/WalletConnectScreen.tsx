@@ -1,6 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-export const WalletConnectScreen: React.FC = () => (
-  <View style={s.c}><Text style={s.t}>Deprecated</Text></View>
-);
-const s = StyleSheet.create({ c: { flex: 1, backgroundColor: '#0A0A0C', alignItems: 'center', justifyContent: 'center' }, t: { color: 'rgba(255,255,255,0.6)' } });
+import { useTheme } from '../../theme';
+
+export const WalletConnectScreen: React.FC = () => {
+  const { theme } = useTheme();
+  return (
+    <View style={[s.c, { backgroundColor: theme.background.default }]}>
+      <Text style={{ color: theme.text.secondary }}>Deprecated</Text>
+    </View>
+  );
+};
+
+const s = StyleSheet.create({
+  c: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+});

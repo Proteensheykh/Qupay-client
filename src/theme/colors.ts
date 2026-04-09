@@ -57,7 +57,6 @@ export const colors = {
     inputBorder: 'rgba(255,255,255,0.08)',
   },
   brand: {
-    // Single brand purple (local uses one purple, not two)
     green: '#4ADE80',
     greenDark: '#16A34A',
     purple: '#38BDF8',
@@ -65,7 +64,6 @@ export const colors = {
     blue: '#38BDF8',
     red: '#EF4444',
     yellow: '#FFD60A',
-    // Soft tints
     greenDim: 'rgba(74,222,128,0.15)',
     greenDim2: 'rgba(74,222,128,0.06)',
     purpleDim: 'rgba(56,189,248,0.15)',
@@ -75,15 +73,26 @@ export const colors = {
     yellowDim: 'rgba(255,214,10,0.15)',
   },
   gradient: {
-    // Brand gradient is purple-only (single-purple system, no green CTA)
-    brand: ['#38BDF8', '#0284C7'] as const,
-    phantom: ['#38BDF8', '#0284C7'] as const,
-    hero: ['#17171A', '#0A0A0C'] as const,
-    avatar1: ['#38BDF8', '#0284C7'] as const,
-    avatar2: ['#38BDF8', '#38BDF8'] as const,
-    avatar3: ['#FFE55C', '#FFD60A'] as const,
-    avatar4: ['#EF4444', '#FFD60A'] as const,
-    avatar5: ['#A855F7', '#38BDF8'] as const,
+    light: {
+      brand: ['#38BDF8', '#0284C7'] as const,
+      phantom: ['#38BDF8', '#0284C7'] as const,
+      hero: ['#F5F5F7', '#FFFFFF'] as const,
+      avatar1: ['#38BDF8', '#0284C7'] as const,
+      avatar2: ['#38BDF8', '#38BDF8'] as const,
+      avatar3: ['#FFE55C', '#FFD60A'] as const,
+      avatar4: ['#EF4444', '#FFD60A'] as const,
+      avatar5: ['#A855F7', '#38BDF8'] as const,
+    },
+    dark: {
+      brand: ['#38BDF8', '#0284C7'] as const,
+      phantom: ['#38BDF8', '#0284C7'] as const,
+      hero: ['#17171A', '#0A0A0C'] as const,
+      avatar1: ['#38BDF8', '#0284C7'] as const,
+      avatar2: ['#38BDF8', '#38BDF8'] as const,
+      avatar3: ['#FFE55C', '#FFD60A'] as const,
+      avatar4: ['#EF4444', '#FFD60A'] as const,
+      avatar5: ['#A855F7', '#38BDF8'] as const,
+    },
   },
 };
 

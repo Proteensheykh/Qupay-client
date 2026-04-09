@@ -6,6 +6,7 @@ import { Ionicons } from '../../components/Icon';
 import { CTAButton } from '../../components';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
+import { useTheme } from '../../theme';
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'Tracking'>;
 
@@ -17,6 +18,7 @@ interface Step {
 }
 
 export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
+  const { theme, gradient } = useTheme();
   const {
     recipientName = 'Emeka Johnson',
     recipientInitials = 'EJ',
@@ -104,10 +106,10 @@ export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
   }, [etaSecs]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]} edges={['top']}>
       <View style={styles.header}>
         <View style={{ width: 36 }} />
-        <Text style={styles.headerTitle}>Transfer in progress</Text>
+        <Text style={[styles.headerTitle, { color: theme.text.primary }]}>Transfer in progress</Text>
         <View style={{ width: 36 }} />
       </View>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -115,19 +117,31 @@ export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
         <View style={styles.trackHero}>
           <View style={styles.thFlags}>
             <Text style={styles.flagLg}>{'\u{1F1F8}\u{1F1EC}'}</Text>
-            <Ionicons name="arrow-forward" size={18} color="#38BDF8" />
+            <Ionicons name="arrow-forward" size={18} color={theme.secondary.main} />
             <Text style={styles.flagLg}>{recipientFlag}</Text>
           </View>
-          <Text style={styles.thAmount}>
+          <Text style={[styles.thAmount, { color: theme.text.primary }]}>
             {symbol}
             {receiveAmount.toLocaleString()}
           </Text>
-          <Text style={styles.thSub}>
+          <Text style={[styles.thSub, { color: theme.text.secondary }]}>
             {'\u2192'} {recipientName} {'\u00B7'} {recipientMethod} {'\u00B7'} Nigeria
           </Text>
-          <View style={[styles.thEta, progress >= 100 && styles.thEtaDone]}>
-            <View style={styles.ldot} />
-            <Text style={[styles.thEtaText, progress >= 100 && styles.thEtaTextDone]}>
+          <View
+            style={[
+              styles.thEta,
+              progress >= 100
+                ? { backgroundColor: theme.secondary.main, borderColor: theme.secondary.main }
+                : { backgroundColor: theme.info.bg, borderColor: theme.secondary.light },
+            ]}
+          >
+            <View style={[styles.ldot, { backgroundColor: theme.secondary.main }]} />
+            <Text
+              style={[
+                styles.thEtaText,
+                progress >= 100 ? { color: theme.background.default } : { color: theme.secondary.main },
+              ]}
+            >
               {progress >= 100 ? 'Delivered!' : `Est. delivery in${formatEta()}`}
             </Text>
           </View>
@@ -135,15 +149,17 @@ export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Progress bar */}
         <View style={styles.progressWrap}>
-          <View style={styles.progressTrack}>
+          <View style={[styles.progressTrack, { backgroundColor: theme.background.surface }]}>
             <LinearGradient
-              colors={['#38BDF8', '#00bfff']}
+              colors={[...gradient.brand]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={[styles.progressFill, { width: `${Math.min(progress, 100)}%` as any }]}
             />
           </View>
-          <Text style={styles.progressPct}>{Math.round(Math.min(progress, 100))}% complete</Text>
+          <Text style={[styles.progressPct, { color: theme.text.secondary }]}>
+            {Math.round(Math.min(progress, 100))}% complete
+          </Text>
         </View>
 
         {/* Steps */}
@@ -155,7 +171,8 @@ export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
                 <View
                   style={[
                     styles.stepLine,
-                    step.state === 'done' && styles.stepLineDone,
+                    { backgroundColor: theme.inputBorder },
+                    step.state === 'done' && { backgroundColor: theme.secondary.main },
                   ]}
                 />
               )}
@@ -163,18 +180,23 @@ export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
               <View
                 style={[
                   styles.stepDot,
-                  step.state === 'done' && styles.stepDotDone,
-                  step.state === 'active' && styles.stepDotActive,
-                  step.state === 'waiting' && styles.stepDotWait,
+                  step.state === 'done' && { backgroundColor: theme.secondary.main },
+                  step.state === 'active' && {
+                    backgroundColor: theme.info.bg,
+                    borderWidth: 2,
+                    borderColor: theme.secondary.main,
+                  },
+                  step.state === 'waiting' && { backgroundColor: theme.background.surface },
                 ]}
               >
                 {step.state === 'done' ? (
-                  <Text style={styles.stepDotCheckText}>{'\u2713'}</Text>
+                  <Text style={[styles.stepDotCheckText, { color: theme.background.default }]}>{'\u2713'}</Text>
                 ) : (
                   <Text
                     style={[
                       styles.stepDotNum,
-                      step.state === 'active' && styles.stepDotNumActive,
+                      { color: theme.text.muted },
+                      step.state === 'active' && { color: theme.secondary.main },
                     ]}
                   >
                     {i + 1}
@@ -183,9 +205,9 @@ export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
               </View>
               {/* Body */}
               <View style={styles.stepBody}>
-                <Text style={styles.stepLabel}>{step.label}</Text>
-                <Text style={styles.stepDesc}>{step.desc}</Text>
-                <Text style={styles.stepTime}>{step.time}</Text>
+                <Text style={[styles.stepLabel, { color: theme.text.primary }]}>{step.label}</Text>
+                <Text style={[styles.stepDesc, { color: theme.text.secondary }]}>{step.desc}</Text>
+                <Text style={[styles.stepTime, { color: theme.text.muted }]}>{step.time}</Text>
               </View>
             </View>
           ))}
@@ -204,7 +226,7 @@ export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0C' },
+  safe: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -216,7 +238,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Inter_700Bold',
     fontSize: 16,
-    color: '#FFFFFF',
     textAlign: 'center',
   },
   scroll: { flex: 1 },
@@ -236,43 +257,30 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 36,
     letterSpacing: -1,
-    color: '#FFFFFF',
     marginBottom: 4,
   },
   thSub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.6)',
     marginBottom: 10,
   },
   thEta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(56,189,248,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(56,189,248,0.2)',
     borderRadius: 20,
     paddingVertical: 6,
     paddingHorizontal: 14,
   },
-  thEtaDone: {
-    backgroundColor: '#38BDF8',
-    borderColor: '#38BDF8',
-  },
   thEtaText: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 12,
-    color: '#38BDF8',
-  },
-  thEtaTextDone: {
-    color: '#0A0A0C',
   },
   ldot: {
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: '#38BDF8',
   },
   progressWrap: {
     marginHorizontal: 24,
@@ -280,7 +288,6 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     height: 8,
-    backgroundColor: '#2A2A42',
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 6,
@@ -292,7 +299,6 @@ const styles = StyleSheet.create({
   progressPct: {
     fontFamily: 'Inter_500Medium',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
     textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
@@ -312,10 +318,6 @@ const styles = StyleSheet.create({
     top: 28,
     width: 2,
     height: '100%',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  stepLineDone: {
-    backgroundColor: '#38BDF8',
   },
   stepDot: {
     width: 28,
@@ -325,29 +327,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 1,
   },
-  stepDotDone: {
-    backgroundColor: '#38BDF8',
-  },
-  stepDotActive: {
-    backgroundColor: 'rgba(56,189,248,0.15)',
-    borderWidth: 2,
-    borderColor: '#38BDF8',
-  },
-  stepDotWait: {
-    backgroundColor: '#2A2A42',
-  },
   stepDotCheckText: {
     fontFamily: 'Inter_700Bold',
     fontSize: 11,
-    color: '#0A0A0C',
   },
   stepDotNum: {
     fontFamily: 'Inter_700Bold',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.4)',
-  },
-  stepDotNumActive: {
-    color: '#38BDF8',
   },
   stepBody: {
     flex: 1,
@@ -357,19 +343,16 @@ const styles = StyleSheet.create({
   stepLabel: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 13,
-    color: '#FFFFFF',
     marginBottom: 2,
   },
   stepDesc: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
     lineHeight: 17,
   },
   stepTime: {
     fontFamily: 'Inter_500Medium',
     fontSize: 10,
-    color: 'rgba(255,255,255,0.4)',
     marginTop: 3,
     fontVariant: ['tabular-nums'],
   },

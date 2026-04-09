@@ -7,12 +7,14 @@ import { isApiError } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/AppNavigator';
+import { useTheme } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PinVerify'>;
 
 const PIN_LENGTH = 4;
 
 export const PinVerifyScreen: React.FC<Props> = ({ navigation }) => {
+  const { theme } = useTheme();
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -90,16 +92,16 @@ export const PinVerifyScreen: React.FC<Props> = ({ navigation }) => {
   const firstName = user?.firstName || 'there';
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]}>
       <View style={styles.container}>
         <View style={styles.header}>
           <QupayLogo size={22} />
           <View style={{ height: 28 }} />
-          <Text style={styles.headline}>
+          <Text style={[styles.headline, { color: theme.text.primary }]}>
             Welcome back,{'\n'}
-            <Text style={styles.greenText}>{firstName}</Text>
+            <Text style={{ color: theme.secondary.main }}>{firstName}</Text>
           </Text>
-          <Text style={styles.desc}>Enter your PIN to continue</Text>
+          <Text style={[styles.desc, { color: theme.text.secondary }]}>Enter your PIN to continue</Text>
         </View>
 
         <Animated.View style={[styles.pinArea, { transform: [{ translateX: shakeAnim }] }]}>
@@ -109,14 +111,18 @@ export const PinVerifyScreen: React.FC<Props> = ({ navigation }) => {
                 key={i}
                 style={[
                   styles.dot,
-                  pin.length > i && styles.dotFilled,
-                  error && styles.dotError,
+                  { borderColor: theme.text.muted },
+                  pin.length > i && {
+                    backgroundColor: theme.secondary.main,
+                    borderColor: theme.secondary.main,
+                  },
+                  error && { borderColor: theme.error.main },
                 ]}
               />
             ))}
           </View>
-          {error && <Text style={styles.errorText}>{error}</Text>}
-          {loading && <Text style={styles.loadingText}>Verifying...</Text>}
+          {error && <Text style={[styles.errorText, { color: theme.error.main }]}>{error}</Text>}
+          {loading && <Text style={[styles.loadingText, { color: theme.text.secondary }]}>Verifying...</Text>}
         </Animated.View>
 
         <View style={styles.bottom}>
@@ -127,7 +133,7 @@ export const PinVerifyScreen: React.FC<Props> = ({ navigation }) => {
             disabled={resetting}
             activeOpacity={0.7}
           >
-            <Text style={styles.forgotText}>
+            <Text style={[styles.forgotText, { color: theme.secondary.main }]}>
               {resetting ? 'Please wait...' : 'Forgot PIN?'}
             </Text>
           </TouchableOpacity>
@@ -138,22 +144,19 @@ export const PinVerifyScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0C' },
+  safe: { flex: 1 },
   container: { flex: 1, justifyContent: 'space-between' },
   header: { paddingHorizontal: 28, paddingTop: 36 },
   headline: {
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 26,
     letterSpacing: -0.3,
-    color: '#FFFFFF',
     marginBottom: 8,
     lineHeight: 31,
   },
-  greenText: { color: '#38BDF8' },
   desc: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.6)',
     lineHeight: 21,
   },
   pinArea: {
@@ -169,26 +172,16 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)',
     backgroundColor: 'transparent',
-  },
-  dotFilled: {
-    backgroundColor: '#38BDF8',
-    borderColor: '#38BDF8',
-  },
-  dotError: {
-    borderColor: '#EF4444',
   },
   errorText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
-    color: '#EF4444',
     marginTop: 16,
   },
   loadingText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.6)',
     marginTop: 16,
   },
   bottom: {
@@ -202,6 +195,5 @@ const styles = StyleSheet.create({
   forgotText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
-    color: '#38BDF8',
   },
 });

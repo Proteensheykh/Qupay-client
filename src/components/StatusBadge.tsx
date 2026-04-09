@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../theme';
 
 type BadgeVariant = 'green' | 'yellow' | 'red';
 
@@ -8,19 +9,18 @@ interface StatusBadgeProps {
   variant: BadgeVariant;
 }
 
-const bgMap: Record<BadgeVariant, string> = {
-  green: 'rgba(74,222,128,0.15)',
-  yellow: 'rgba(255,214,10,0.15)',
-  red: 'rgba(239,68,68,0.15)',
-};
-
-const colorMap: Record<BadgeVariant, string> = {
-  green: '#4ADE80',
-  yellow: '#FFD60A',
-  red: '#EF4444',
-};
-
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ label, variant }) => {
+  const { theme } = useTheme();
+  const bgMap: Record<BadgeVariant, string> = {
+    green: theme.success.bg,
+    yellow: theme.warning.bg,
+    red: theme.error.bg,
+  };
+  const colorMap: Record<BadgeVariant, string> = {
+    green: theme.success.main,
+    yellow: theme.warning.main,
+    red: theme.error.main,
+  };
   return (
     <View
       style={[styles.badge, { backgroundColor: bgMap[variant] }]}

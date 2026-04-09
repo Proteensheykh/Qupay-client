@@ -14,8 +14,10 @@ import { CommonActions, useNavigation } from '@react-navigation/native';
 import { CTAButton, FormField, BottomSheet, Toast } from '../../components';
 import { banks, networks } from '../../data/mockData';
 import { useAuthStore } from '../../store/authStore';
+import { useTheme } from '../../theme';
 
 export const ProcessorOnboardingScreen: React.FC = () => {
+  const { theme } = useTheme();
   const navigation = useNavigation();
   const { user, setUser, bankDetails, walletDetails, setBankDetails, setWalletDetails } = useAuthStore();
 
@@ -84,7 +86,7 @@ export const ProcessorOnboardingScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]} edges={['top']}>
       <Toast
         visible={showSuccess}
         message="You're now a Processor! The PROCESS tab is now available."
@@ -111,31 +113,38 @@ export const ProcessorOnboardingScreen: React.FC = () => {
           <View style={styles.header}>
             <TouchableOpacity
               onPress={() => navigation.goBack()}
-              style={styles.backBtn}
+              style={[styles.backBtn, { backgroundColor: theme.background.surface }]}
               activeOpacity={0.7}
             >
-              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+              <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
             </TouchableOpacity>
 
             <View style={styles.titleWrap}>
-              <View style={styles.iconWrap}>
-                <Ionicons name="swap-horizontal" size={24} color="#38BDF8" />
+              <View style={[styles.iconWrap, { backgroundColor: theme.info.bg }]}>
+                <Ionicons name="swap-horizontal" size={24} color={theme.secondary.main} />
               </View>
-              <Text style={styles.headline}>Become a Processor</Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.headline, { color: theme.text.primary }]}>Become a Processor</Text>
+              <Text style={[styles.subtitle, { color: theme.text.secondary }]}>
                 Complete verification to start earning by settling transactions
               </Text>
             </View>
           </View>
 
-          <View style={styles.sectionCard}>
+          <View
+            style={[
+              styles.sectionCard,
+              { backgroundColor: theme.background.paper, borderColor: theme.inputBorder },
+            ]}
+          >
             <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconWrap, { backgroundColor: 'rgba(168,85,247,0.12)' }]}>
-                <Ionicons name="person-outline" size={18} color="#A855F7" />
+              <View style={[styles.sectionIconWrap, { backgroundColor: theme.info.bg }]}>
+                <Ionicons name="person-outline" size={18} color={theme.secondary.main} />
               </View>
               <View style={styles.sectionTextWrap}>
-                <Text style={styles.sectionTitle}>Identity Verification</Text>
-                <Text style={styles.sectionSubtitle}>KYC information required</Text>
+                <Text style={[styles.sectionTitle, { color: theme.text.primary }]}>Identity Verification</Text>
+                <Text style={[styles.sectionSubtitle, { color: theme.text.secondary }]}>
+                  KYC information required
+                </Text>
               </View>
             </View>
 
@@ -163,35 +172,52 @@ export const ProcessorOnboardingScreen: React.FC = () => {
             />
           </View>
 
-          <View style={styles.sectionCard}>
+          <View
+            style={[
+              styles.sectionCard,
+              { backgroundColor: theme.background.paper, borderColor: theme.inputBorder },
+            ]}
+          >
             <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconWrap, { backgroundColor: 'rgba(26,111,255,0.12)' }]}>
-                <Ionicons name="business-outline" size={18} color="#1A6FFF" />
+              <View style={[styles.sectionIconWrap, { backgroundColor: theme.info.bg }]}>
+                <Ionicons name="business-outline" size={18} color={theme.info.main} />
               </View>
               <View style={styles.sectionTextWrap}>
-                <Text style={styles.sectionTitle}>Bank Account</Text>
-                <Text style={styles.sectionSubtitle}>For receiving settlements</Text>
+                <Text style={[styles.sectionTitle, { color: theme.text.primary }]}>Bank Account</Text>
+                <Text style={[styles.sectionSubtitle, { color: theme.text.secondary }]}>
+                  For receiving settlements
+                </Text>
               </View>
               {bankDetails && (
-                <View style={styles.prefillBadge}>
-                  <Text style={styles.prefillBadgeText}>Pre-filled</Text>
+                <View style={[styles.prefillBadge, { backgroundColor: theme.info.bg }]}>
+                  <Text style={[styles.prefillBadgeText, { color: theme.secondary.main }]}>Pre-filled</Text>
                 </View>
               )}
             </View>
 
-            <Text style={styles.fieldLabel}>Bank</Text>
+            <Text style={[styles.fieldLabel, { color: theme.text.secondary }]}>Bank</Text>
             <TouchableOpacity
               style={[
                 styles.selectField,
-                bankAccountValid && styles.selectFieldValid,
+                {
+                  backgroundColor: theme.background.surface,
+                  borderColor: bankAccountValid ? theme.secondary.main : theme.inputBorder,
+                },
               ]}
               onPress={() => setShowBankPicker(true)}
               activeOpacity={0.7}
             >
-              <Text style={selectedBank ? styles.selectValue : styles.selectPlaceholder}>
+              <Text
+                style={[
+                  selectedBank ? styles.selectValue : styles.selectPlaceholder,
+                  {
+                    color: selectedBank ? theme.text.primary : theme.text.muted,
+                  },
+                ]}
+              >
                 {selectedBank || 'Select your bank'}
               </Text>
-              <Ionicons name="chevron-down" size={16} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="chevron-down" size={16} color={theme.text.muted} />
             </TouchableOpacity>
 
             <FormField
@@ -206,18 +232,25 @@ export const ProcessorOnboardingScreen: React.FC = () => {
             />
           </View>
 
-          <View style={styles.sectionCard}>
+          <View
+            style={[
+              styles.sectionCard,
+              { backgroundColor: theme.background.paper, borderColor: theme.inputBorder },
+            ]}
+          >
             <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconWrap, { backgroundColor: 'rgba(56,189,248,0.12)' }]}>
-                <Ionicons name="wallet-outline" size={18} color="#38BDF8" />
+              <View style={[styles.sectionIconWrap, { backgroundColor: theme.info.bg }]}>
+                <Ionicons name="wallet-outline" size={18} color={theme.secondary.main} />
               </View>
               <View style={styles.sectionTextWrap}>
-                <Text style={styles.sectionTitle}>USDT Wallet</Text>
-                <Text style={styles.sectionSubtitle}>For receiving crypto payments</Text>
+                <Text style={[styles.sectionTitle, { color: theme.text.primary }]}>USDT Wallet</Text>
+                <Text style={[styles.sectionSubtitle, { color: theme.text.secondary }]}>
+                  For receiving crypto payments
+                </Text>
               </View>
               {walletDetails && (
-                <View style={styles.prefillBadge}>
-                  <Text style={styles.prefillBadgeText}>Pre-filled</Text>
+                <View style={[styles.prefillBadge, { backgroundColor: theme.info.bg }]}>
+                  <Text style={[styles.prefillBadgeText, { color: theme.secondary.main }]}>Pre-filled</Text>
                 </View>
               )}
             </View>
@@ -234,25 +267,40 @@ export const ProcessorOnboardingScreen: React.FC = () => {
               accessibilityLabel="Wallet address"
             />
 
-            <Text style={styles.fieldLabel}>Network</Text>
+            <Text style={[styles.fieldLabel, { color: theme.text.secondary }]}>Network</Text>
             <TouchableOpacity
               style={[
                 styles.selectField,
-                walletValid && styles.selectFieldValid,
+                {
+                  backgroundColor: theme.background.surface,
+                  borderColor: walletValid ? theme.secondary.main : theme.inputBorder,
+                },
               ]}
               onPress={() => setShowNetworkPicker(true)}
               activeOpacity={0.7}
             >
-              <Text style={selectedNetwork ? styles.selectValue : styles.selectPlaceholder}>
+              <Text
+                style={[
+                  selectedNetwork ? styles.selectValue : styles.selectPlaceholder,
+                  {
+                    color: selectedNetwork ? theme.text.primary : theme.text.muted,
+                  },
+                ]}
+              >
                 {selectedNetwork || 'Select network'}
               </Text>
-              <Ionicons name="chevron-down" size={16} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="chevron-down" size={16} color={theme.text.muted} />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.infoCard}>
-            <Ionicons name="information-circle-outline" size={20} color="#1A6FFF" />
-            <Text style={styles.infoText}>
+          <View
+            style={[
+              styles.infoCard,
+              { backgroundColor: theme.info.bg, borderColor: theme.inputBorder },
+            ]}
+          >
+            <Ionicons name="information-circle-outline" size={20} color={theme.info.main} />
+            <Text style={[styles.infoText, { color: theme.text.secondary }]}>
               Your information will be verified. Once approved, you'll be able to accept and settle transactions from the PROCESS tab.
             </Text>
           </View>
@@ -260,7 +308,7 @@ export const ProcessorOnboardingScreen: React.FC = () => {
           <View style={{ height: 24 }} />
         </ScrollView>
 
-        <View style={styles.bottomArea}>
+        <View style={[styles.bottomArea, { borderTopColor: theme.divider }]}>
           <CTAButton
             title="Apply to become a Processor"
             onPress={handleSubmit}
@@ -281,7 +329,8 @@ export const ProcessorOnboardingScreen: React.FC = () => {
               key={bank.id}
               style={[
                 styles.pickerItem,
-                selectedBank === bank.name && styles.pickerItemSel,
+                { borderBottomColor: theme.inputBorder },
+                selectedBank === bank.name && { backgroundColor: theme.info.bg },
               ]}
               onPress={() => {
                 setSelectedBank(bank.name);
@@ -289,10 +338,19 @@ export const ProcessorOnboardingScreen: React.FC = () => {
               }}
               activeOpacity={0.7}
             >
-              <Text style={styles.pickerItemText}>{bank.name}</Text>
-              {bank.popular && <Text style={styles.popularBadge}>Popular</Text>}
+              <Text style={[styles.pickerItemText, { color: theme.text.primary }]}>{bank.name}</Text>
+              {bank.popular && (
+                <Text
+                  style={[
+                    styles.popularBadge,
+                    { color: theme.secondary.main, backgroundColor: theme.info.bg },
+                  ]}
+                >
+                  Popular
+                </Text>
+              )}
               {selectedBank === bank.name && (
-                <Ionicons name="checkmark" size={18} color="#38BDF8" />
+                <Ionicons name="checkmark" size={18} color={theme.secondary.main} />
               )}
             </TouchableOpacity>
           ))}
@@ -310,7 +368,8 @@ export const ProcessorOnboardingScreen: React.FC = () => {
             key={network.id}
             style={[
               styles.pickerItem,
-              selectedNetwork === network.name && styles.pickerItemSel,
+              { borderBottomColor: theme.inputBorder },
+              selectedNetwork === network.name && { backgroundColor: theme.info.bg },
             ]}
             onPress={() => {
               setSelectedNetwork(network.name);
@@ -318,13 +377,20 @@ export const ProcessorOnboardingScreen: React.FC = () => {
             }}
             activeOpacity={0.7}
           >
-            <Ionicons name={network.icon as any} size={20} color="#38BDF8" style={{ marginRight: 12 }} />
+            <Ionicons
+              name={network.icon as any}
+              size={20}
+              color={theme.secondary.main}
+              style={{ marginRight: 12 }}
+            />
             <View style={{ flex: 1 }}>
-              <Text style={styles.pickerItemText}>{network.name}</Text>
-              <Text style={styles.pickerItemSub}>Gas: {network.gasEstimate}</Text>
+              <Text style={[styles.pickerItemText, { color: theme.text.primary }]}>{network.name}</Text>
+              <Text style={[styles.pickerItemSub, { color: theme.text.secondary }]}>
+                Gas: {network.gasEstimate}
+              </Text>
             </View>
             {selectedNetwork === network.name && (
-              <Ionicons name="checkmark" size={18} color="#38BDF8" />
+              <Ionicons name="checkmark" size={18} color={theme.secondary.main} />
             )}
           </TouchableOpacity>
         ))}
@@ -337,7 +403,6 @@ export const ProcessorOnboardingScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#0A0A0C',
   },
   flex: {
     flex: 1,
@@ -357,7 +422,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#1F1F23',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -369,7 +433,6 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 16,
-    backgroundColor: 'rgba(56,189,248,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -377,22 +440,18 @@ const styles = StyleSheet.create({
   headline: {
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 24,
-    color: '#FFFFFF',
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
     fontFamily: 'Inter_400Regular',
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
     lineHeight: 20,
     paddingHorizontal: 20,
   },
   sectionCard: {
-    backgroundColor: '#1A1A2E',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -416,16 +475,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: 'Inter_700Bold',
     fontSize: 15,
-    color: '#FFFFFF',
   },
   sectionSubtitle: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
     marginTop: 2,
   },
   prefillBadge: {
-    backgroundColor: 'rgba(56,189,248,0.15)',
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -433,40 +489,31 @@ const styles = StyleSheet.create({
   prefillBadgeText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 10,
-    color: '#38BDF8',
   },
   fieldLabel: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 11,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.6)',
     marginBottom: 8,
   },
   selectField: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#1F1F23',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     marginBottom: 12,
   },
-  selectFieldValid: {
-    borderColor: 'rgba(56,189,248,0.5)',
-  },
   selectValue: {
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
-    color: '#FFFFFF',
   },
   selectPlaceholder: {
     fontFamily: 'Inter_400Regular',
     fontSize: 16,
-    color: 'rgba(255,255,255,0.4)',
   },
   addressInput: {
     minHeight: 80,
@@ -475,9 +522,7 @@ const styles = StyleSheet.create({
   infoCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: 'rgba(26,111,255,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(26,111,255,0.2)',
     borderRadius: 12,
     padding: 14,
     gap: 10,
@@ -486,7 +531,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.7)',
     lineHeight: 19,
   },
   bottomArea: {
@@ -494,7 +538,6 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
   },
   pickerScroll: {
     maxHeight: 400,
@@ -505,28 +548,20 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
-  },
-  pickerItemSel: {
-    backgroundColor: 'rgba(56,189,248,0.08)',
   },
   pickerItemText: {
     flex: 1,
     fontFamily: 'Inter_500Medium',
     fontSize: 15,
-    color: '#FFFFFF',
   },
   pickerItemSub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
     marginTop: 2,
   },
   popularBadge: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 10,
-    color: '#38BDF8',
-    backgroundColor: 'rgba(56,189,248,0.12)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,

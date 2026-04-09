@@ -25,7 +25,7 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
   textStyle,
   fullWidth = false,
 }) => {
-  const { theme, brand } = useTheme();
+  const { theme } = useTheme();
   const haptics = useHaptics();
 
   const sizeStyles = {
@@ -37,10 +37,10 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
   const textVariant = size === 'large' ? typography.buttonL : size === 'medium' ? typography.buttonM : typography.buttonS;
 
   const variantStyles: Record<string, { bg: string; textColor: string; border?: string }> = {
-    primary: { bg: '#171717', textColor: '#FFFFFF' },
+    primary: { bg: theme.background.paper, textColor: theme.text.primary },
     secondary: { bg: theme.background.surface, textColor: theme.text.primary },
     outline: { bg: 'transparent', textColor: theme.text.primary, border: theme.divider },
-    ghost: { bg: 'transparent', textColor: brand.blue },
+    ghost: { bg: 'transparent', textColor: theme.secondary.main },
   };
 
   const v = variantStyles[variant] || variantStyles.primary;

@@ -7,6 +7,7 @@ import { Ionicons } from '../../components/Icon';
 import { Avatar, BankLogo, CryptoIcon } from '../../components';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HistoryStackParamList } from '../../navigation/AppNavigator';
+import { useTheme, type ThemeColors } from '../../theme';
 
 type Props = NativeStackScreenProps<HistoryStackParamList, 'TransferDetail'>;
 type TransferStatus = 'delivered' | 'pending' | 'failed' | 'disputed';
@@ -19,50 +20,54 @@ interface StatusConfig {
   showSendAgain: boolean;
 }
 
-const STATUS: Record<TransferStatus, StatusConfig> = {
-  delivered: {
-    label: 'Delivered',
-    color: '#38BDF8',
-    glow: ['rgba(56,189,248,0.18)', 'rgba(56,189,248,0)'],
-    icon: 'checkmark',
-    showSendAgain: true,
-  },
-  pending: {
-    label: 'In progress',
-    color: '#38BDF8',
-    glow: ['rgba(56,189,248,0.18)', 'rgba(56,189,248,0)'],
-    icon: 'time',
-    showSendAgain: false,
-  },
-  failed: {
-    label: 'Refunded',
-    color: '#EF4444',
-    glow: ['rgba(239,68,68,0.18)', 'rgba(239,68,68,0)'],
-    icon: 'close',
-    showSendAgain: false,
-  },
-  disputed: {
-    label: 'Disputed',
-    color: '#FFD60A',
-    glow: ['rgba(255,214,10,0.18)', 'rgba(255,214,10,0)'],
-    icon: 'alert-circle',
-    showSendAgain: false,
-  },
-};
+function getStatusConfig(theme: ThemeColors): Record<TransferStatus, StatusConfig> {
+  return {
+    delivered: {
+      label: 'Delivered',
+      color: theme.secondary.main,
+      glow: [theme.info.bg, theme.background.default],
+      icon: 'checkmark',
+      showSendAgain: true,
+    },
+    pending: {
+      label: 'In progress',
+      color: theme.secondary.main,
+      glow: [theme.info.bg, theme.background.default],
+      icon: 'time',
+      showSendAgain: false,
+    },
+    failed: {
+      label: 'Refunded',
+      color: theme.error.main,
+      glow: [theme.error.bg, theme.background.default],
+      icon: 'close',
+      showSendAgain: false,
+    },
+    disputed: {
+      label: 'Disputed',
+      color: theme.warning.main,
+      glow: [theme.warning.bg, theme.background.default],
+      icon: 'alert-circle',
+      showSendAgain: false,
+    },
+  };
+}
 
-const Row: React.FC<{ label: string; value: string; mono?: boolean; emphasis?: boolean }> = ({
-  label,
-  value,
-  mono,
-  emphasis,
-}) => (
+const Row: React.FC<{
+  label: string;
+  value: string;
+  mono?: boolean;
+  emphasis?: boolean;
+  theme: ThemeColors;
+}> = ({ label, value, mono, emphasis, theme }) => (
   <View style={styles.row}>
-    <Text style={styles.rowLabel}>{label}</Text>
+    <Text style={[styles.rowLabel, { color: theme.text.secondary }]}>{label}</Text>
     <Text
       style={[
         styles.rowValue,
+        { color: theme.text.primary },
         mono && styles.rowValueMono,
-        emphasis && styles.rowValueEmphasis,
+        emphasis && [styles.rowValueEmphasis, { color: theme.secondary.main }],
       ]}
     >
       {value}
@@ -70,29 +75,33 @@ const Row: React.FC<{ label: string; value: string; mono?: boolean; emphasis?: b
   </View>
 );
 
-const Divider: React.FC = () => <View style={styles.divider} />;
+const Divider: React.FC<{ theme: ThemeColors }> = ({ theme }) => (
+  <View style={[styles.divider, { backgroundColor: theme.divider }]} />
+);
 
 const ActionRow: React.FC<{
+  theme: ThemeColors;
   icon: string;
   label: string;
   sub: string;
   onPress: () => void;
-}> = ({ icon, label, sub, onPress }) => (
+}> = ({ theme, icon, label, sub, onPress }) => (
   <TouchableOpacity style={styles.actionRow} activeOpacity={0.6} onPress={onPress}>
-    <View style={styles.actionIcon}>
-      <Ionicons name={icon as any} size={18} color="#38BDF8" />
+    <View style={[styles.actionIcon, { backgroundColor: theme.info.bg }]}>
+      <Ionicons name={icon as any} size={18} color={theme.secondary.main} />
     </View>
     <View style={{ flex: 1 }}>
-      <Text style={styles.actionLabel}>{label}</Text>
-      <Text style={styles.actionSub}>{sub}</Text>
+      <Text style={[styles.actionLabel, { color: theme.text.primary }]}>{label}</Text>
+      <Text style={[styles.actionSub, { color: theme.text.secondary }]}>{sub}</Text>
     </View>
-    <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.42)" />
+    <Ionicons name="chevron-forward" size={18} color={theme.text.muted} />
   </TouchableOpacity>
 );
 
 export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) => {
+  const { theme } = useTheme();
   const status = (route.params?.status as TransferStatus) || 'delivered';
-  const config = STATUS[status];
+  const config = getStatusConfig(theme)[status];
 
   const recipientName = 'Emeka Johnson';
   const firstName = recipientName.split(' ')[0];
@@ -104,18 +113,14 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
   const goHome = () => navigation.goBack();
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <LinearGradient
-        pointerEvents="none"
-        colors={config.glow}
-        style={styles.glow}
-      />
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]} edges={['top', 'bottom']}>
+      <LinearGradient pointerEvents="none" colors={config.glow} style={styles.glow} />
 
       <View style={styles.headerBar}>
         <View style={styles.iconBtn} />
-        <Text style={styles.headerTitle}>Receipt</Text>
+        <Text style={[styles.headerTitle, { color: theme.text.primary }]}>Receipt</Text>
         <TouchableOpacity style={styles.iconBtn} onPress={goHome} activeOpacity={0.7}>
-          <Ionicons name="close" size={24} color="#FFFFFF" />
+          <Ionicons name="close" size={24} color={theme.text.primary} />
         </TouchableOpacity>
       </View>
 
@@ -125,15 +130,15 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
             <Ionicons name={config.icon as any} size={48} color={config.color} />
           </View>
           <Text style={[styles.heroLabel, { color: config.color }]}>{config.label}</Text>
-          <Text style={styles.heroAmount}>{'\u20A6'}329,000</Text>
-          <Text style={styles.heroSub}>to {recipientName}</Text>
+          <Text style={[styles.heroAmount, { color: theme.text.primary }]}>{'\u20A6'}329,000</Text>
+          <Text style={[styles.heroSub, { color: theme.text.secondary }]}>to {recipientName}</Text>
         </View>
 
-        <View style={styles.recipientCard}>
+        <View style={[styles.recipientCard, { backgroundColor: theme.background.paper }]}>
           <Avatar seed={recipientName} initials="EJ" size={44} bankBadge={method} />
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.recipientName}>{recipientName}</Text>
-            <Text style={styles.recipientSub}>
+            <Text style={[styles.recipientName, { color: theme.text.primary }]}>{recipientName}</Text>
+            <Text style={[styles.recipientSub, { color: theme.text.secondary }]}>
               {method} {'\u00B7'} {country}
             </Text>
           </View>
@@ -143,68 +148,86 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
           </View>
         </View>
 
-        <View style={styles.detailsCard}>
+        <View style={[styles.detailsCard, { backgroundColor: theme.background.paper }]}>
           <View style={styles.sentRow}>
-            <Text style={styles.rowLabel}>You sent</Text>
+            <Text style={[styles.rowLabel, { color: theme.text.secondary }]}>You sent</Text>
             <View style={styles.sentValueWrap}>
-              <CryptoIcon token="USDT" network="Polygon" size={22} ringColor="#17171A" />
-              <Text style={styles.sentValueText}>200 USDT</Text>
+              <CryptoIcon token="USDT" network="Polygon" size={22} ringColor={theme.background.paper} />
+              <Text style={[styles.sentValueText, { color: theme.text.primary }]}>200 USDT</Text>
             </View>
           </View>
-          <Divider />
-          <Row label="They received" value={'\u20A6329,000'} emphasis />
-          <Divider />
-          <Row label="Rate" value={'1 USDT = \u20A61,645'} />
-          <Divider />
-          <Row label="Fee" value={'\u20A63,290 (0.98%)'} />
-          <Divider />
-          <Row label="Network" value="Polygon (PoS)" />
-          <Divider />
-          <Row label="Delivered in" value="4m 11s" />
-          <Divider />
-          <Row label="Delivered at" value={'21 Mar 2026 \u00B7 09:41 SGT'} />
-          <Divider />
-          <TouchableOpacity activeOpacity={0.6} onPress={() => { Clipboard.setStringAsync('QP-2026-0384-7821'); Alert.alert('Copied', 'Reference copied to clipboard.'); }}>
-            <Row label="Reference" value="QP-2026-0384-7821" mono />
+          <Divider theme={theme} />
+          <Row label="They received" value={'\u20A6329,000'} emphasis theme={theme} />
+          <Divider theme={theme} />
+          <Row label="Rate" value={'1 USDT = \u20A61,645'} theme={theme} />
+          <Divider theme={theme} />
+          <Row label="Fee" value={'\u20A63,290 (0.98%)'} theme={theme} />
+          <Divider theme={theme} />
+          <Row label="Network" value="Polygon (PoS)" theme={theme} />
+          <Divider theme={theme} />
+          <Row label="Delivered in" value="4m 11s" theme={theme} />
+          <Divider theme={theme} />
+          <Row label="Delivered at" value={'21 Mar 2026 \u00B7 09:41 SGT'} theme={theme} />
+          <Divider theme={theme} />
+          <TouchableOpacity
+            activeOpacity={0.6}
+            onPress={() => {
+              Clipboard.setStringAsync('QP-2026-0384-7821');
+              Alert.alert('Copied', 'Reference copied to clipboard.');
+            }}
+          >
+            <Row label="Reference" value="QP-2026-0384-7821" mono theme={theme} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.providerCard}>
+        <View style={[styles.providerCard, { backgroundColor: theme.background.paper }]}>
           <BankLogo name={method} size={36} />
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.providerLabel}>Cashed out via</Text>
-            <Text style={styles.providerName}>{method} {'\u00B7'} {phone}</Text>
+            <Text style={[styles.providerLabel, { color: theme.text.secondary }]}>Cashed out via</Text>
+            <Text style={[styles.providerName, { color: theme.text.primary }]}>
+              {method} {'\u00B7'} {phone}
+            </Text>
           </View>
           <Ionicons name="checkmark-circle" size={18} color={config.color} />
         </View>
 
-        <View style={styles.actionsCard}>
+        <View style={[styles.actionsCard, { backgroundColor: theme.background.paper }]}>
           <ActionRow
+            theme={theme}
             icon="cloud-download"
             label="Save receipt"
             sub="Download a PDF copy"
             onPress={() => Alert.alert('Save receipt', 'Receipt saved to your device.')}
           />
-          <Divider />
+          <Divider theme={theme} />
           <ActionRow
+            theme={theme}
             icon="share"
             label="Share with recipient"
             sub="Send a link with delivery details"
             onPress={() => Alert.alert('Share', `Receipt link for ${recipientName} copied to clipboard.`)}
           />
-          <Divider />
+          <Divider theme={theme} />
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
         {config.showSendAgain && (
-          <TouchableOpacity style={styles.ctaPrimary} onPress={sendAgain} activeOpacity={0.85}>
-            <Ionicons name="send" size={18} color="#0A0A0C" />
-            <Text style={styles.ctaPrimaryText}>Send to {firstName} again</Text>
+          <TouchableOpacity
+            style={[styles.ctaPrimary, { backgroundColor: theme.secondary.main }]}
+            onPress={sendAgain}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="send" size={18} color={theme.background.default} />
+            <Text style={[styles.ctaPrimaryText, { color: theme.background.default }]}>Send to {firstName} again</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={styles.ctaSecondary} onPress={goHome} activeOpacity={0.85}>
-          <Text style={styles.ctaSecondaryText}>Back to home</Text>
+        <TouchableOpacity
+          style={[styles.ctaSecondary, { backgroundColor: theme.background.surface }]}
+          onPress={goHome}
+          activeOpacity={0.85}
+        >
+          <Text style={[styles.ctaSecondaryText, { color: theme.text.primary }]}>Back to home</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -212,7 +235,7 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0C' },
+  safe: { flex: 1 },
   glow: { position: 'absolute', top: 0, left: 0, right: 0, height: 320 },
 
   headerBar: {
@@ -227,7 +250,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 17,
-    color: '#FFFFFF',
   },
 
   hero: { alignItems: 'center', paddingTop: 8, paddingBottom: 24 },
@@ -248,21 +270,18 @@ const styles = StyleSheet.create({
   heroAmount: {
     fontFamily: 'Inter_700Bold',
     fontSize: 42,
-    color: '#FFFFFF',
     marginTop: 6,
     letterSpacing: -0.8,
   },
   heroSub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 14,
-    color: 'rgba(255,255,255,0.58)',
     marginTop: 4,
   },
 
   recipientCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#17171A',
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -271,12 +290,10 @@ const styles = StyleSheet.create({
   recipientName: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 15,
-    color: '#FFFFFF',
   },
   recipientSub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.58)',
     marginTop: 2,
   },
   statusPill: {
@@ -294,7 +311,6 @@ const styles = StyleSheet.create({
   },
 
   detailsCard: {
-    backgroundColor: '#17171A',
     borderRadius: 16,
     paddingHorizontal: 16,
     marginHorizontal: 20,
@@ -309,12 +325,10 @@ const styles = StyleSheet.create({
   rowLabel: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.58)',
   },
   rowValue: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 13,
-    color: '#FFFFFF',
     fontVariant: ['tabular-nums'],
   },
   rowValueMono: {
@@ -322,7 +336,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   rowValueEmphasis: {
-    color: '#38BDF8',
     fontFamily: 'Inter_700Bold',
     fontSize: 14,
   },
@@ -340,15 +353,13 @@ const styles = StyleSheet.create({
   sentValueText: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 13,
-    color: '#FFFFFF',
     fontVariant: ['tabular-nums'],
   },
-  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.06)' },
+  divider: { height: 1 },
 
   providerCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#17171A',
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -358,17 +369,14 @@ const styles = StyleSheet.create({
   providerLabel: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.58)',
   },
   providerName: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 13,
-    color: '#FFFFFF',
     marginTop: 1,
   },
 
   actionsCard: {
-    backgroundColor: '#17171A',
     borderRadius: 16,
     paddingHorizontal: 12,
     marginHorizontal: 20,
@@ -384,19 +392,16 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(56,189,248,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionLabel: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
-    color: '#FFFFFF',
   },
   actionSub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.58)',
     marginTop: 2,
   },
 
@@ -409,7 +414,6 @@ const styles = StyleSheet.create({
   ctaPrimary: {
     flexDirection: 'row',
     gap: 8,
-    backgroundColor: '#38BDF8',
     borderRadius: 999,
     paddingVertical: 18,
     alignItems: 'center',
@@ -418,10 +422,8 @@ const styles = StyleSheet.create({
   ctaPrimaryText: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
-    color: '#0A0A0C',
   },
   ctaSecondary: {
-    backgroundColor: '#1F1F23',
     borderRadius: 999,
     paddingVertical: 16,
     alignItems: 'center',
@@ -429,6 +431,5 @@ const styles = StyleSheet.create({
   ctaSecondaryText: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
-    color: '#FFFFFF',
   },
 });

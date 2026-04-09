@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '../../components/Icon';
@@ -8,6 +8,7 @@ import type { ProfileStackParamList } from '../../navigation/AppNavigator';
 import { QupayLogo, Avatar, CTAButton } from '../../components';
 import { userProfile } from '../../data/mockData';
 import { useAuthStore } from '../../store/authStore';
+import { useTheme, ThemePreference } from '../../theme';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
@@ -15,25 +16,37 @@ interface Props {
   navigation?: ProfileScreenNavigationProp;
 }
 
+const PREFERENCE_LABELS: Record<ThemePreference, string> = {
+  system: 'System',
+  light: 'Light',
+  dark: 'Dark',
+};
+
+const PREFERENCE_CYCLE: ThemePreference[] = ['system', 'light', 'dark'];
+
 export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [notifOn, setNotifOn] = useState(true);
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
+  const { theme, mode, preference, setPreference, gradient } = useTheme();
 
   const handleLogout = useCallback(async () => {
     await logout();
   }, [logout]);
 
+  const cycleTheme = useCallback(() => {
+    const currentIndex = PREFERENCE_CYCLE.indexOf(preference);
+    const nextIndex = (currentIndex + 1) % PREFERENCE_CYCLE.length;
+    setPreference(PREFERENCE_CYCLE[nextIndex]);
+  }, [preference, setPreference]);
+
   const displayName = user ? `${user.firstName} ${user.lastName}` : userProfile.name;
   const displayEmail = user?.email || userProfile.email;
   const displayPhone = user?.phoneNumber || userProfile.phone;
-  const initials = user
-    ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
-    : userProfile.initials;
   const isProcessor = user?.role === 'BOTH' || user?.role === 'MP';
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]} edges={['top']}>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
@@ -41,9 +54,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         {/* Profile hero */}
-        <View style={styles.heroWrap}>
+        <View style={[styles.heroWrap, { borderColor: theme.info.bg }]}>
           <LinearGradient
-            colors={['#1A1A2E', '#0A0A0C']}
+            colors={gradient.hero}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.hero}
@@ -52,93 +65,119 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               <Avatar seed={displayName} size={60} />
               <View style={styles.phInfo}>
                 <View style={styles.nameRow}>
-                  <Text style={styles.phName}>{displayName}</Text>
+                  <Text style={[styles.phName, { color: theme.text.primary }]}>{displayName}</Text>
                   {isProcessor && (
-                    <View style={styles.processorBadge}>
-                      <Ionicons name="swap-horizontal" size={10} color="#38BDF8" />
-                      <Text style={styles.processorBadgeText}>Processor</Text>
+                    <View style={[styles.processorBadge, { backgroundColor: theme.info.bg, borderColor: theme.secondary.main }]}>
+                      <Ionicons name="swap-horizontal" size={10} color={theme.secondary.main} />
+                      <Text style={[styles.processorBadgeText, { color: theme.secondary.main }]}>Processor</Text>
                     </View>
                   )}
                 </View>
-                <Text style={styles.phEmail}>{displayEmail}</Text>
-                <Text style={styles.phPhone}>{displayPhone}</Text>
+                <Text style={[styles.phEmail, { color: theme.text.secondary }]}>{displayEmail}</Text>
+                <Text style={[styles.phPhone, { color: theme.text.muted }]}>{displayPhone}</Text>
               </View>
             </View>
-            <View style={styles.phStats}>
+            <View style={[styles.phStats, { borderTopColor: theme.divider }]}>
               <View style={styles.phStat}>
-                <Text style={styles.phVal}>{userProfile.totalTransfers}</Text>
-                <Text style={styles.phLabel}>Transfers</Text>
+                <Text style={[styles.phVal, { color: theme.text.primary }]}>{userProfile.totalTransfers}</Text>
+                <Text style={[styles.phLabel, { color: theme.text.secondary }]}>Transfers</Text>
               </View>
-              <View style={styles.phStatDivider} />
+              <View style={[styles.phStatDivider, { backgroundColor: theme.divider }]} />
               <View style={styles.phStat}>
-                <Text style={[styles.phVal, styles.phValGreen]}>${userProfile.totalSent.toLocaleString()}</Text>
-                <Text style={styles.phLabel}>Total Sent</Text>
+                <Text style={[styles.phVal, { color: theme.secondary.main }]}>${userProfile.totalSent.toLocaleString()}</Text>
+                <Text style={[styles.phLabel, { color: theme.text.secondary }]}>Total Sent</Text>
               </View>
-              <View style={styles.phStatDivider} />
+              <View style={[styles.phStatDivider, { backgroundColor: theme.divider }]} />
               <View style={styles.phStat}>
-                <Text style={styles.phVal}>Nov '25</Text>
-                <Text style={styles.phLabel}>Member</Text>
+                <Text style={[styles.phVal, { color: theme.text.primary }]}>Nov '25</Text>
+                <Text style={[styles.phLabel, { color: theme.text.secondary }]}>Member</Text>
               </View>
             </View>
 
             {user?.role === 'PAYER' && (
               <TouchableOpacity
-                style={styles.heroPromo}
+                style={[styles.heroPromo, { borderTopColor: theme.divider }]}
                 onPress={() => navigation?.navigate('ProcessorOnboarding')}
                 activeOpacity={0.7}
               >
-                <Ionicons name="swap-horizontal" size={14} color="#38BDF8" />
-                <Text style={styles.heroPromoText}>Earn by settling transactions</Text>
-                <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.4)" />
+                <Ionicons name="swap-horizontal" size={14} color={theme.secondary.main} />
+                <Text style={[styles.heroPromoText, { color: theme.text.secondary }]}>Earn by settling transactions</Text>
+                <Ionicons name="chevron-forward" size={14} color={theme.text.muted} />
               </TouchableOpacity>
             )}
           </LinearGradient>
         </View>
 
         {/* Settings */}
-        <Text style={styles.sectionLabel}>Settings</Text>
-        <View style={styles.card}>
-          <TouchableOpacity style={styles.row} activeOpacity={0.7}>
-            <View style={[styles.rowIcon, { backgroundColor: 'rgba(56,189,248,0.07)' }]}>
-              <Ionicons name="lock-closed-outline" size={18} color="#38BDF8" />
+        <Text style={[styles.sectionLabel, { color: theme.text.secondary }]}>Settings</Text>
+        <View style={[styles.card, { backgroundColor: theme.background.surface, borderColor: theme.inputBorder }]}>
+          <TouchableOpacity style={[styles.row, { borderBottomColor: theme.inputBorder }]} activeOpacity={0.7}>
+            <View style={[styles.rowIcon, { backgroundColor: theme.info.bg }]}>
+              <Ionicons name="lock-closed-outline" size={18} color={theme.secondary.main} />
             </View>
             <View style={styles.rowBody}>
-              <Text style={styles.rowTitle}>Transaction PIN</Text>
-              <Text style={styles.rowSub}>Change your 4-digit PIN</Text>
+              <Text style={[styles.rowTitle, { color: theme.text.primary }]}>Transaction PIN</Text>
+              <Text style={[styles.rowSub, { color: theme.text.secondary }]}>Change your 4-digit PIN</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
+            <Ionicons name="chevron-forward" size={16} color={theme.text.muted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.row, { borderBottomColor: theme.inputBorder }]}
+            activeOpacity={0.7}
+            onPress={cycleTheme}
+          >
+            <View style={[styles.rowIcon, { backgroundColor: mode === 'dark' ? theme.background.surface2 : theme.background.surface }]}>
+              <Ionicons
+                name={mode === 'dark' ? 'moon-outline' : 'sunny-outline'}
+                size={18}
+                color={theme.secondary.main}
+              />
+            </View>
+            <View style={styles.rowBody}>
+              <Text style={[styles.rowTitle, { color: theme.text.primary }]}>Appearance</Text>
+              <Text style={[styles.rowSub, { color: theme.text.secondary }]}>{PREFERENCE_LABELS[preference]}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.text.muted} />
           </TouchableOpacity>
 
           <View style={[styles.row, styles.rowLast]}>
-            <View style={[styles.rowIcon, { backgroundColor: 'rgba(255,212,96,0.1)' }]}>
-              <Ionicons name="notifications-outline" size={18} color="#FFD60A" />
+            <View style={[styles.rowIcon, { backgroundColor: theme.warning.bg }]}>
+              <Ionicons name="notifications-outline" size={18} color={theme.warning.main} />
             </View>
             <View style={styles.rowBody}>
-              <Text style={styles.rowTitle}>Notifications</Text>
-              <Text style={styles.rowSub}>Push {'\u00B7'} SMS</Text>
+              <Text style={[styles.rowTitle, { color: theme.text.primary }]}>Notifications</Text>
+              <Text style={[styles.rowSub, { color: theme.text.secondary }]}>Push {'\u00B7'} SMS</Text>
             </View>
-            <Switch
-              value={notifOn}
-              onValueChange={setNotifOn}
-              trackColor={{ false: '#2A2A42', true: '#38BDF8' }}
-              thumbColor="#fff"
-              ios_backgroundColor="#2A2A42"
-            />
+            <TouchableOpacity
+              onPress={() => setNotifOn(!notifOn)}
+              style={[
+                styles.toggle,
+                { backgroundColor: notifOn ? theme.secondary.main : theme.background.surface2 }
+              ]}
+              activeOpacity={0.8}
+            >
+              <View style={[
+                styles.toggleThumb,
+                { backgroundColor: theme.background.default },
+                notifOn && styles.toggleThumbOn
+              ]} />
+            </TouchableOpacity>
           </View>
         </View>
 
         {/* Support */}
-        <Text style={styles.sectionLabel}>Support</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: theme.text.secondary }]}>Support</Text>
+        <View style={[styles.card, { backgroundColor: theme.background.surface, borderColor: theme.inputBorder }]}>
           <TouchableOpacity style={[styles.row, styles.rowLast]} activeOpacity={0.7}>
-            <View style={[styles.rowIcon, { backgroundColor: '#2A2A42' }]}>
-              <Ionicons name="chatbubble-ellipses-outline" size={18} color="rgba(255,255,255,0.6)" />
+            <View style={[styles.rowIcon, { backgroundColor: theme.background.surface2 }]}>
+              <Ionicons name="chatbubble-ellipses-outline" size={18} color={theme.text.secondary} />
             </View>
             <View style={styles.rowBody}>
-              <Text style={styles.rowTitle}>Help & Support</Text>
-              <Text style={styles.rowSub}>Avg. response &lt;3 mins</Text>
+              <Text style={[styles.rowTitle, { color: theme.text.primary }]}>Help & Support</Text>
+              <Text style={[styles.rowSub, { color: theme.text.secondary }]}>Avg. response &lt;3 mins</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
+            <Ionicons name="chevron-forward" size={16} color={theme.text.muted} />
           </TouchableOpacity>
         </View>
 
@@ -150,7 +189,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           style={styles.logoutBtn}
         />
 
-        <Text style={styles.versionText}>Qupay v1.0.0</Text>
+        <Text style={[styles.versionText, { color: theme.text.disabled }]}>Qupay v1.0.0</Text>
         <View style={{ height: 20 }} />
       </ScrollView>
     </SafeAreaView>
@@ -158,7 +197,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0C' },
+  safe: { flex: 1 },
   scroll: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -175,7 +214,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(56,189,248,0.12)',
   },
   hero: { padding: 22 },
   phTop: {
@@ -195,15 +233,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 19,
     letterSpacing: -0.3,
-    color: '#FFFFFF',
   },
   processorBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(56,189,248,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(56,189,248,0.25)',
     borderRadius: 6,
     paddingVertical: 3,
     paddingHorizontal: 6,
@@ -211,26 +246,22 @@ const styles = StyleSheet.create({
   processorBadgeText: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 9,
-    color: '#38BDF8',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   phEmail: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
     marginTop: 2,
   },
   phPhone: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.4)',
     marginTop: 1,
   },
   phStats: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
     paddingTop: 14,
   },
   heroPromo: {
@@ -241,28 +272,22 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
   },
   heroPromoText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
   },
   phStat: { flex: 1, alignItems: 'center' },
   phStatDivider: {
     width: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   phVal: {
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 17,
-    color: '#FFFFFF',
   },
-  phValGreen: { color: '#38BDF8' },
   phLabel: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 9,
-    color: 'rgba(255,255,255,0.6)',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     marginTop: 2,
@@ -272,16 +297,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 1,
     textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.6)',
     marginHorizontal: 24,
     marginBottom: 10,
   },
   card: {
     marginHorizontal: 24,
     marginBottom: 16,
-    backgroundColor: '#1F1F23',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 20,
     overflow: 'hidden',
   },
@@ -292,7 +314,6 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   rowLast: { borderBottomWidth: 0 },
   rowIcon: {
@@ -306,13 +327,26 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
-    color: '#FFFFFF',
   },
   rowSub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
     marginTop: 1,
+  },
+  toggle: {
+    width: 48,
+    height: 28,
+    borderRadius: 14,
+    padding: 2,
+    justifyContent: 'center',
+  },
+  toggleThumb: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  toggleThumbOn: {
+    alignSelf: 'flex-end',
   },
   logoutBtn: {
     marginHorizontal: 24,
@@ -321,7 +355,6 @@ const styles = StyleSheet.create({
   versionText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.2)',
     textAlign: 'center',
     paddingVertical: 12,
   },

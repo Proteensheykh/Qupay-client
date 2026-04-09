@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
@@ -19,6 +18,7 @@ import { acceptTransaction, uploadSettlementProof, updateTransactionStatus } fro
 import type { TransactionStatus, ProofType } from '../../types/transaction';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ProcessorStackParamList } from '../../navigation/AppNavigator';
+import { useTheme } from '../../theme';
 
 type Props = NativeStackScreenProps<ProcessorStackParamList, 'ProcessorTransactionDetail'>;
 
@@ -32,21 +32,6 @@ const currencySymbols: Record<string, string> = {
   MXN: '$',
   PKR: 'Rs',
   ZAR: 'R',
-};
-
-const statusConfig: Record<
-  TransactionStatus,
-  { label: string; color: string; bgColor: string; icon: keyof typeof Ionicons.glyphMap }
-> = {
-  PENDING_DEPOSIT: { label: 'Pending Deposit', color: '#FFD60A', bgColor: 'rgba(255,212,96,0.12)', icon: 'time-outline' },
-  DEPOSIT_CONFIRMED: { label: 'Ready for Settlement', color: '#38BDF8', bgColor: 'rgba(56,189,248,0.12)', icon: 'checkmark-circle-outline' },
-  MATCHED: { label: 'Matched', color: '#1A6FFF', bgColor: 'rgba(26,111,255,0.12)', icon: 'link-outline' },
-  SETTLEMENT_IN_PROGRESS: { label: 'Settlement In Progress', color: '#FF9F43', bgColor: 'rgba(255,159,67,0.12)', icon: 'hourglass-outline' },
-  SETTLEMENT_PROOF_UPLOADED: { label: 'Proof Uploaded', color: '#A855F7', bgColor: 'rgba(168,85,247,0.12)', icon: 'document-attach-outline' },
-  COMPLETED: { label: 'Completed', color: '#4ADE80', bgColor: 'rgba(74,222,128,0.15)', icon: 'checkmark-done-outline' },
-  FAILED: { label: 'Failed', color: '#EF4444', bgColor: 'rgba(255,77,106,0.12)', icon: 'close-circle-outline' },
-  EXPIRED: { label: 'Expired', color: '#F87171', bgColor: 'rgba(255,107,107,0.12)', icon: 'timer-outline' },
-  DISPUTED: { label: 'Disputed', color: '#FFD60A', bgColor: 'rgba(255,212,96,0.12)', icon: 'warning-outline' },
 };
 
 const proofTypes: { type: ProofType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -68,10 +53,11 @@ function formatDateTime(timestamp: string): string {
 }
 
 export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, route }) => {
+  const { theme } = useTheme();
   const { transactionId, slug } = route.params;
   const transaction = useTransactionStore((state) => state.getTransaction(transactionId));
   const currentUser = useAuthStore((state) => state.user);
-  
+
   const [loading, setLoading] = useState(false);
   const [showProofSheet, setShowProofSheet] = useState(false);
   const [selectedProofType, setSelectedProofType] = useState<ProofType>('receipt_image');
@@ -82,12 +68,374 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
   const [showToast, setShowToast] = useState(false);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
+  const statusConfig = useMemo<
+    Record<
+      TransactionStatus,
+      { label: string; color: string; bgColor: string; icon: keyof typeof Ionicons.glyphMap }
+    >
+  >(
+    () => ({
+      PENDING_DEPOSIT: { label: 'Pending Deposit', color: theme.warning.main, bgColor: theme.warning.bg, icon: 'time-outline' },
+      DEPOSIT_CONFIRMED: { label: 'Ready for Settlement', color: theme.secondary.main, bgColor: theme.info.bg, icon: 'checkmark-circle-outline' },
+      MATCHED: { label: 'Matched', color: theme.secondary.main, bgColor: theme.info.bg, icon: 'link-outline' },
+      SETTLEMENT_IN_PROGRESS: { label: 'Settlement In Progress', color: theme.warning.main, bgColor: theme.warning.bg, icon: 'hourglass-outline' },
+      SETTLEMENT_PROOF_UPLOADED: { label: 'Proof Uploaded', color: theme.secondary.main, bgColor: theme.info.bg, icon: 'document-attach-outline' },
+      COMPLETED: { label: 'Completed', color: theme.success.main, bgColor: theme.success.bg, icon: 'checkmark-done-outline' },
+      FAILED: { label: 'Failed', color: theme.error.main, bgColor: theme.error.bg, icon: 'close-circle-outline' },
+      EXPIRED: { label: 'Expired', color: theme.error.light, bgColor: theme.error.bg, icon: 'timer-outline' },
+      DISPUTED: { label: 'Disputed', color: theme.warning.main, bgColor: theme.warning.bg, icon: 'warning-outline' },
+    }),
+    [theme]
+  );
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        safe: { flex: 1, backgroundColor: theme.background.default },
+        scroll: { flex: 1 },
+        errorState: {
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 12,
+        },
+        errorText: {
+          fontFamily: 'Inter_500Medium',
+          fontSize: 16,
+          color: theme.text.secondary,
+        },
+        statusBanner: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          marginHorizontal: 24,
+          marginBottom: 16,
+          paddingVertical: 12,
+          borderRadius: 12,
+        },
+        statusLabel: {
+          fontFamily: 'Inter_700Bold',
+          fontSize: 14,
+        },
+        amountCard: {
+          marginHorizontal: 24,
+          marginBottom: 20,
+          backgroundColor: theme.background.paper,
+          borderWidth: 1,
+          borderColor: theme.info.bg,
+          borderRadius: 16,
+          padding: 20,
+        },
+        amountRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginBottom: 16,
+        },
+        amountCol: {
+          flex: 1,
+        },
+        arrowWrap: {
+          paddingHorizontal: 12,
+        },
+        amountLabel: {
+          fontFamily: 'Inter_400Regular',
+          fontSize: 12,
+          color: theme.text.secondary,
+          marginBottom: 4,
+        },
+        amountValue: {
+          fontFamily: 'Inter_700Bold',
+          fontSize: 18,
+          color: theme.text.primary,
+        },
+        receiveValue: {
+          fontFamily: 'Inter_700Bold',
+          fontSize: 18,
+          color: theme.secondary.main,
+        },
+        amountMeta: {
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          paddingTop: 16,
+          borderTopWidth: 1,
+          borderTopColor: theme.inputBorder,
+        },
+        metaText: {
+          fontFamily: 'Inter_400Regular',
+          fontSize: 12,
+          color: theme.text.secondary,
+        },
+        section: {
+          marginHorizontal: 24,
+          marginBottom: 20,
+        },
+        sectionTitle: {
+          fontFamily: 'Inter_600SemiBold',
+          fontSize: 12,
+          letterSpacing: 0.8,
+          textTransform: 'uppercase',
+          color: theme.text.secondary,
+          marginBottom: 10,
+        },
+        partyCard: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: theme.background.surface,
+          borderWidth: 1,
+          borderColor: theme.inputBorder,
+          borderRadius: 14,
+          padding: 14,
+          gap: 12,
+        },
+        partyInfo: {
+          flex: 1,
+        },
+        partyName: {
+          fontFamily: 'Inter_600SemiBold',
+          fontSize: 14,
+          color: theme.text.primary,
+          marginBottom: 2,
+        },
+        partyRole: {
+          fontFamily: 'Inter_400Regular',
+          fontSize: 12,
+          color: theme.text.secondary,
+        },
+        partyBadge: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 4,
+          backgroundColor: theme.info.bg,
+          borderRadius: 8,
+          paddingVertical: 4,
+          paddingHorizontal: 8,
+        },
+        partyBadgeText: {
+          fontFamily: 'Inter_500Medium',
+          fontSize: 11,
+          color: theme.secondary.main,
+        },
+        detailCard: {
+          backgroundColor: theme.background.surface,
+          borderWidth: 1,
+          borderColor: theme.inputBorder,
+          borderRadius: 14,
+          padding: 16,
+        },
+        detailRow: {
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingVertical: 8,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.divider,
+        },
+        detailLabel: {
+          fontFamily: 'Inter_400Regular',
+          fontSize: 13,
+          color: theme.text.secondary,
+        },
+        detailValue: {
+          fontFamily: 'Inter_500Medium',
+          fontSize: 13,
+          color: theme.text.primary,
+          maxWidth: '60%',
+          textAlign: 'right',
+        },
+        detailValueHighlight: {
+          color: theme.secondary.main,
+        },
+        walletAddr: {
+          fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+          fontSize: 11,
+          color: theme.secondary.main,
+          maxWidth: '55%',
+        },
+        proofCard: {
+          backgroundColor: theme.info.bg,
+          borderWidth: 1,
+          borderColor: theme.secondary.light,
+          borderRadius: 14,
+          padding: 16,
+        },
+        proofHeader: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+        },
+        proofIconWrap: {
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          backgroundColor: theme.info.bg,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        proofType: {
+          fontFamily: 'Inter_600SemiBold',
+          fontSize: 13,
+          color: theme.text.primary,
+          marginBottom: 2,
+        },
+        proofData: {
+          fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+          fontSize: 11,
+          color: theme.text.secondary,
+        },
+        proofNotes: {
+          fontFamily: 'Inter_400Regular',
+          fontSize: 12,
+          color: theme.text.secondary,
+          marginTop: 12,
+          fontStyle: 'italic',
+        },
+        bottomArea: {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          paddingHorizontal: 24,
+          paddingBottom: 34,
+          paddingTop: 16,
+          backgroundColor: theme.background.default,
+          borderTopWidth: 1,
+          borderTopColor: theme.inputBorder,
+        },
+        completedBadge: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          backgroundColor: theme.info.bg,
+          borderWidth: 1.5,
+          borderColor: theme.secondary.light,
+          borderRadius: 16,
+          paddingVertical: 16,
+        },
+        completedText: {
+          fontFamily: 'Inter_700Bold',
+          fontSize: 15,
+          color: theme.secondary.main,
+        },
+        sheetContent: {
+          paddingHorizontal: 24,
+        },
+        sheetLabel: {
+          fontFamily: 'Inter_600SemiBold',
+          fontSize: 11,
+          letterSpacing: 0.8,
+          textTransform: 'uppercase',
+          color: theme.text.secondary,
+          marginBottom: 10,
+        },
+        proofTypeRow: {
+          flexDirection: 'row',
+          gap: 8,
+          marginBottom: 20,
+        },
+        proofTypeChip: {
+          flex: 1,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          backgroundColor: theme.background.surface,
+          borderWidth: 1.5,
+          borderColor: theme.inputBorder,
+          borderRadius: 10,
+          paddingVertical: 10,
+        },
+        proofTypeChipActive: {
+          backgroundColor: theme.info.bg,
+          borderColor: theme.secondary.light,
+        },
+        proofTypeText: {
+          fontFamily: 'Inter_500Medium',
+          fontSize: 11,
+          color: theme.text.secondary,
+        },
+        proofTypeTextActive: {
+          color: theme.secondary.main,
+        },
+        filePickerSection: {
+          marginBottom: 12,
+        },
+        filePickerBtn: {
+          backgroundColor: theme.background.paper,
+          borderWidth: 2,
+          borderColor: theme.secondary.light,
+          borderStyle: 'dashed',
+          borderRadius: 14,
+          paddingVertical: 28,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        filePickerIconWrap: {
+          width: 56,
+          height: 56,
+          borderRadius: 28,
+          backgroundColor: theme.info.bg,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 12,
+        },
+        filePickerTitle: {
+          fontFamily: 'Inter_600SemiBold',
+          fontSize: 14,
+          color: theme.text.primary,
+          marginBottom: 4,
+        },
+        filePickerSub: {
+          fontFamily: 'Inter_400Regular',
+          fontSize: 12,
+          color: theme.text.secondary,
+        },
+        selectedFileCard: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: theme.info.bg,
+          borderWidth: 1,
+          borderColor: theme.secondary.light,
+          borderRadius: 12,
+          padding: 12,
+          gap: 12,
+        },
+        selectedFileIcon: {
+          width: 48,
+          height: 48,
+          borderRadius: 12,
+          backgroundColor: theme.info.bg,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        selectedFileInfo: {
+          flex: 1,
+        },
+        selectedFileName: {
+          fontFamily: 'Inter_600SemiBold',
+          fontSize: 14,
+          color: theme.text.primary,
+          marginBottom: 2,
+        },
+        selectedFileType: {
+          fontFamily: 'Inter_400Regular',
+          fontSize: 12,
+          color: theme.text.secondary,
+        },
+        removeFileBtn: {
+          padding: 4,
+        },
+      }),
+    [theme]
+  );
+
   if (!transaction) {
     return (
       <SafeAreaView style={styles.safe}>
         <ScreenHeader title="Transaction" onBack={() => navigation.goBack()} />
         <View style={styles.errorState}>
-          <Ionicons name="alert-circle-outline" size={48} color="rgba(255,255,255,0.3)" />
+          <Ionicons name="alert-circle-outline" size={48} color={theme.text.disabled} />
           <Text style={styles.errorText}>Transaction not found</Text>
         </View>
       </SafeAreaView>
@@ -233,7 +581,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
               </Text>
             </View>
             <View style={styles.arrowWrap}>
-              <Ionicons name="arrow-forward" size={18} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="arrow-forward" size={18} color={theme.text.muted} />
             </View>
             <View style={[styles.amountCol, { alignItems: 'flex-end' }]}>
               <Text style={styles.amountLabel}>Receive Amount</Text>
@@ -260,7 +608,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
               <Text style={styles.partyRole}>Payer</Text>
             </View>
             <View style={styles.partyBadge}>
-              <Ionicons name="person-outline" size={12} color="#1A6FFF" />
+              <Ionicons name="person-outline" size={12} color={theme.secondary.main} />
               <Text style={styles.partyBadgeText}>Verified</Text>
             </View>
           </View>
@@ -287,9 +635,9 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
                 <Text style={styles.partyRole}>Settlement Processor</Text>
               </View>
               {currentUser && transaction.processorId === currentUser.id && (
-                <View style={[styles.partyBadge, { backgroundColor: 'rgba(56,189,248,0.1)' }]}>
-                  <Ionicons name="checkmark-circle" size={12} color="#38BDF8" />
-                  <Text style={[styles.partyBadgeText, { color: '#38BDF8' }]}>You</Text>
+                <View style={[styles.partyBadge, { backgroundColor: theme.info.bg }]}>
+                  <Ionicons name="checkmark-circle" size={12} color={theme.secondary.main} />
+                  <Text style={[styles.partyBadgeText, { color: theme.secondary.main }]}>You</Text>
                 </View>
               )}
             </View>
@@ -339,7 +687,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
                         : 'document-text'
                     }
                     size={18}
-                    color="#38BDF8"
+                    color={theme.secondary.main}
                   />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -385,7 +733,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
         )}
         {isComplete && (
           <View style={styles.completedBadge}>
-            <Ionicons name="checkmark-circle" size={20} color="#38BDF8" />
+            <Ionicons name="checkmark-circle" size={20} color={theme.secondary.main} />
             <Text style={styles.completedText}>Settlement Complete</Text>
           </View>
         )}
@@ -421,7 +769,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
                 <Ionicons
                   name={pt.icon}
                   size={16}
-                  color={selectedProofType === pt.type ? '#38BDF8' : 'rgba(255,255,255,0.5)'}
+                  color={selectedProofType === pt.type ? theme.secondary.main : theme.text.secondary}
                 />
                 <Text
                   style={[
@@ -445,7 +793,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
                     <Ionicons 
                       name={selectedFile.type.includes('pdf') ? 'document-text' : 'image'} 
                       size={24} 
-                      color="#38BDF8" 
+                      color={theme.secondary.main}
                     />
                   </View>
                   <View style={styles.selectedFileInfo}>
@@ -461,7 +809,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
                     style={styles.removeFileBtn}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
-                    <Ionicons name="close-circle" size={24} color="rgba(255,255,255,0.4)" />
+                    <Ionicons name="close-circle" size={24} color={theme.text.muted} />
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -471,7 +819,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
                   activeOpacity={0.7}
                 >
                   <View style={styles.filePickerIconWrap}>
-                    <Ionicons name="cloud-upload-outline" size={28} color="#38BDF8" />
+                    <Ionicons name="cloud-upload-outline" size={28} color={theme.secondary.main} />
                   </View>
                   <Text style={styles.filePickerTitle}>Tap to select file</Text>
                   <Text style={styles.filePickerSub}>Supports images and PDFs</Text>
@@ -520,341 +868,3 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0C' },
-  scroll: { flex: 1 },
-  errorState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  errorText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.5)',
-  },
-  statusBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginHorizontal: 24,
-    marginBottom: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  statusLabel: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 14,
-  },
-  amountCard: {
-    marginHorizontal: 24,
-    marginBottom: 20,
-    backgroundColor: '#1A1A2E',
-    borderWidth: 1,
-    borderColor: 'rgba(56,189,248,0.2)',
-    borderRadius: 16,
-    padding: 20,
-  },
-  amountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  amountCol: {
-    flex: 1,
-  },
-  arrowWrap: {
-    paddingHorizontal: 12,
-  },
-  amountLabel: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
-    marginBottom: 4,
-  },
-  amountValue: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 18,
-    color: '#FFFFFF',
-  },
-  receiveValue: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 18,
-    color: '#38BDF8',
-  },
-  amountMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
-  },
-  metaText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
-  },
-  section: {
-    marginHorizontal: 24,
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 12,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.5)',
-    marginBottom: 10,
-  },
-  partyCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1F1F23',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 14,
-    padding: 14,
-    gap: 12,
-  },
-  partyInfo: {
-    flex: 1,
-  },
-  partyName: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 14,
-    color: '#FFFFFF',
-    marginBottom: 2,
-  },
-  partyRole: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
-  },
-  partyBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(26,111,255,0.1)',
-    borderRadius: 8,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
-  partyBadgeText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 11,
-    color: '#1A6FFF',
-  },
-  detailCard: {
-    backgroundColor: '#1F1F23',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 14,
-    padding: 16,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-  },
-  detailLabel: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.5)',
-  },
-  detailValue: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 13,
-    color: '#FFFFFF',
-    maxWidth: '60%',
-    textAlign: 'right',
-  },
-  detailValueHighlight: {
-    color: '#38BDF8',
-  },
-  walletAddr: {
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 11,
-    color: '#38BDF8',
-    maxWidth: '55%',
-  },
-  proofCard: {
-    backgroundColor: 'rgba(56,189,248,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(56,189,248,0.2)',
-    borderRadius: 14,
-    padding: 16,
-  },
-  proofHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  proofIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(56,189,248,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  proofType: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 13,
-    color: '#FFFFFF',
-    marginBottom: 2,
-  },
-  proofData: {
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
-  },
-  proofNotes: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
-    marginTop: 12,
-    fontStyle: 'italic',
-  },
-  bottomArea: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 24,
-    paddingBottom: 34,
-    paddingTop: 16,
-    backgroundColor: '#0A0A0C',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
-  },
-  completedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(56,189,248,0.1)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(56,189,248,0.3)',
-    borderRadius: 16,
-    paddingVertical: 16,
-  },
-  completedText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 15,
-    color: '#38BDF8',
-  },
-  sheetContent: {
-    paddingHorizontal: 24,
-  },
-  sheetLabel: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 11,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.6)',
-    marginBottom: 10,
-  },
-  proofTypeRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 20,
-  },
-  proofTypeChip: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: '#1F1F23',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 10,
-    paddingVertical: 10,
-  },
-  proofTypeChipActive: {
-    backgroundColor: 'rgba(56,189,248,0.1)',
-    borderColor: 'rgba(56,189,248,0.4)',
-  },
-  proofTypeText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.5)',
-  },
-  proofTypeTextActive: {
-    color: '#38BDF8',
-  },
-  filePickerSection: {
-    marginBottom: 12,
-  },
-  filePickerBtn: {
-    backgroundColor: '#1A1A2E',
-    borderWidth: 2,
-    borderColor: 'rgba(56,189,248,0.3)',
-    borderStyle: 'dashed',
-    borderRadius: 14,
-    paddingVertical: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filePickerIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(56,189,248,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  filePickerTitle: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 14,
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  filePickerSub: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
-  },
-  selectedFileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(56,189,248,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(56,189,248,0.3)',
-    borderRadius: 12,
-    padding: 12,
-    gap: 12,
-  },
-  selectedFileIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: 'rgba(56,189,248,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  selectedFileInfo: {
-    flex: 1,
-  },
-  selectedFileName: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 14,
-    color: '#FFFFFF',
-    marginBottom: 2,
-  },
-  selectedFileType: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
-  },
-  removeFileBtn: {
-    padding: 4,
-  },
-});

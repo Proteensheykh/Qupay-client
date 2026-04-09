@@ -7,12 +7,14 @@ import { isApiError } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
+import { useTheme } from '../../theme';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OTP'>;
 
 const OTP_LENGTH = 6;
 
 export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
+  const { theme } = useTheme();
   const { phoneNumber, cooldownSeconds: initialCooldown, registrationPayload } = route.params;
   const [code, setCode] = useState('');
   const [resendTimer, setResendTimer] = useState(initialCooldown);
@@ -96,16 +98,18 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]}>
       <View style={styles.container}>
         <View style={styles.form}>
           <QupayLogo size={22} />
           <View style={{ height: 28 }} />
-          <Text style={styles.headline}>
+          <Text style={[styles.headline, { color: theme.text.primary }]}>
             Enter the{'\n'}
-            <Text style={styles.greenText}>code</Text>
+            <Text style={{ color: theme.secondary.main }}>code</Text>
           </Text>
-          <Text style={styles.desc}>We sent a 6-digit code to {registrationPayload.email}</Text>
+          <Text style={[styles.desc, { color: theme.text.secondary }]}>
+            We sent a 6-digit code to {registrationPayload.email}
+          </Text>
 
           <TextInput
             ref={inputRef}
@@ -127,35 +131,43 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
                 key={i}
                 style={[
                   styles.otpCell,
-                  code[i] ? styles.otpCellFill : undefined,
-                  !code[i] && i === code.length ? styles.otpCellCur : undefined,
-                  error ? styles.otpCellError : undefined,
+                  { backgroundColor: theme.background.surface, borderColor: theme.inputBorder },
+                  code[i] && !error && {
+                    borderColor: theme.secondary.main,
+                    backgroundColor: theme.info.bg,
+                  },
+                  !code[i] && i === code.length && !error && { borderColor: theme.secondary.main },
+                  error && { borderColor: theme.error.main },
                 ]}
               >
                 {code[i] ? (
-                  <Text style={styles.otpDigit}>{code[i]}</Text>
+                  <Text style={[styles.otpDigit, { color: theme.text.primary }]}>{code[i]}</Text>
                 ) : i === code.length ? (
-                  <Animated.View style={[styles.curLine, { opacity: blinkAnim }]} />
+                  <Animated.View style={[styles.curLine, { opacity: blinkAnim, backgroundColor: theme.secondary.main }]} />
                 ) : null}
               </View>
             ))}
           </TouchableOpacity>
 
           {error && (
-            <Text style={styles.errorText}>{error}</Text>
+            <Text style={[styles.errorText, { color: theme.error.main }]}>{error}</Text>
           )}
 
           <View style={styles.resendRow}>
-            <Text style={styles.resendText}>
+            <Text style={[styles.resendText, { color: theme.text.secondary }]}>
               Didn't get it?{' '}
               <Text
-                style={[styles.resendLink, resendTimer > 0 && styles.resendLinkDisabled]}
+                style={[
+                  styles.resendLink,
+                  { color: theme.secondary.main },
+                  resendTimer > 0 && { color: theme.text.muted },
+                ]}
                 onPress={handleResend}
               >
                 Resend
               </Text>
               {resendTimer > 0 && (
-                <Text style={styles.resendTimer}>
+                <Text style={{ color: theme.text.muted }}>
                   {' '}
                   {'\u00B7'} 0:{resendTimer < 10 ? `0${resendTimer}` : resendTimer}
                 </Text>
@@ -178,22 +190,19 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0C' },
+  safe: { flex: 1 },
   container: { flex: 1, justifyContent: 'space-between' },
   form: { paddingHorizontal: 28, paddingTop: 36 },
   headline: {
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 26,
     letterSpacing: -0.3,
-    color: '#FFFFFF',
     marginBottom: 8,
     lineHeight: 31,
   },
-  greenText: { color: '#38BDF8' },
   desc: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.6)',
     marginBottom: 24,
     lineHeight: 21,
   },
@@ -210,37 +219,22 @@ const styles = StyleSheet.create({
   otpCell: {
     flex: 1,
     height: 58,
-    backgroundColor: '#1F1F23',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  otpCellFill: {
-    borderColor: 'rgba(56,189,248,0.4)',
-    backgroundColor: 'rgba(56,189,248,0.12)',
-  },
-  otpCellCur: {
-    borderColor: '#38BDF8',
-  },
-  otpCellError: {
-    borderColor: '#EF4444',
-  },
   otpDigit: {
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 24,
-    color: '#FFFFFF',
   },
   curLine: {
     width: 2,
     height: 24,
-    backgroundColor: '#38BDF8',
   },
   errorText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
-    color: '#EF4444',
     textAlign: 'center',
     marginBottom: 8,
   },
@@ -251,17 +245,9 @@ const styles = StyleSheet.create({
   resendText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
   },
   resendLink: {
-    color: '#38BDF8',
     fontFamily: 'Inter_600SemiBold',
-  },
-  resendLinkDisabled: {
-    color: 'rgba(255,255,255,0.4)',
-  },
-  resendTimer: {
-    color: 'rgba(255,255,255,0.4)',
   },
   bottom: {
     paddingHorizontal: 24,

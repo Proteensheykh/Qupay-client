@@ -17,12 +17,14 @@ import { completePasswordReset, resendOtp } from '../../api/auth';
 import { isApiError } from '../../api/client';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
+import { useTheme } from '../../theme';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'ResetPassword'>;
 
 const OTP_LENGTH = 6;
 
 export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
+  const { theme } = useTheme();
   const { email, cooldownSeconds: initialCooldown } = route.params;
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -108,7 +110,7 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -117,11 +119,11 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
         <View style={styles.form}>
           <QupayLogo size={22} />
           <View style={{ height: 28 }} />
-          <Text style={styles.headline}>
+          <Text style={[styles.headline, { color: theme.text.primary }]}>
             Create new{'\n'}
-            <Text style={styles.greenText}>password</Text>
+            <Text style={{ color: theme.secondary.main }}>password</Text>
           </Text>
-          <Text style={styles.desc}>
+          <Text style={[styles.desc, { color: theme.text.secondary }]}>
             Enter the 6-digit code sent to {email} and your new password.
           </Text>
 
@@ -135,7 +137,7 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
             autoFocus
           />
 
-          <Text style={styles.label}>Verification Code</Text>
+          <Text style={[styles.label, { color: theme.text.secondary }]}>Verification Code</Text>
           <TouchableOpacity
             style={styles.otpGrid}
             onPress={focusInput}
@@ -146,31 +148,39 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
                 key={i}
                 style={[
                   styles.otpCell,
-                  code[i] ? styles.otpCellFill : undefined,
-                  !code[i] && i === code.length ? styles.otpCellCur : undefined,
-                  error ? styles.otpCellError : undefined,
+                  { backgroundColor: theme.background.surface, borderColor: theme.inputBorder },
+                  code[i] && !error && {
+                    borderColor: theme.secondary.main,
+                    backgroundColor: theme.info.bg,
+                  },
+                  !code[i] && i === code.length && !error && { borderColor: theme.secondary.main },
+                  error && { borderColor: theme.error.main },
                 ]}
               >
                 {code[i] ? (
-                  <Text style={styles.otpDigit}>{code[i]}</Text>
+                  <Text style={[styles.otpDigit, { color: theme.text.primary }]}>{code[i]}</Text>
                 ) : i === code.length ? (
-                  <Animated.View style={[styles.curLine, { opacity: blinkAnim }]} />
+                  <Animated.View style={[styles.curLine, { opacity: blinkAnim, backgroundColor: theme.secondary.main }]} />
                 ) : null}
               </View>
             ))}
           </TouchableOpacity>
 
           <View style={styles.resendRow}>
-            <Text style={styles.resendText}>
+            <Text style={[styles.resendText, { color: theme.text.secondary }]}>
               Didn't get it?{' '}
               <Text
-                style={[styles.resendLink, resendTimer > 0 && styles.resendLinkDisabled]}
+                style={[
+                  styles.resendLink,
+                  { color: theme.secondary.main },
+                  resendTimer > 0 && { color: theme.text.muted },
+                ]}
                 onPress={handleResend}
               >
                 Resend
               </Text>
               {resendTimer > 0 && (
-                <Text style={styles.resendTimer}>
+                <Text style={{ color: theme.text.muted }}>
                   {' '}
                   {'\u00B7'} 0:{resendTimer < 10 ? `0${resendTimer}` : resendTimer}
                 </Text>
@@ -191,7 +201,7 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
             accessibilityLabel="New password"
             rightIcon={
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color="rgba(255,255,255,0.4)" />
+                <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color={theme.text.muted} />
               </TouchableOpacity>
             }
           />
@@ -209,13 +219,13 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
             accessibilityLabel="Confirm password"
             rightIcon={
               <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={20} color="rgba(255,255,255,0.4)" />
+                <Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={20} color={theme.text.muted} />
               </TouchableOpacity>
             }
           />
 
           {error && (
-            <Text style={styles.errorText}>{error}</Text>
+            <Text style={[styles.errorText, { color: theme.error.main }]}>{error}</Text>
           )}
 
           <View style={{ height: 8 }} />
@@ -241,7 +251,7 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0C' },
+  safe: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
   form: { paddingHorizontal: 28, paddingTop: 36 },
@@ -249,22 +259,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 26,
     letterSpacing: -0.3,
-    color: '#FFFFFF',
     marginBottom: 8,
     lineHeight: 31,
   },
-  greenText: { color: '#38BDF8' },
   desc: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
     lineHeight: 21,
-    color: 'rgba(255,255,255,0.6)',
     marginBottom: 24,
   },
   label: {
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.6)',
     marginBottom: 8,
   },
   hiddenInput: {
@@ -280,37 +286,22 @@ const styles = StyleSheet.create({
   otpCell: {
     flex: 1,
     height: 58,
-    backgroundColor: '#1F1F23',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  otpCellFill: {
-    borderColor: 'rgba(56,189,248,0.4)',
-    backgroundColor: 'rgba(56,189,248,0.12)',
-  },
-  otpCellCur: {
-    borderColor: '#38BDF8',
-  },
-  otpCellError: {
-    borderColor: '#EF4444',
-  },
   otpDigit: {
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 24,
-    color: '#FFFFFF',
   },
   curLine: {
     width: 2,
     height: 24,
-    backgroundColor: '#38BDF8',
   },
   errorText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
-    color: '#EF4444',
     textAlign: 'center',
     marginTop: 8,
   },
@@ -321,17 +312,9 @@ const styles = StyleSheet.create({
   resendText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
   },
   resendLink: {
-    color: '#38BDF8',
     fontFamily: 'Inter_600SemiBold',
-  },
-  resendLinkDisabled: {
-    color: 'rgba(255,255,255,0.4)',
-  },
-  resendTimer: {
-    color: 'rgba(255,255,255,0.4)',
   },
   bottomArea: {
     paddingHorizontal: 24,

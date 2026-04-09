@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useTheme } from '../theme';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
@@ -27,6 +28,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   title,
   children,
 }) => {
+  const { theme } = useTheme();
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
 
@@ -83,11 +85,20 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
           />
         </Animated.View>
         <Animated.View
-          style={[styles.sheet, { transform: [{ translateY }] }]}
+          style={[
+            styles.sheet,
+            {
+              backgroundColor: theme.background.paper,
+              transform: [{ translateY }],
+            },
+          ]}
         >
-          <View style={styles.handle} />
+          <View style={[styles.handle, { backgroundColor: theme.text.disabled }]} />
           {title ? (
-            <Text style={styles.title} accessibilityRole="header">
+            <Text
+              style={[styles.title, { color: theme.text.primary }]}
+              accessibilityRole="header"
+            >
               {title}
             </Text>
           ) : null}
@@ -115,8 +126,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   sheet: {
-    backgroundColor: '#17171A', // P.card
-    borderTopLeftRadius: 24,    // R.xxl in local
+    borderTopLeftRadius: 24, // R.xxl in local
     borderTopRightRadius: 24,
     // No border on dark surfaces
     maxHeight: '88%',
@@ -124,7 +134,6 @@ const styles = StyleSheet.create({
   handle: {
     width: 36,
     height: 4,
-    backgroundColor: 'rgba(255,255,255,0.2)', // P.sheetHandle
     borderRadius: 2,
     alignSelf: 'center',
     marginTop: 12,
@@ -132,7 +141,6 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Inter_700Bold',
     fontSize: 22, // T.screenTitle / sectionTitle
-    color: '#FFFFFF',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 12,

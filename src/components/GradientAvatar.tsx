@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../theme';
 
 interface GradientAvatarProps {
   initials: string;
@@ -11,16 +12,16 @@ interface GradientAvatarProps {
   borderColor?: string;
 }
 
-const DEFAULT_COLORS: readonly [string, string] = ['#1a6fff', '#38BDF8'];
-
 export const GradientAvatar: React.FC<GradientAvatarProps> = ({
   initials,
   size = 44,
-  colors = DEFAULT_COLORS,
+  colors: colorsProp,
   fontSize,
   borderWidth,
   borderColor,
 }) => {
+  const { theme, gradient } = useTheme();
+  const colors = colorsProp ?? (gradient.avatar1 as readonly [string, string, ...string[]]);
   const fs = fontSize || size * 0.3;
   return (
     <View
@@ -31,7 +32,7 @@ export const GradientAvatar: React.FC<GradientAvatarProps> = ({
           borderRadius: size / 2,
           overflow: 'hidden',
         },
-        borderWidth ? { borderWidth, borderColor: borderColor || 'rgba(255,255,255,0.1)' } : undefined,
+        borderWidth ? { borderWidth, borderColor: borderColor || theme.inputBorder } : undefined,
       ]}
       accessible
       accessibilityLabel={`Avatar for ${initials}`}
@@ -43,7 +44,7 @@ export const GradientAvatar: React.FC<GradientAvatarProps> = ({
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
       >
-        <Text style={[styles.initials, { fontSize: fs }]}>{initials}</Text>
+        <Text style={[styles.initials, { fontSize: fs, color: theme.text.primary }]}>{initials}</Text>
       </LinearGradient>
     </View>
   );
@@ -57,6 +58,5 @@ const styles = StyleSheet.create({
   },
   initials: {
     fontFamily: 'Inter_700Bold',
-    color: '#fff',
   },
 });

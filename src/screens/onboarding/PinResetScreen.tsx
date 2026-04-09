@@ -7,6 +7,7 @@ import { isApiError } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/AppNavigator';
+import { useTheme } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PinReset'>;
 
@@ -16,6 +17,7 @@ const PIN_LENGTH = 4;
 type Step = 'otp' | 'newPin' | 'confirmPin';
 
 export const PinResetScreen: React.FC<Props> = ({ route, navigation }) => {
+  const { theme } = useTheme();
   const { cooldownSeconds: initialCooldown } = route.params;
   const [step, setStep] = useState<Step>('otp');
   const [otp, setOtp] = useState('');
@@ -146,16 +148,16 @@ export const PinResetScreen: React.FC<Props> = ({ route, navigation }) => {
   const isComplete = currentValue.length === currentLength;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]}>
       <View style={styles.container}>
         <View style={styles.header}>
           <QupayLogo size={22} />
           <View style={{ height: 28 }} />
-          <Text style={styles.headline}>
+          <Text style={[styles.headline, { color: theme.text.primary }]}>
             {getHeadline().split(' ').slice(0, -1).join(' ')}{'\n'}
-            <Text style={styles.greenText}>{getHeadline().split(' ').slice(-1)}</Text>
+            <Text style={{ color: theme.secondary.main }}>{getHeadline().split(' ').slice(-1)}</Text>
           </Text>
-          <Text style={styles.desc}>{getDescription()}</Text>
+          <Text style={[styles.desc, { color: theme.text.secondary }]}>{getDescription()}</Text>
         </View>
 
         <View style={styles.pinArea}>
@@ -165,26 +167,34 @@ export const PinResetScreen: React.FC<Props> = ({ route, navigation }) => {
                 key={i}
                 style={[
                   styles.dot,
-                  currentValue.length > i && styles.dotFilled,
-                  error && styles.dotError,
+                  { borderColor: theme.text.muted },
+                  currentValue.length > i && {
+                    backgroundColor: theme.secondary.main,
+                    borderColor: theme.secondary.main,
+                  },
+                  error && { borderColor: theme.error.main },
                 ]}
               />
             ))}
           </View>
-          {error && <Text style={styles.errorText}>{error}</Text>}
+          {error && <Text style={[styles.errorText, { color: theme.error.main }]}>{error}</Text>}
 
           {step === 'otp' && (
             <View style={styles.resendRow}>
-              <Text style={styles.resendText}>
+              <Text style={[styles.resendText, { color: theme.text.secondary }]}>
                 Didn't get it?{' '}
                 <Text
-                  style={[styles.resendLink, resendTimer > 0 && styles.resendLinkDisabled]}
+                  style={[
+                    styles.resendLink,
+                    { color: theme.secondary.main },
+                    resendTimer > 0 && { color: theme.text.muted },
+                  ]}
                   onPress={handleResend}
                 >
                   Resend
                 </Text>
                 {resendTimer > 0 && (
-                  <Text style={styles.resendTimer}>
+                  <Text style={{ color: theme.text.muted }}>
                     {' '}· 0:{resendTimer < 10 ? `0${resendTimer}` : resendTimer}
                   </Text>
                 )}
@@ -217,22 +227,19 @@ export const PinResetScreen: React.FC<Props> = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0C' },
+  safe: { flex: 1 },
   container: { flex: 1, justifyContent: 'space-between' },
   header: { paddingHorizontal: 28, paddingTop: 36 },
   headline: {
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 26,
     letterSpacing: -0.3,
-    color: '#FFFFFF',
     marginBottom: 8,
     lineHeight: 31,
   },
-  greenText: { color: '#38BDF8' },
   desc: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.6)',
     lineHeight: 21,
   },
   pinArea: {
@@ -248,20 +255,11 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)',
     backgroundColor: 'transparent',
-  },
-  dotFilled: {
-    backgroundColor: '#38BDF8',
-    borderColor: '#38BDF8',
-  },
-  dotError: {
-    borderColor: '#EF4444',
   },
   errorText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
-    color: '#EF4444',
     marginTop: 16,
   },
   resendRow: {
@@ -270,17 +268,9 @@ const styles = StyleSheet.create({
   resendText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
   },
   resendLink: {
-    color: '#38BDF8',
     fontFamily: 'Inter_600SemiBold',
-  },
-  resendLinkDisabled: {
-    color: 'rgba(255,255,255,0.4)',
-  },
-  resendTimer: {
-    color: 'rgba(255,255,255,0.4)',
   },
   bottom: {
     paddingHorizontal: 24,

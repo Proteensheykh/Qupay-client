@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TextInputProps, Platform } from 'react-native';
 import { Ionicons } from './Icon';
+import { useTheme } from '../theme';
 
 interface FormFieldProps extends TextInputProps {
   label?: string;
@@ -19,25 +20,31 @@ export const FormField: React.FC<FormFieldProps> = ({
   style,
   ...inputProps
 }) => {
+  const { theme } = useTheme();
   const [focused, setFocused] = useState(false);
   const hasError = !!error;
 
+  const borderColor = useMemo(() => {
+    if (hasError) return `${theme.error.main}99`;
+    if (isValid) return `${theme.secondary.main}80`;
+    if (focused) return `${theme.secondary.main}66`;
+    return 'transparent';
+  }, [hasError, isValid, focused, theme.error.main, theme.secondary.main]);
+
   return (
     <View>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={[styles.label, { color: theme.text.secondary }]}>{label}</Text>}
       <View
         style={[
           styles.field,
-          focused && styles.fieldFocused,
-          isValid && !hasError && styles.fieldValid,
-          hasError && styles.fieldError,
+          { backgroundColor: theme.background.surface, borderColor },
         ]}
       >
         <TextInput
-          style={[styles.input, style]}
-          placeholderTextColor="rgba(255,255,255,0.4)"
-          selectionColor="#38BDF8"
-          cursorColor="#38BDF8"
+          style={[styles.input, { color: theme.text.primary }, style]}
+          placeholderTextColor={theme.text.muted}
+          selectionColor={theme.secondary.main}
+          cursorColor={theme.secondary.main}
           underlineColorAndroid="transparent"
           onFocus={(e) => {
             setFocused(true);
@@ -50,14 +57,14 @@ export const FormField: React.FC<FormFieldProps> = ({
           {...inputProps}
         />
         {isValid && showCheck && !rightIcon && !hasError && (
-          <Ionicons name="checkmark" size={16} color="#38BDF8" />
+          <Ionicons name="checkmark" size={16} color={theme.secondary.main} />
         )}
         {hasError && !rightIcon && (
-          <Ionicons name="alert-circle" size={16} color="#EF4444" />
+          <Ionicons name="alert-circle" size={16} color={theme.error.main} />
         )}
         {rightIcon}
       </View>
-      {hasError && <Text style={styles.errorText}>{error}</Text>}
+      {hasError && <Text style={[styles.errorText, { color: theme.error.main }]}>{error}</Text>}
     </View>
   );
 };
@@ -68,36 +75,23 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.6)',
     marginBottom: 8,
   },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1F1F23', // P.cardInner
     // Local inputs sit on dark surfaces with no visible border by default —
     // borders only appear on focus / validation states
     borderWidth: 1,
-    borderColor: 'transparent',
     borderRadius: 12, // R.md
     paddingHorizontal: 16,
     gap: 8,
     marginBottom: 4,
   },
-  fieldFocused: {
-    borderColor: 'rgba(56,189,248,0.4)',
-  },
-  fieldValid: {
-    borderColor: 'rgba(56,189,248,0.5)',
-  },
-  fieldError: {
-    borderColor: 'rgba(255,107,107,0.6)',
-  },
   input: {
     flex: 1,
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
-    color: '#FFFFFF',
     paddingVertical: 14,
     ...(Platform.OS === 'web' ? {
       outlineStyle: 'none',
@@ -107,7 +101,6 @@ const styles = StyleSheet.create({
   errorText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: '#EF4444',
     marginBottom: 12,
     marginTop: 2,
   },

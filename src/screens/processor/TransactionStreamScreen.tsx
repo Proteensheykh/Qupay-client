@@ -16,6 +16,7 @@ import { useAuthStore } from '../../store/authStore';
 import type { TransactionStatus, TransactionDetail } from '../../types/transaction';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ProcessorStackParamList } from '../../navigation/AppNavigator';
+import { useTheme } from '../../theme';
 
 type Props = NativeStackScreenProps<ProcessorStackParamList, 'TransactionStream'>;
 
@@ -31,21 +32,6 @@ const currencySymbols: Record<string, string> = {
   MXN: '$',
   PKR: 'Rs',
   ZAR: 'R',
-};
-
-const statusConfig: Record<
-  TransactionStatus,
-  { label: string; color: string; bgColor: string; icon: keyof typeof Ionicons.glyphMap }
-> = {
-  PENDING_DEPOSIT: { label: 'Pending', color: '#FFD60A', bgColor: 'rgba(255,212,96,0.12)', icon: 'time-outline' },
-  DEPOSIT_CONFIRMED: { label: 'Ready', color: '#38BDF8', bgColor: 'rgba(56,189,248,0.12)', icon: 'checkmark-circle-outline' },
-  MATCHED: { label: 'Matched', color: '#1A6FFF', bgColor: 'rgba(26,111,255,0.12)', icon: 'link-outline' },
-  SETTLEMENT_IN_PROGRESS: { label: 'Settling', color: '#FF9F43', bgColor: 'rgba(255,159,67,0.12)', icon: 'hourglass-outline' },
-  SETTLEMENT_PROOF_UPLOADED: { label: 'Proof Sent', color: '#A855F7', bgColor: 'rgba(168,85,247,0.12)', icon: 'document-attach-outline' },
-  COMPLETED: { label: 'Completed', color: '#4ADE80', bgColor: 'rgba(74,222,128,0.15)', icon: 'checkmark-done-outline' },
-  FAILED: { label: 'Failed', color: '#EF4444', bgColor: 'rgba(255,77,106,0.12)', icon: 'close-circle-outline' },
-  EXPIRED: { label: 'Expired', color: '#F87171', bgColor: 'rgba(255,107,107,0.12)', icon: 'timer-outline' },
-  DISPUTED: { label: 'Disputed', color: '#FFD60A', bgColor: 'rgba(255,212,96,0.12)', icon: 'warning-outline' },
 };
 
 const tabs: { key: TabType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -67,6 +53,7 @@ function timeAgo(timestamp: string): string {
 }
 
 export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<TabType>('stream');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -75,6 +62,69 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
   const transactions = useTransactionStore((state) => state.transactions);
   const user = useAuthStore((state) => state.user);
   const currentUserId = user?.id;
+
+  const statusConfig = useMemo(
+    (): Record<
+      TransactionStatus,
+      { label: string; color: string; bgColor: string; icon: keyof typeof Ionicons.glyphMap }
+    > => ({
+      PENDING_DEPOSIT: {
+        label: 'Pending',
+        color: theme.warning.main,
+        bgColor: theme.warning.bg,
+        icon: 'time-outline',
+      },
+      DEPOSIT_CONFIRMED: {
+        label: 'Ready',
+        color: theme.secondary.main,
+        bgColor: theme.info.bg,
+        icon: 'checkmark-circle-outline',
+      },
+      MATCHED: {
+        label: 'Matched',
+        color: theme.info.main,
+        bgColor: theme.info.bg,
+        icon: 'link-outline',
+      },
+      SETTLEMENT_IN_PROGRESS: {
+        label: 'Settling',
+        color: theme.warning.main,
+        bgColor: theme.warning.bg,
+        icon: 'hourglass-outline',
+      },
+      SETTLEMENT_PROOF_UPLOADED: {
+        label: 'Proof Sent',
+        color: theme.secondary.main,
+        bgColor: theme.info.bg,
+        icon: 'document-attach-outline',
+      },
+      COMPLETED: {
+        label: 'Completed',
+        color: theme.success.main,
+        bgColor: theme.success.bg,
+        icon: 'checkmark-done-outline',
+      },
+      FAILED: {
+        label: 'Failed',
+        color: theme.error.main,
+        bgColor: theme.error.bg,
+        icon: 'close-circle-outline',
+      },
+      EXPIRED: {
+        label: 'Expired',
+        color: theme.error.light,
+        bgColor: theme.error.bg,
+        icon: 'timer-outline',
+      },
+      DISPUTED: {
+        label: 'Disputed',
+        color: theme.warning.main,
+        bgColor: theme.warning.bg,
+        icon: 'warning-outline',
+      },
+    }),
+    [theme]
+  );
 
   const isSearching = searchQuery.trim().length > 0;
 
@@ -144,32 +194,40 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
 
     return (
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, { backgroundColor: theme.background.paper, borderColor: theme.inputBorder }]}
         onPress={() => handleTransactionPress(item.id, item.slug)}
         activeOpacity={0.7}
       >
         <View style={styles.cardTop}>
-          <View style={styles.slugBadge}>
-            <Text style={styles.slugText}>{item.slug}</Text>
+          <View
+            style={[
+              styles.slugBadge,
+              {
+                backgroundColor: `${theme.secondary.main}1A`,
+                borderColor: `${theme.secondary.main}33`,
+              },
+            ]}
+          >
+            <Text style={[styles.slugText, { color: theme.secondary.main }]}>{item.slug}</Text>
           </View>
-          <Text style={styles.timeText}>{timeAgo(item.createdAt)}</Text>
+          <Text style={[styles.timeText, { color: theme.text.secondary }]}>{timeAgo(item.createdAt)}</Text>
         </View>
 
         <View style={styles.cardMiddle}>
           <View style={styles.amountRow}>
-            <Text style={styles.sendAmount}>
+            <Text style={[styles.sendAmount, { color: theme.text.primary }]}>
               {item.sendAmount} {item.sendCurrency}
             </Text>
-            <Ionicons name="arrow-forward" size={14} color="rgba(255,255,255,0.4)" />
-            <Text style={styles.receiveAmount}>
+            <Ionicons name="arrow-forward" size={14} color={theme.text.muted} />
+            <Text style={[styles.receiveAmount, { color: theme.secondary.main }]}>
               {recvSymbol}
               {item.receiveAmount.toLocaleString()} {item.receiveCurrency}
             </Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.corridorText}>{item.corridorDisplay}</Text>
-            <Text style={styles.dotSeparator}>{'\u00B7'}</Text>
-            <Text style={styles.methodText}>{item.recipientAccountLabel}</Text>
+            <Text style={[styles.corridorText, { color: theme.text.secondary }]}>{item.corridorDisplay}</Text>
+            <Text style={{ color: theme.text.muted }}>{'\u00B7'}</Text>
+            <Text style={[styles.methodText, { color: theme.text.secondary }]}>{item.recipientAccountLabel}</Text>
           </View>
         </View>
 
@@ -178,7 +236,7 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
             <Ionicons name={status.icon} size={12} color={status.color} />
             <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.3)" />
+          <Ionicons name="chevron-forward" size={18} color={theme.text.disabled} />
         </View>
       </TouchableOpacity>
     );
@@ -222,11 +280,11 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
     if (isSearching) {
       return (
         <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <Ionicons name="search-outline" size={36} color="rgba(255,255,255,0.2)" />
+          <View style={[styles.emptyIcon, { backgroundColor: theme.background.surface }]}>
+            <Ionicons name="search-outline" size={36} color={theme.text.disabled} />
           </View>
-          <Text style={styles.emptyTitle}>No results</Text>
-          <Text style={styles.emptySub}>
+          <Text style={[styles.emptyTitle, { color: theme.text.primary }]}>No results</Text>
+          <Text style={[styles.emptySub, { color: theme.text.secondary }]}>
             No transactions found matching "{searchQuery}"
           </Text>
         </View>
@@ -236,27 +294,39 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
     const { title, sub } = getEmptyMessage();
     return (
       <View style={styles.emptyState}>
-        <View style={styles.emptyIcon}>
-          <Ionicons name="swap-horizontal-outline" size={36} color="rgba(255,255,255,0.2)" />
+        <View style={[styles.emptyIcon, { backgroundColor: theme.background.surface }]}>
+          <Ionicons name="swap-horizontal-outline" size={36} color={theme.text.disabled} />
         </View>
-        <Text style={styles.emptyTitle}>{title}</Text>
-        <Text style={styles.emptySub}>{sub}</Text>
+        <Text style={[styles.emptyTitle, { color: theme.text.primary }]}>{title}</Text>
+        <Text style={[styles.emptySub, { color: theme.text.secondary }]}>{sub}</Text>
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]} edges={['top']}>
       <ScreenHeader title="Processor" />
 
       <View style={styles.searchContainer}>
-        <View style={[styles.searchBar, searchFocused && styles.searchBarFocused]}>
-          <Ionicons name="search" size={18} color={searchFocused ? '#38BDF8' : 'rgba(255,255,255,0.3)'} />
+        <View
+          style={[
+            styles.searchBar,
+            {
+              backgroundColor: theme.background.surface,
+              borderColor: searchFocused ? `${theme.secondary.main}66` : theme.inputBorder,
+            },
+          ]}
+        >
+          <Ionicons
+            name="search"
+            size={18}
+            color={searchFocused ? theme.secondary.main : theme.text.disabled}
+          />
           <TextInput
             ref={searchRef}
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.text.primary }]}
             placeholder="Search by slug or ID (e.g. QP-X7K2M9)"
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor={theme.text.disabled}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onFocus={() => setSearchFocused(true)}
@@ -273,7 +343,7 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
               }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="close-circle" size={18} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="close-circle" size={18} color={theme.text.muted} />
             </TouchableOpacity>
           )}
         </View>
@@ -288,21 +358,49 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
             return (
               <TouchableOpacity
                 key={tab.key}
-                style={[styles.tab, isActive && styles.tabActive]}
+                style={[
+                  styles.tab,
+                  {
+                    backgroundColor: theme.background.surface,
+                    borderColor: theme.inputBorder,
+                  },
+                  isActive && {
+                    backgroundColor: `${theme.secondary.main}1A`,
+                    borderColor: `${theme.secondary.main}4D`,
+                  },
+                ]}
                 onPress={() => setActiveTab(tab.key)}
                 activeOpacity={0.7}
               >
                 <Ionicons
                   name={tab.icon}
                   size={16}
-                  color={isActive ? '#38BDF8' : 'rgba(255,255,255,0.4)'}
+                  color={isActive ? theme.secondary.main : theme.text.muted}
                 />
-                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                <Text
+                  style={[
+                    styles.tabLabel,
+                    { color: theme.text.secondary },
+                    isActive && { color: theme.secondary.main, fontFamily: 'Inter_600SemiBold' },
+                  ]}
+                >
                   {tab.label}
                 </Text>
                 {count > 0 && (
-                  <View style={[styles.tabBadge, isActive && styles.tabBadgeActive]}>
-                    <Text style={[styles.tabBadgeText, isActive && styles.tabBadgeTextActive]}>
+                  <View
+                    style={[
+                      styles.tabBadge,
+                      { backgroundColor: theme.action.selected },
+                      isActive && { backgroundColor: `${theme.secondary.main}33` },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.tabBadgeText,
+                        { color: theme.text.secondary },
+                        isActive && { color: theme.secondary.main },
+                      ]}
+                    >
                       {count}
                     </Text>
                   </View>
@@ -314,7 +412,7 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
       )}
 
       {displayTransactions.length > 0 && (
-        <Text style={styles.countText}>
+        <Text style={[styles.countText, { color: theme.text.secondary }]}>
           {isSearching ? `${displayTransactions.length} result${displayTransactions.length !== 1 ? 's' : ''}` : `${displayTransactions.length} transaction${displayTransactions.length !== 1 ? 's' : ''}`}
         </Text>
       )}
@@ -331,9 +429,9 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#38BDF8"
-            colors={['#38BDF8']}
-            progressBackgroundColor="#1F1F23"
+            tintColor={theme.secondary.main}
+            colors={[theme.secondary.main]}
+            progressBackgroundColor={theme.background.surface}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -344,7 +442,7 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0C' },
+  safe: { flex: 1 },
   searchContainer: {
     paddingHorizontal: 16,
     paddingBottom: 12,
@@ -352,22 +450,16 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1F1F23',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     paddingHorizontal: 14,
     gap: 10,
     height: 44,
   },
-  searchBarFocused: {
-    borderColor: 'rgba(56,189,248,0.4)',
-  },
   searchInput: {
     flex: 1,
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
-    color: '#FFFFFF',
     paddingVertical: 0,
   },
   tabContainer: {
@@ -382,50 +474,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#1F1F23',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 8,
   },
-  tabActive: {
-    backgroundColor: 'rgba(56,189,248,0.1)',
-    borderColor: 'rgba(56,189,248,0.3)',
-  },
   tabLabel: {
     fontFamily: 'Inter_500Medium',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
-  },
-  tabLabelActive: {
-    color: '#38BDF8',
-    fontFamily: 'Inter_600SemiBold',
   },
   tabBadge: {
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 5,
   },
-  tabBadgeActive: {
-    backgroundColor: 'rgba(56,189,248,0.2)',
-  },
   tabBadgeText: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 10,
-    color: 'rgba(255,255,255,0.5)',
-  },
-  tabBadgeTextActive: {
-    color: '#38BDF8',
   },
   countText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
     paddingHorizontal: 24,
     paddingBottom: 12,
   },
@@ -434,9 +506,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   card: {
-    backgroundColor: '#1A1A2E',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -448,9 +518,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   slugBadge: {
-    backgroundColor: 'rgba(56,189,248,0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(56,189,248,0.2)',
     borderRadius: 8,
     paddingVertical: 4,
     paddingHorizontal: 10,
@@ -458,13 +526,11 @@ const styles = StyleSheet.create({
   slugText: {
     fontFamily: 'Inter_700Bold',
     fontSize: 12,
-    color: '#38BDF8',
     letterSpacing: 0.5,
   },
   timeText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
   },
   cardMiddle: {
     marginBottom: 12,
@@ -478,12 +544,10 @@ const styles = StyleSheet.create({
   sendAmount: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 15,
-    color: '#FFFFFF',
   },
   receiveAmount: {
     fontFamily: 'Inter_700Bold',
     fontSize: 15,
-    color: '#38BDF8',
   },
   detailRow: {
     flexDirection: 'row',
@@ -493,15 +557,10 @@ const styles = StyleSheet.create({
   corridorText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.6)',
-  },
-  dotSeparator: {
-    color: 'rgba(255,255,255,0.3)',
   },
   methodText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.6)',
   },
   cardBottom: {
     flexDirection: 'row',
@@ -533,7 +592,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#1F1F23',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -541,13 +599,11 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontFamily: 'Inter_700Bold',
     fontSize: 18,
-    color: '#FFFFFF',
     marginBottom: 8,
   },
   emptySub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.5)',
     textAlign: 'center',
     lineHeight: 20,
   },

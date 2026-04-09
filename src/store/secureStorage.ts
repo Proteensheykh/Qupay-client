@@ -9,6 +9,7 @@ export const StorageKeys = {
   WALLET_DETAILS: 'wallet_details',
   USERNAME: 'username',
   PROCESSOR_PROMO_DISMISSED: 'processor_promo_dismissed',
+  THEME_PREFERENCE: 'theme_preference',
 } as const;
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];

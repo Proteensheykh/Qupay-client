@@ -17,6 +17,7 @@ import {
   PlusCircle, MinusCircle, FileText, File, Folder, FolderOpen, Tag, Hash,
   type LucideIcon,
 } from 'lucide-react-native';
+import { useTheme } from '../theme';
 
 // Map Ionicons name strings → Lucide components.
 // Both `-outline` variants and the bare names resolve to the same Lucide icon
@@ -248,10 +249,12 @@ interface IconProps {
 export const Icon: React.FC<IconProps> = ({
   name,
   size = 20,
-  color = '#FFFFFF',
+  color: colorProp,
   strokeWidth = 2,
   style,
 }) => {
+  const { theme } = useTheme();
+  const color = colorProp ?? theme.text.primary;
   const Comp = ICON_MAP[name] || HelpCircle;
   return <Comp size={size} color={color} strokeWidth={strokeWidth} style={style} />;
 };

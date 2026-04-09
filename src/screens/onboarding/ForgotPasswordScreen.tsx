@@ -12,10 +12,12 @@ import { initiatePasswordReset } from '../../api/auth';
 import { isApiError } from '../../api/client';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
+import { useTheme } from '../../theme';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'ForgotPassword'>;
 
 export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
+  const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -41,7 +43,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   }, [emailValid, email, navigation]);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -50,11 +52,11 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.form}>
           <QupayLogo size={22} />
           <View style={{ height: 28 }} />
-          <Text style={styles.headline}>
+          <Text style={[styles.headline, { color: theme.text.primary }]}>
             Reset your{'\n'}
-            <Text style={styles.greenText}>password</Text>
+            <Text style={{ color: theme.secondary.main }}>password</Text>
           </Text>
-          <Text style={styles.desc}>
+          <Text style={[styles.desc, { color: theme.text.secondary }]}>
             Enter your email address and we'll send you a code to reset your password.
           </Text>
 
@@ -94,7 +96,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0C' },
+  safe: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
   form: { paddingHorizontal: 28, paddingTop: 36 },
@@ -102,16 +104,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 26,
     letterSpacing: -0.3,
-    color: '#FFFFFF',
     marginBottom: 8,
     lineHeight: 31,
   },
-  greenText: { color: '#38BDF8' },
   desc: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
     lineHeight: 21,
-    color: 'rgba(255,255,255,0.6)',
     marginBottom: 24,
   },
   bottomArea: {

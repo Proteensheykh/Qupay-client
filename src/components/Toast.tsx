@@ -21,7 +21,7 @@ export const Toast: React.FC<ToastProps> = ({
   onDismiss,
   duration = 3000,
 }) => {
-  const { theme, brand } = useTheme();
+  const { theme } = useTheme();
   const translateY = useRef(new Animated.Value(-100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -47,9 +47,9 @@ export const Toast: React.FC<ToastProps> = ({
   };
 
   const config = {
-    success: { icon: 'checkmark-circle' as const, color: brand.green, bg: theme.background.paper },
+    success: { icon: 'checkmark-circle' as const, color: theme.success.main, bg: theme.background.paper },
     error: { icon: 'close-circle' as const, color: theme.error.main, bg: theme.background.paper },
-    info: { icon: 'information-circle' as const, color: brand.blue, bg: theme.background.paper },
+    info: { icon: 'information-circle' as const, color: theme.secondary.main, bg: theme.background.paper },
   };
 
   const c = config[type];

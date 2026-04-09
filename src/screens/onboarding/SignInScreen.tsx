@@ -15,10 +15,12 @@ import { isApiError } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
+import { useTheme } from '../../theme';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'SignIn'>;
 
 export const SignInScreen: React.FC<Props> = ({ navigation }) => {
+  const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -58,7 +60,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
   }, [allFieldsValid, email, password, setTokens, setUser]);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -67,11 +69,11 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.form}>
           <QupayLogo size={22} />
           <View style={{ height: 28 }} />
-          <Text style={styles.headline}>
+          <Text style={[styles.headline, { color: theme.text.primary }]}>
             Welcome{'\n'}
-            <Text style={styles.greenText}>back</Text>
+            <Text style={{ color: theme.secondary.main }}>back</Text>
           </Text>
-          <Text style={styles.desc}>
+          <Text style={[styles.desc, { color: theme.text.secondary }]}>
             Sign in to continue sending crypto to cash instantly.
           </Text>
 
@@ -101,7 +103,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
             accessibilityLabel="Password"
             rightIcon={
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color="rgba(255,255,255,0.4)" />
+                <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color={theme.text.muted} />
               </TouchableOpacity>
             }
           />
@@ -111,7 +113,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
             activeOpacity={0.7}
             onPress={() => navigation.navigate('ForgotPassword')}
           >
-            <Text style={styles.forgotText}>Forgot password?</Text>
+            <Text style={[styles.forgotText, { color: theme.secondary.main }]}>Forgot password?</Text>
           </TouchableOpacity>
 
           <View style={{ height: 8 }} />
@@ -127,9 +129,9 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
           style={styles.cta}
         />
         <TouchableOpacity onPress={() => navigation.navigate('SignUp')} activeOpacity={0.7}>
-          <Text style={styles.switchText}>
+          <Text style={[styles.switchText, { color: theme.text.secondary }]}>
             Don't have an account?{' '}
-            <Text style={styles.switchLink}>Sign Up</Text>
+            <Text style={[styles.switchLink, { color: theme.secondary.main }]}>Sign Up</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -138,7 +140,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0C' },
+  safe: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
   form: { paddingHorizontal: 28, paddingTop: 36 },
@@ -146,16 +148,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 26,
     letterSpacing: -0.3,
-    color: '#FFFFFF',
     marginBottom: 8,
     lineHeight: 31,
   },
-  greenText: { color: '#38BDF8' },
   desc: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
     lineHeight: 21,
-    color: 'rgba(255,255,255,0.6)',
     marginBottom: 24,
   },
   forgotBtn: {
@@ -166,7 +165,6 @@ const styles = StyleSheet.create({
   forgotText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
-    color: '#38BDF8',
   },
   bottomArea: {
     paddingHorizontal: 24,
@@ -176,13 +174,11 @@ const styles = StyleSheet.create({
   switchText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
     marginTop: 8,
     paddingBottom: 8,
   },
   switchLink: {
-    color: '#38BDF8',
     fontFamily: 'Inter_600SemiBold',
   },
 });

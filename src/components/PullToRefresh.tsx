@@ -8,7 +8,7 @@ interface UsePullToRefreshResult {
 }
 
 export const usePullToRefresh = (onRefreshCallback?: () => void): UsePullToRefreshResult => {
-  const { theme, brand } = useTheme();
+  const { theme } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(() => {
@@ -24,8 +24,8 @@ export const usePullToRefresh = (onRefreshCallback?: () => void): UsePullToRefre
     <RefreshControl
       refreshing={refreshing}
       onRefresh={onRefresh}
-      tintColor={brand.blue}
-      colors={[brand.blue]}
+      tintColor={theme.secondary.main}
+      colors={[theme.secondary.main]}
       progressBackgroundColor={theme.background.surface}
     />
   );

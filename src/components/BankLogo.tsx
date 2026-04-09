@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { findBankLogo, findCurrencyLogo, BrandLogo } from '../data/logos';
+import { useTheme } from '../theme';
 
 interface BankLogoProps {
   // Either pass a bank/provider name, or a currency code (USDT/USDC/etc.)
@@ -19,6 +20,7 @@ export const BankLogo: React.FC<BankLogoProps> = ({
   size = 40,
   variant = 'default',
 }) => {
+  const { theme } = useTheme();
   const [errored, setErrored] = useState(false);
   const logo: BrandLogo | undefined = currency
     ? findCurrencyLogo(currency)
@@ -34,13 +36,19 @@ export const BankLogo: React.FC<BankLogoProps> = ({
       <View
         style={[
           styles.fallback,
-          { width: size, height: size, borderRadius: radius },
-          variant === 'ghost' && { backgroundColor: 'transparent' },
+          {
+            width: size,
+            height: size,
+            borderRadius: radius,
+            backgroundColor: variant === 'ghost' ? 'transparent' : theme.background.surface,
+          },
         ]}
         accessible
         accessibilityLabel={label}
       >
-        <Text style={[styles.fallbackText, { fontSize: size * 0.42 }]}>{initial}</Text>
+        <Text style={[styles.fallbackText, { fontSize: size * 0.42, color: theme.text.primary }]}>
+          {initial}
+        </Text>
       </View>
     );
   }
@@ -49,7 +57,12 @@ export const BankLogo: React.FC<BankLogoProps> = ({
     <View
       style={[
         styles.chip,
-        { width: size, height: size, borderRadius: radius, backgroundColor: variant === 'ghost' ? 'transparent' : '#FFFFFF' },
+        {
+          width: size,
+          height: size,
+          borderRadius: radius,
+          backgroundColor: variant === 'ghost' ? 'transparent' : theme.text.primary,
+        },
       ]}
       accessible
       accessibilityLabel={label}
@@ -71,12 +84,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   fallback: {
-    backgroundColor: '#1F1F23',
     alignItems: 'center',
     justifyContent: 'center',
   },
   fallbackText: {
     fontFamily: 'Inter_700Bold',
-    color: '#FFFFFF',
   },
 });

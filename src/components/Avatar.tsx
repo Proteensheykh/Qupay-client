@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { getAvatarUri, AvatarStyle, findBankLogo } from '../data/logos';
+import { useTheme } from '../theme';
 
 interface AvatarProps {
   // Seed determines which avatar is generated (use full name for stability)
@@ -15,7 +16,7 @@ interface AvatarProps {
   style?: AvatarStyle;
   // If provided, a small bank logo badge is overlaid bottom-right
   bankBadge?: string;
-  // Surface color used for the badge ring — match parent card
+  // Surface color used for the badge ring — match parent card (defaults to theme.background.paper)
   ringColor?: string;
 }
 
@@ -25,8 +26,10 @@ export const Avatar: React.FC<AvatarProps> = ({
   size = 44,
   style = 'shapes',
   bankBadge,
-  ringColor = '#17171A',
+  ringColor,
 }) => {
+  const { theme } = useTheme();
+  const resolvedRingColor = ringColor ?? theme.background.paper;
   const [imageErr, setImageErr] = useState(false);
   const radius = size / 2;
   const fallbackInitials = (initials || seed).trim().substring(0, 2).toUpperCase();
@@ -38,17 +41,32 @@ export const Avatar: React.FC<AvatarProps> = ({
         <View
           style={[
             styles.fallback,
-            { width: size, height: size, borderRadius: radius },
+            {
+              width: size,
+              height: size,
+              borderRadius: radius,
+              backgroundColor: theme.background.surface,
+            },
           ]}
         >
-          <Text style={[styles.fallbackText, { fontSize: size * 0.36 }]}>
+          <Text
+            style={[
+              styles.fallbackText,
+              { fontSize: size * 0.36, color: theme.text.primary },
+            ]}
+          >
             {fallbackInitials}
           </Text>
         </View>
       ) : (
         <Image
           source={{ uri: getAvatarUri(seed, style) }}
-          style={{ width: size, height: size, borderRadius: radius, backgroundColor: '#1F1F23' }}
+          style={{
+            width: size,
+            height: size,
+            borderRadius: radius,
+            backgroundColor: theme.background.surface,
+          }}
           onError={() => setImageErr(true)}
         />
       )}
@@ -61,7 +79,7 @@ export const Avatar: React.FC<AvatarProps> = ({
               width: badgeSize + 4,
               height: badgeSize + 4,
               borderRadius: (badgeSize + 4) / 2,
-              backgroundColor: ringColor,
+              backgroundColor: resolvedRingColor,
               right: -2,
               bottom: -2,
             },
@@ -85,13 +103,11 @@ export const Avatar: React.FC<AvatarProps> = ({
 
 const styles = StyleSheet.create({
   fallback: {
-    backgroundColor: '#1F1F23',
     alignItems: 'center',
     justifyContent: 'center',
   },
   fallbackText: {
     fontFamily: 'Inter_700Bold',
-    color: '#FFFFFF',
   },
   badge: {
     position: 'absolute',

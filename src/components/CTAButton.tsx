@@ -7,6 +7,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
+import { useTheme } from '../theme';
 // shadows intentionally not imported — local CTAs don't use a glow.
 
 interface CTAButtonProps {
@@ -30,10 +31,20 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
   style,
   textStyle,
 }) => {
+  const { theme } = useTheme();
+
   if (danger) {
     return (
       <TouchableOpacity
-        style={[styles.danger, disabled && styles.disabled, style]}
+        style={[
+          styles.danger,
+          {
+            backgroundColor: theme.error.bg,
+            borderColor: `${theme.error.main}40`,
+          },
+          disabled && styles.disabled,
+          style,
+        ]}
         onPress={onPress}
         disabled={disabled || loading}
         activeOpacity={0.85}
@@ -41,7 +52,7 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
         accessibilityRole="button"
         accessibilityState={{ disabled: disabled || loading }}
       >
-        <Text style={[styles.dangerText, textStyle]}>{title}</Text>
+        <Text style={[styles.dangerText, { color: theme.error.main }, textStyle]}>{title}</Text>
       </TouchableOpacity>
     );
   }
@@ -49,7 +60,7 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
   if (ghost) {
     return (
       <TouchableOpacity
-        style={[styles.ghost, disabled && styles.disabled, style]}
+        style={[styles.ghost, { backgroundColor: theme.background.surface }, disabled && styles.disabled, style]}
         onPress={onPress}
         disabled={disabled || loading}
         activeOpacity={0.85}
@@ -58,9 +69,9 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
         accessibilityState={{ disabled: disabled || loading }}
       >
         {loading ? (
-          <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+          <ActivityIndicator size="small" color={theme.text.secondary} />
         ) : (
-          <Text style={[styles.ghostText, textStyle]}>{title}</Text>
+          <Text style={[styles.ghostText, { color: theme.text.secondary }, textStyle]}>{title}</Text>
         )}
       </TouchableOpacity>
     );
@@ -68,7 +79,7 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
 
   return (
     <TouchableOpacity
-      style={[styles.cta, disabled && styles.disabled, style]}
+      style={[styles.cta, { backgroundColor: theme.secondary.main }, disabled && styles.disabled, style]}
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.85}
@@ -77,9 +88,9 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
       accessibilityState={{ disabled: disabled || loading }}
     >
       {loading ? (
-        <ActivityIndicator size="small" color="#0A0A0C" />
+        <ActivityIndicator size="small" color={theme.background.default} />
       ) : (
-        <Text style={[styles.ctaText, textStyle]}>{title}</Text>
+        <Text style={[styles.ctaText, { color: theme.background.default }, textStyle]}>{title}</Text>
       )}
     </TouchableOpacity>
   );
@@ -87,7 +98,6 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
 
 const styles = StyleSheet.create({
   cta: {
-    backgroundColor: '#38BDF8',
     borderRadius: 999, // local CTAs are pill-shaped (R.pill)
     paddingVertical: 16,
     paddingHorizontal: 24,
@@ -99,10 +109,8 @@ const styles = StyleSheet.create({
   ctaText: {
     fontFamily: 'Inter_600SemiBold', // T.ctaPurple — semibold, not extraBold
     fontSize: 16,
-    color: '#0A0A0C',
   },
   ghost: {
-    backgroundColor: '#1F1F23', // P.cardInner
     borderRadius: 999,
     paddingVertical: 16,
     paddingHorizontal: 24,
@@ -113,24 +121,20 @@ const styles = StyleSheet.create({
   ghostText: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 15,
-    color: 'rgba(255,255,255,0.58)',
   },
   danger: {
-    backgroundColor: 'rgba(239,68,68,0.1)',
     borderRadius: 999,
     paddingVertical: 15,
     paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.25)',
     flexDirection: 'row',
     gap: 8,
   },
   dangerText: {
     fontFamily: 'Inter_700Bold',
     fontSize: 15,
-    color: '#EF4444',
   },
   disabled: {
     opacity: 0.4,

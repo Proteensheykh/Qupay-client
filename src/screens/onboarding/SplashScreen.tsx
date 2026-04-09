@@ -5,12 +5,14 @@ import { Ionicons } from '../../components/Icon';
 import { QupayLogo, CTAButton } from '../../components';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
+import { useTheme } from '../../theme';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'Splash'>;
 
 const words = ['anyone', 'anywhere'];
 
 export const SplashScreen: React.FC<Props> = ({ navigation }) => {
+  const { theme } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
@@ -34,35 +36,43 @@ export const SplashScreen: React.FC<Props> = ({ navigation }) => {
   }, [fadeAnim]);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]}>
       <View style={styles.container}>
         <View style={styles.content}>
           <QupayLogo size={28} />
           <View style={styles.spacer} />
-          <Text style={styles.headline}>
+          <Text style={[styles.headline, { color: theme.text.primary }]}>
             Quick payments,{'\n'}in any currency,{'\n'}
-            <Text style={styles.greenText}>
+            <Text style={{ color: theme.secondary.main }}>
               to <Animated.Text style={{ opacity: fadeAnim }}>{words[currentIndex]}</Animated.Text>
             </Text>
           </Text>
-          <Text style={styles.description}>
+          <Text style={[styles.description, { color: theme.text.secondary }]}>
             Send or receive money, in any currency, to & from anyone, anywhere, with just a mobile number.
           </Text>
           {/* Stats row */}
-          <View style={styles.statRow}>
+          <View
+            style={[
+              styles.statRow,
+              {
+                backgroundColor: theme.background.surface,
+                borderColor: theme.inputBorder,
+              },
+            ]}
+          >
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>54+</Text>
-              <Text style={styles.statLabel}>Countries</Text>
+              <Text style={[styles.statVal, { color: theme.secondary.main }]}>54+</Text>
+              <Text style={[styles.statLabel, { color: theme.text.secondary }]}>Countries</Text>
             </View>
-            <View style={styles.statDivider} />
+            <View style={[styles.statDivider, { backgroundColor: theme.inputBorder }]} />
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>No fees</Text>
-              <Text style={styles.statLabel}>Zero cost</Text>
+              <Text style={[styles.statVal, { color: theme.secondary.main }]}>No fees</Text>
+              <Text style={[styles.statLabel, { color: theme.text.secondary }]}>Zero cost</Text>
             </View>
-            <View style={styles.statDivider} />
+            <View style={[styles.statDivider, { backgroundColor: theme.inputBorder }]} />
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>Quick</Text>
-              <Text style={styles.statLabel}>Delivery</Text>
+              <Text style={[styles.statVal, { color: theme.secondary.main }]}>Quick</Text>
+              <Text style={[styles.statLabel, { color: theme.text.secondary }]}>Delivery</Text>
             </View>
           </View>
         </View>
@@ -74,13 +84,13 @@ export const SplashScreen: React.FC<Props> = ({ navigation }) => {
             style={styles.ctaBtn}
           />
           <TouchableOpacity onPress={() => navigation.navigate('SignIn')} activeOpacity={0.7}>
-            <Text style={styles.loginText}>
-              Already have an account? <Text style={styles.loginLink}>Log in</Text>
+            <Text style={[styles.loginText, { color: theme.text.secondary }]}>
+              Already have an account? <Text style={[styles.loginLink, { color: theme.secondary.main }]}>Log in</Text>
             </Text>
           </TouchableOpacity>
           <View style={styles.footer}>
-            <Ionicons name="shield-checkmark-outline" size={11} color="rgba(255,255,255,0.4)" />
-            <Text style={styles.footerText}>Licensed & regulated globally</Text>
+            <Ionicons name="shield-checkmark-outline" size={11} color={theme.text.muted} />
+            <Text style={[styles.footerText, { color: theme.text.muted }]}>Licensed & regulated globally</Text>
           </View>
         </View>
       </View>
@@ -91,7 +101,6 @@ export const SplashScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#0A0A0C',
   },
   container: {
     flex: 1,
@@ -109,24 +118,17 @@ const styles = StyleSheet.create({
     fontSize: 32,
     lineHeight: 35,
     letterSpacing: -0.5,
-    color: '#FFFFFF',
     marginBottom: 12,
-  },
-  greenText: {
-    color: '#38BDF8',
   },
   description: {
     fontFamily: 'Inter_400Regular',
     fontSize: 14,
     lineHeight: 23,
-    color: 'rgba(255,255,255,0.6)',
     marginBottom: 32,
   },
   statRow: {
     flexDirection: 'row',
-    backgroundColor: '#1F1F23',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 32,
@@ -139,18 +141,15 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   statVal: {
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 18,
-    color: '#38BDF8',
     marginBottom: 2,
   },
   statLabel: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 9,
-    color: 'rgba(255,255,255,0.6)',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -164,12 +163,10 @@ const styles = StyleSheet.create({
   loginText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
     marginBottom: 20,
   },
   loginLink: {
-    color: '#38BDF8',
     fontFamily: 'Inter_600SemiBold',
   },
   footer: {
@@ -182,6 +179,5 @@ const styles = StyleSheet.create({
   footerText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 10,
-    color: 'rgba(255,255,255,0.4)',
   },
 });

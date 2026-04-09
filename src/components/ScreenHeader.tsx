@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { BackButton } from './BackButton';
+import { useTheme } from '../theme';
 
 interface ScreenHeaderProps {
   title: string;
@@ -9,10 +10,11 @@ interface ScreenHeaderProps {
 }
 
 export const ScreenHeader: React.FC<ScreenHeaderProps> = ({ title, onBack, right }) => {
+  const { theme } = useTheme();
   return (
     <View style={styles.container}>
       {onBack ? <BackButton onPress={onBack} /> : <View style={styles.spacer} />}
-      <Text style={styles.title} numberOfLines={1}>
+      <Text style={[styles.title, { color: theme.text.primary }]} numberOfLines={1}>
         {title}
       </Text>
       {right ? right : <View style={styles.spacer} />}
@@ -33,7 +35,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Inter_700Bold',
     fontSize: 22, // T.screenTitle
-    color: '#FFFFFF',
   },
   spacer: {
     width: 36,

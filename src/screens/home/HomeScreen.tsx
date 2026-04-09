@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,16 +12,10 @@ import { Ionicons } from '../../components/Icon';
 import { useNavigation } from '@react-navigation/native';
 import { QupayLogo, Avatar, BottomSheet } from '../../components';
 import { shadows } from '../../theme/spacing';
+import { useTheme, colors } from '../../theme';
 import { userProfile } from '../../data/mockData';
 
 type Props = { navigation: any };
-
-const recentContacts = [
-  { name: 'Emeka', initials: 'EJ', fullName: 'Emeka Johnson', colors: ['#1a6fff', '#38BDF8'] as [string, string], method: 'OPay', phone: '0812 456 7890', flag: '\u{1F1F3}\u{1F1EC}', amount: 200 },
-  { name: 'Adaeze', initials: 'AO', fullName: 'Adaeze Obi', colors: ['#a855f7', '#1a6fff'] as [string, string], method: 'GTBank', phone: '\u00B7\u00B7\u00B7\u00B7 4521', flag: '\u{1F1F3}\u{1F1EC}', amount: 100 },
-  { name: 'Kofi', initials: 'KM', fullName: 'Kofi Mensah', colors: ['#ff9f43', '#38BDF8'] as [string, string], method: 'MTN Momo', phone: '0541 234 567', flag: '\u{1F1EC}\u{1F1ED}', amount: 50 },
-  { name: 'Chidi', initials: 'CN', fullName: 'Chidi Nwosu', colors: ['#F87171', '#FFD60A'] as [string, string], method: 'PalmPay', phone: '0813 456 7890', flag: '\u{1F1F3}\u{1F1EC}', amount: 30 },
-];
 
 export interface DestInfo {
   flag: string;
@@ -42,8 +36,19 @@ const destinationList: DestInfo[] = [
 ];
 
 export const HomeScreen: React.FC<Props> = ({ navigation }) => {
+  const { theme, gradient } = useTheme();
   const [selectedDest, setSelectedDest] = useState(destinationList[0]);
   const [showCorridorSheet, setShowCorridorSheet] = useState(false);
+
+  const recentContacts = useMemo(
+    () => [
+      { name: 'Emeka', initials: 'EJ', fullName: 'Emeka Johnson', colors: ['#1a6fff', theme.secondary.main] as [string, string], method: 'OPay', phone: '0812 456 7890', flag: '\u{1F1F3}\u{1F1EC}', amount: 200 },
+      { name: 'Adaeze', initials: 'AO', fullName: 'Adaeze Obi', colors: ['#a855f7', '#1a6fff'] as [string, string], method: 'GTBank', phone: '\u00B7\u00B7\u00B7\u00B7 4521', flag: '\u{1F1F3}\u{1F1EC}', amount: 100 },
+      { name: 'Kofi', initials: 'KM', fullName: 'Kofi Mensah', colors: ['#ff9f43', theme.secondary.main] as [string, string], method: 'MTN Momo', phone: '0541 234 567', flag: '\u{1F1EC}\u{1F1ED}', amount: 50 },
+      { name: 'Chidi', initials: 'CN', fullName: 'Chidi Nwosu', colors: [theme.error.light, theme.warning.main] as [string, string], method: 'PalmPay', phone: '0813 456 7890', flag: '\u{1F1F3}\u{1F1EC}', amount: 30 },
+    ],
+    [theme.secondary.main, theme.error.light, theme.warning.main]
+  );
 
   const greeting = useCallback(() => {
     const h = new Date().getHours();
@@ -53,7 +58,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]} edges={['top']}>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
@@ -70,41 +75,47 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         {/* Hero card */}
-        <View style={styles.heroWrap}>
+        <View style={[styles.heroWrap, { borderColor: colors.brand.blueDim }]}>
           <LinearGradient
-            colors={['#1A1A2E', '#0A0A0C']}
+            colors={[...gradient.hero]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.hero}
           >
-            <Text style={styles.heroName}>
+            <Text style={[styles.heroName, { color: theme.text.primary }]}>
               {greeting()}, {userProfile.name} {'\u{1F44B}'}
             </Text>
             <TouchableOpacity
-              style={styles.corridorBtn}
+              style={[
+                styles.corridorBtn,
+                {
+                  backgroundColor: colors.brand.purpleDim2,
+                  borderColor: colors.brand.blueDim,
+                },
+              ]}
               onPress={() => setShowCorridorSheet(true)}
               activeOpacity={0.7}
             >
               <View style={styles.corridorFlags}>
                 <Text style={styles.flagText}>{'\u{1F1F8}\u{1F1EC}'}</Text>
-                <Text style={styles.arrowGreen}>{'\u2192'}</Text>
+                <Text style={[styles.arrowGreen, { color: theme.secondary.main }]}>{'\u2192'}</Text>
                 <Text style={styles.flagText}>{selectedDest.flag}</Text>
               </View>
-              <Text style={styles.corridorName}>
+              <Text style={[styles.corridorName, { color: theme.text.secondary }]}>
                 Singapore {'\u2192'} {selectedDest.name}
               </Text>
-              <Text style={styles.cbRate}>
+              <Text style={[styles.cbRate, { color: theme.secondary.main }]}>
                 {selectedDest.symbol}
                 {selectedDest.rate.toLocaleString()}/USDT
               </Text>
-              <Text style={styles.tapText}>tap to change</Text>
+              <Text style={[styles.tapText, { color: theme.text.muted }]}>tap to change</Text>
             </TouchableOpacity>
           </LinearGradient>
         </View>
 
         {/* Send Money button */}
         <TouchableOpacity
-          style={[styles.sendBtn, shadows.ctaGlow]}
+          style={[styles.sendBtn, shadows.ctaGlow, { backgroundColor: theme.secondary.main }]}
           onPress={() => {
             const rootNav = navigation.getParent()?.getParent();
             if (rootNav) {
@@ -116,12 +127,12 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
           }}
           activeOpacity={0.85}
         >
-          <Ionicons name="arrow-forward" size={20} color="#0A0A0C" />
-          <Text style={styles.sendBtnText}>Send Money</Text>
+          <Ionicons name="arrow-forward" size={20} color={theme.background.default} />
+          <Text style={[styles.sendBtnText, { color: theme.background.default }]}>Send Money</Text>
         </TouchableOpacity>
 
         {/* Send again */}
-        <Text style={styles.sectionLabel}>Send again</Text>
+        <Text style={[styles.sectionLabel, { color: theme.text.secondary }]}>Send again</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -151,10 +162,10 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
               }}
               activeOpacity={0.7}
             >
-              <View style={styles.avRing}>
+              <View style={[styles.avRing, { borderColor: theme.inputBorder }]}>
                 <Avatar seed={c.fullName} size={46} />
               </View>
-              <Text style={styles.recentName}>{c.name}</Text>
+              <Text style={[styles.recentName, { color: theme.text.secondary }]}>{c.name}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -168,9 +179,9 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
         onClose={() => setShowCorridorSheet(false)}
         title="Send to"
       >
-        <Text style={styles.corrFromLabel}>
+        <Text style={[styles.corrFromLabel, { color: theme.text.secondary }]}>
           From{' '}
-          <Text style={styles.corrFromVal}>
+          <Text style={[styles.corrFromVal, { color: theme.text.primary }]}>
             Singapore {'\u{1F1F8}\u{1F1EC}'}
           </Text>
         </Text>
@@ -179,7 +190,8 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
             key={d.name}
             style={[
               styles.cpItem,
-              selectedDest.name === d.name && styles.cpItemSel,
+              { borderBottomColor: theme.inputBorder },
+              selectedDest.name === d.name && { backgroundColor: colors.brand.blueDim },
             ]}
             onPress={() => {
               setSelectedDest(d);
@@ -189,14 +201,14 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
           >
             <Text style={styles.cpFlag}>{d.flag}</Text>
             <View style={styles.cpInfo}>
-              <Text style={styles.cpName}>{d.name}</Text>
-              <Text style={styles.cpSub}>
+              <Text style={[styles.cpName, { color: theme.text.primary }]}>{d.name}</Text>
+              <Text style={[styles.cpSub, { color: theme.text.secondary }]}>
                 {d.symbol}
                 {d.rate.toLocaleString()}/USDT {'\u00B7'} {d.providers}
               </Text>
             </View>
             {selectedDest.name === d.name && (
-              <Text style={styles.cpCheck}>{'\u2713'}</Text>
+              <Text style={[styles.cpCheck, { color: theme.secondary.main }]}>{'\u2713'}</Text>
             )}
           </TouchableOpacity>
         ))}
@@ -207,7 +219,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0C' },
+  safe: { flex: 1 },
   scroll: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -223,7 +235,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(56,189,248,0.12)',
   },
   hero: {
     padding: 20,
@@ -232,13 +243,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 22,
     letterSpacing: -0.3,
-    color: '#FFFFFF',
     marginBottom: 14,
   },
   corridorBtn: {
-    backgroundColor: 'rgba(56,189,248,0.07)',
     borderWidth: 1,
-    borderColor: 'rgba(56,189,248,0.1)',
     borderRadius: 10,
     padding: 12,
     flexDirection: 'row',
@@ -252,29 +260,25 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   flagText: { fontSize: 16 },
-  arrowGreen: { color: '#38BDF8', fontSize: 14 },
+  arrowGreen: { fontSize: 14 },
   corridorName: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
   },
   cbRate: {
     fontFamily: 'Inter_500Medium',
     fontSize: 12,
-    color: '#38BDF8',
     marginLeft: 'auto',
     fontVariant: ['tabular-nums'],
   },
   tapText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 10,
-    color: 'rgba(255,255,255,0.4)',
   },
   sendBtn: {
     marginHorizontal: 20,
     marginBottom: 24,
     paddingVertical: 18,
-    backgroundColor: '#38BDF8',
     borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -284,14 +288,12 @@ const styles = StyleSheet.create({
   sendBtnText: {
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 17,
-    color: '#0A0A0C',
   },
   sectionLabel: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 11,
     letterSpacing: 1,
     textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.6)',
     marginHorizontal: 24,
     marginBottom: 10,
   },
@@ -308,7 +310,6 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 26,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.08)',
     padding: 2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -317,18 +318,15 @@ const styles = StyleSheet.create({
   recentName: {
     fontFamily: 'Inter_400Regular',
     fontSize: 10,
-    color: 'rgba(255,255,255,0.6)',
   },
   corrFromLabel: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
     paddingHorizontal: 24,
     paddingBottom: 12,
   },
   corrFromVal: {
     fontFamily: 'Inter_600SemiBold',
-    color: '#FFFFFF',
   },
   cpItem: {
     flexDirection: 'row',
@@ -337,27 +335,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
-  },
-  cpItemSel: {
-    backgroundColor: 'rgba(56,189,248,0.12)',
   },
   cpFlag: { fontSize: 24, width: 32, textAlign: 'center' },
   cpInfo: { flex: 1 },
   cpName: {
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
-    color: '#FFFFFF',
   },
   cpSub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
     marginTop: 1,
   },
   cpCheck: {
     fontSize: 16,
-    color: '#38BDF8',
     fontFamily: 'Inter_700Bold',
   },
 });

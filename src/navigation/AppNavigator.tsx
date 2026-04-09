@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '../components/Icon';
 import { useAuthStore } from '../store/authStore';
+import { useTheme } from '../theme';
 import type { InitiateRegistrationRequest, UserRole } from '../types/auth';
 
 // Screens
@@ -229,6 +230,7 @@ function getTabIcon(routeName: string): string {
 
 function MainTabs() {
   const user = useAuthStore((state) => state.user);
+  const { theme } = useTheme();
   const role: UserRole = user?.role || 'PAYER';
 
   const showHistory = role === 'PAYER' || role === 'BOTH' || role === 'ADMIN';
@@ -246,15 +248,15 @@ function MainTabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#0A0A0C',
-          borderTopColor: 'rgba(255,255,255,0.06)',
+          backgroundColor: theme.background.default,
+          borderTopColor: theme.divider,
           borderTopWidth: 1,
           height: 88,
           paddingTop: 8,
           paddingBottom: 28,
         },
-        tabBarActiveTintColor: '#38BDF8',
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.4)',
+        tabBarActiveTintColor: theme.secondary.main,
+        tabBarInactiveTintColor: theme.text.muted,
         tabBarLabelStyle: {
           fontFamily: 'Inter_600SemiBold',
           fontSize: 9,
@@ -302,9 +304,10 @@ function MainTabs() {
 }
 
 function LoadingScreen() {
+  const { theme } = useTheme();
   return (
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#38BDF8" />
+    <View style={{ flex: 1, backgroundColor: theme.background.default, alignItems: 'center', justifyContent: 'center' }}>
+      <ActivityIndicator size="large" color={theme.secondary.main} />
     </View>
   );
 }
@@ -339,11 +342,3 @@ export const AppNavigator: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#0A0A0C',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

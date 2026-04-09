@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { findCurrencyLogo, findNetworkLogo, BrandLogo } from '../data/logos';
+import { useTheme } from '../theme';
 
 interface CryptoIconProps {
   token: string;          // e.g., "USDT", "USDC", "ETH"
@@ -19,8 +20,10 @@ export const CryptoIcon: React.FC<CryptoIconProps> = ({
   token,
   network,
   size = 40,
-  ringColor = '#17171A',
+  ringColor: ringColorProp,
 }) => {
+  const { theme } = useTheme();
+  const ringColor = ringColorProp ?? theme.background.paper;
   const [tokenErr, setTokenErr] = useState(false);
   const [netErr, setNetErr] = useState(false);
 
@@ -37,7 +40,12 @@ export const CryptoIcon: React.FC<CryptoIconProps> = ({
       <View
         style={[
           styles.tokenChip,
-          { width: size, height: size, borderRadius: radius, backgroundColor: tokenLogo.bg || '#FFFFFF' },
+          {
+            width: size,
+            height: size,
+            borderRadius: radius,
+            backgroundColor: tokenLogo.bg || theme.text.primary,
+          },
         ]}
       >
         <Image
@@ -51,10 +59,20 @@ export const CryptoIcon: React.FC<CryptoIconProps> = ({
       <View
         style={[
           styles.fallback,
-          { width: size, height: size, borderRadius: radius },
+          {
+            width: size,
+            height: size,
+            borderRadius: radius,
+            backgroundColor: theme.background.surface,
+          },
         ]}
       >
-        <Text style={[styles.fallbackText, { fontSize: size * 0.36 }]}>
+        <Text
+          style={[
+            styles.fallbackText,
+            { fontSize: size * 0.36, color: theme.text.primary },
+          ]}
+        >
           {token.substring(0, 4).toUpperCase()}
         </Text>
       </View>
@@ -93,7 +111,7 @@ export const CryptoIcon: React.FC<CryptoIconProps> = ({
               width: badgeSize,
               height: badgeSize,
               borderRadius: badgeRadius,
-              backgroundColor: netLogo.bg || '#FFFFFF',
+              backgroundColor: netLogo.bg || theme.text.primary,
             }}
             resizeMode="cover"
             onError={() => setNetErr(true)}
@@ -104,12 +122,18 @@ export const CryptoIcon: React.FC<CryptoIconProps> = ({
               width: badgeSize,
               height: badgeSize,
               borderRadius: badgeRadius,
-              backgroundColor: '#1F1F23',
+              backgroundColor: theme.background.surface,
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: badgeSize * 0.5, color: '#FFFFFF' }}>
+            <Text
+              style={{
+                fontFamily: 'Inter_700Bold',
+                fontSize: badgeSize * 0.5,
+                color: theme.text.primary,
+              }}
+            >
               {network.charAt(0).toUpperCase()}
             </Text>
           </View>
@@ -126,13 +150,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   fallback: {
-    backgroundColor: '#1F1F23',
     alignItems: 'center',
     justifyContent: 'center',
   },
   fallbackText: {
     fontFamily: 'Inter_700Bold',
-    color: '#FFFFFF',
   },
   badge: {
     position: 'absolute',

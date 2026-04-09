@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { useTransactionStore } from '../../store/transactionStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
+import { useTheme } from '../../theme';
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'DepositWaiting'>;
 
@@ -42,6 +43,7 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
     recipientNetwork,
   } = route.params || {};
 
+  const { theme } = useTheme();
   const updateStatus = useTransactionStore((state) => state.updateStatus);
 
   const isCryptoOut = recvCurrency === 'USDT';
@@ -158,14 +160,19 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]}>
       <View style={styles.container}>
         {/* Top section */}
         <View style={styles.top}>
           {/* Transaction slug badge */}
           {transactionSlug && (
-            <View style={styles.slugBadge}>
-              <Text style={styles.slugText}>{transactionSlug}</Text>
+            <View
+              style={[
+                styles.slugBadge,
+                { backgroundColor: theme.info.bg, borderColor: theme.secondary.light },
+              ]}
+            >
+              <Text style={[styles.slugText, { color: theme.secondary.main }]}>{transactionSlug}</Text>
             </View>
           )}
 
@@ -175,25 +182,37 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
               <Animated.View
                 style={[
                   styles.pulseRing,
-                  { transform: [{ scale: pulseScale }], opacity: pulseOpacity },
+                  { transform: [{ scale: pulseScale }], opacity: pulseOpacity, borderColor: theme.secondary.main },
                 ]}
               />
             )}
-            <View style={[styles.scanIcon, detected && styles.scanIconDone]}>
+            <View
+              style={[
+                styles.scanIcon,
+                detected
+                  ? { backgroundColor: theme.info.bg, borderColor: theme.secondary.main }
+                  : { backgroundColor: theme.info.bg, borderColor: theme.secondary.light },
+              ]}
+            >
               {detected ? (
-                <Ionicons name="checkmark" size={32} color="#38BDF8" />
+                <Ionicons name="checkmark" size={32} color={theme.secondary.main} />
               ) : (
-                <Ionicons name={isCryptoOut ? 'card-outline' : 'radio-outline'} size={32} color="#38BDF8" />
+                <Ionicons name={isCryptoOut ? 'card-outline' : 'radio-outline'} size={32} color={theme.secondary.main} />
               )}
             </View>
           </View>
 
-          <Text style={styles.title}>{getTitle()}</Text>
-          <Text style={styles.subtitle}>{getSubtitle()}</Text>
+          <Text style={[styles.title, { color: theme.text.primary }]}>{getTitle()}</Text>
+          <Text style={[styles.subtitle, { color: theme.text.secondary }]}>{getSubtitle()}</Text>
 
           {/* Amount badge */}
-          <View style={styles.amountBadge}>
-            <Text style={styles.amountBadgeText}>
+          <View
+            style={[
+              styles.amountBadge,
+              { backgroundColor: theme.info.bg, borderColor: theme.info.bg },
+            ]}
+          >
+            <Text style={[styles.amountBadgeText, { color: theme.secondary.main }]}>
               {sendSymbol}{amount.toLocaleString()} {sendCurrency} {'\u2192'} {isCryptoOut ? `${formatUSDT(receiveAmount)} USDT` : `${recvSymbol}${receiveAmount.toLocaleString()} ${recvCurrency}`}
             </Text>
           </View>
@@ -207,32 +226,48 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
                 <View
                   style={[
                     styles.connector,
-                    step.state !== 'waiting' && styles.connectorActive,
+                    { backgroundColor: theme.inputBorder },
+                    step.state !== 'waiting' && { backgroundColor: theme.secondary.main },
                   ]}
                 />
               )}
               <View style={styles.stepRow}>
-                <View style={[
-                  styles.stepDot,
-                  step.state === 'active' && styles.stepDotActive,
-                  step.state === 'done' && styles.stepDotDone,
-                ]}>
+                <View
+                  style={[
+                    styles.stepDot,
+                    step.state === 'active' && {
+                      borderColor: theme.secondary.main,
+                      backgroundColor: theme.info.bg,
+                    },
+                    step.state === 'done' && {
+                      borderColor: theme.secondary.main,
+                      backgroundColor: theme.secondary.main,
+                    },
+                    step.state === 'waiting' && {
+                      borderColor: theme.action.selected,
+                      backgroundColor: 'transparent',
+                    },
+                  ]}
+                >
                   {step.state === 'done' && (
-                    <Ionicons name="checkmark" size={12} color="#0A0A0C" />
+                    <Ionicons name="checkmark" size={12} color={theme.background.default} />
                   )}
                   {step.state === 'active' && (
-                    <View style={styles.stepDotPulse} />
+                    <View style={[styles.stepDotPulse, { backgroundColor: theme.secondary.main }]} />
                   )}
                 </View>
                 <View style={styles.stepText}>
-                  <Text style={[
-                    styles.stepLabel,
-                    step.state === 'active' && styles.stepLabelActive,
-                    step.state === 'done' && styles.stepLabelDone,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.stepLabel,
+                      { color: theme.text.disabled },
+                      step.state === 'active' && { color: theme.text.primary, fontFamily: 'Inter_600SemiBold' },
+                      step.state === 'done' && { color: theme.secondary.main, fontFamily: 'Inter_600SemiBold' },
+                    ]}
+                  >
                     {step.label}
                   </Text>
-                  <Text style={styles.stepDesc}>{step.desc}</Text>
+                  <Text style={[styles.stepDesc, { color: theme.text.muted }]}>{step.desc}</Text>
                 </View>
               </View>
             </View>
@@ -241,7 +276,7 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
 
         {/* Bottom */}
         <View style={styles.bottom}>
-          <Text style={styles.bottomNote}>
+          <Text style={[styles.bottomNote, { color: theme.text.disabled }]}>
             {detected
               ? 'Processing your transfer\u2026'
               : isCryptoOut
@@ -255,13 +290,11 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0C' },
+  safe: { flex: 1 },
   container: { flex: 1, justifyContent: 'space-between' },
   top: { alignItems: 'center', paddingTop: 32, paddingHorizontal: 24 },
   slugBadge: {
-    backgroundColor: 'rgba(56,189,248,0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(56,189,248,0.2)',
     borderRadius: 8,
     paddingVertical: 6,
     paddingHorizontal: 14,
@@ -270,61 +303,51 @@ const styles = StyleSheet.create({
   slugText: {
     fontFamily: 'Inter_700Bold',
     fontSize: 13,
-    color: '#38BDF8',
     letterSpacing: 0.5,
   },
   scanWrap: { width: 100, height: 100, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
   pulseRing: {
     position: 'absolute', width: 100, height: 100, borderRadius: 50,
-    borderWidth: 2, borderColor: '#38BDF8',
+    borderWidth: 2,
   },
   scanIcon: {
     width: 72, height: 72, borderRadius: 36,
-    backgroundColor: 'rgba(56,189,248,0.08)', borderWidth: 2, borderColor: 'rgba(56,189,248,0.3)',
+    borderWidth: 2,
     alignItems: 'center', justifyContent: 'center',
-  },
-  scanIconDone: {
-    backgroundColor: 'rgba(56,189,248,0.15)', borderColor: '#38BDF8',
   },
   title: {
     fontFamily: 'Inter_800ExtraBold', fontSize: 22, letterSpacing: -0.3,
-    color: '#FFFFFF', marginBottom: 6,
+    marginBottom: 6,
   },
   subtitle: {
-    fontFamily: 'Inter_400Regular', fontSize: 13, color: 'rgba(255,255,255,0.6)',
+    fontFamily: 'Inter_400Regular', fontSize: 13,
     textAlign: 'center', lineHeight: 20, marginBottom: 16,
   },
   amountBadge: {
-    backgroundColor: 'rgba(56,189,248,0.07)', borderWidth: 1, borderColor: 'rgba(56,189,248,0.15)',
+    borderWidth: 1,
     borderRadius: 20, paddingVertical: 8, paddingHorizontal: 18,
   },
-  amountBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#38BDF8' },
+  amountBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
   timeline: { paddingHorizontal: 32, paddingVertical: 8 },
   timelineStep: { position: 'relative' },
   connector: {
     position: 'absolute', left: 10, top: -8, width: 2, height: 16,
-    backgroundColor: 'rgba(255,255,255,0.08)',
   },
-  connectorActive: { backgroundColor: 'rgba(56,189,248,0.4)' },
   stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, paddingVertical: 10 },
   stepDot: {
     width: 22, height: 22, borderRadius: 11, marginTop: 1,
-    borderWidth: 2, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'transparent',
+    borderWidth: 2,
     alignItems: 'center', justifyContent: 'center',
   },
-  stepDotActive: { borderColor: '#38BDF8', backgroundColor: 'rgba(56,189,248,0.12)' },
-  stepDotDone: { borderColor: '#38BDF8', backgroundColor: '#38BDF8' },
-  stepDotPulse: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#38BDF8' },
+  stepDotPulse: { width: 8, height: 8, borderRadius: 4 },
   stepText: { flex: 1 },
   stepLabel: {
-    fontFamily: 'Inter_500Medium', fontSize: 14, color: 'rgba(255,255,255,0.3)',
+    fontFamily: 'Inter_500Medium', fontSize: 14,
   },
-  stepLabelActive: { color: '#FFFFFF', fontFamily: 'Inter_600SemiBold' },
-  stepLabelDone: { color: '#38BDF8', fontFamily: 'Inter_600SemiBold' },
-  stepDesc: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 },
+  stepDesc: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2 },
   bottom: { paddingHorizontal: 24, paddingBottom: 36 },
   bottomNote: {
-    fontFamily: 'Inter_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.35)',
+    fontFamily: 'Inter_400Regular', fontSize: 12,
     textAlign: 'center', lineHeight: 18,
   },
 });
