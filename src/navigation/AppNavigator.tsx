@@ -2,7 +2,7 @@ import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../components/Icon';
 import { useAuthStore } from '../store/authStore';
 import type { InitiateRegistrationRequest, UserRole } from '../types/auth';
 
@@ -212,16 +212,16 @@ function ProcessorStackNavigator() {
   );
 }
 
-function getTabIcon(routeName: string, focused: boolean): keyof typeof Ionicons.glyphMap {
+function getTabIcon(routeName: string): string {
   switch (routeName) {
     case 'HistoryTab':
-      return focused ? 'time' : 'time-outline';
+      return 'time';
     case 'SendTab':
-      return focused ? 'send' : 'send-outline';
+      return 'send';
     case 'ProcessorTab':
-      return focused ? 'swap-horizontal' : 'swap-horizontal-outline';
+      return 'swap-horizontal';
     case 'ProfileTab':
-      return focused ? 'person' : 'person-outline';
+      return 'person';
     default:
       return 'ellipse';
   }
@@ -246,15 +246,15 @@ function MainTabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#111118',
-          borderTopColor: 'rgba(255,255,245,0.08)',
+          backgroundColor: '#0A0A0C',
+          borderTopColor: 'rgba(255,255,255,0.06)',
           borderTopWidth: 1,
           height: 88,
           paddingTop: 8,
           paddingBottom: 28,
         },
-        tabBarActiveTintColor: '#00E5A0',
-        tabBarInactiveTintColor: 'rgba(255,255,245,0.4)',
+        tabBarActiveTintColor: '#38BDF8',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.4)',
         tabBarLabelStyle: {
           fontFamily: 'Inter_600SemiBold',
           fontSize: 9,
@@ -262,8 +262,12 @@ function MainTabs() {
           textTransform: 'uppercase' as const,
         },
         tabBarIcon: ({ focused, color }) => {
-          const iconName = getTabIcon(route.name, focused);
-          return <Ionicons name={iconName} size={20} color={color} />;
+          const iconName = getTabIcon(route.name);
+          return (
+            <View style={{ transform: [{ scale: focused ? 1.15 : 1 }] }}>
+              <Ionicons name={iconName} size={20} color={color} />
+            </View>
+          );
         },
       })}
     >
@@ -300,7 +304,7 @@ function MainTabs() {
 function LoadingScreen() {
   return (
     <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#00E5A0" />
+      <ActivityIndicator size="large" color="#38BDF8" />
     </View>
   );
 }
@@ -338,7 +342,7 @@ export const AppNavigator: React.FC = () => {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#111118',
+    backgroundColor: '#0A0A0C',
     alignItems: 'center',
     justifyContent: 'center',
   },

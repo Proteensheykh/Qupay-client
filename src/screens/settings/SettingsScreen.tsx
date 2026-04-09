@@ -2,10 +2,10 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/Icon';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProfileStackParamList } from '../../navigation/AppNavigator';
-import { QupayLogo, GradientAvatar, CTAButton } from '../../components';
+import { QupayLogo, Avatar, CTAButton } from '../../components';
 import { userProfile } from '../../data/mockData';
 import { useAuthStore } from '../../store/authStore';
 
@@ -43,25 +43,19 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         {/* Profile hero */}
         <View style={styles.heroWrap}>
           <LinearGradient
-            colors={['#1A1A2E', '#111118']}
+            colors={['#1A1A2E', '#0A0A0C']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.hero}
           >
             <View style={styles.phTop}>
-              <GradientAvatar
-                initials={initials}
-                size={60}
-                borderWidth={2}
-                borderColor="rgba(255,255,255,0.1)"
-                fontSize={20}
-              />
+              <Avatar seed={displayName} size={60} />
               <View style={styles.phInfo}>
                 <View style={styles.nameRow}>
                   <Text style={styles.phName}>{displayName}</Text>
                   {isProcessor && (
                     <View style={styles.processorBadge}>
-                      <Ionicons name="swap-horizontal" size={10} color="#00E5A0" />
+                      <Ionicons name="swap-horizontal" size={10} color="#38BDF8" />
                       <Text style={styles.processorBadgeText}>Processor</Text>
                     </View>
                   )}
@@ -93,9 +87,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
                 onPress={() => navigation?.navigate('ProcessorOnboarding')}
                 activeOpacity={0.7}
               >
-                <Ionicons name="swap-horizontal" size={14} color="#00E5A0" />
+                <Ionicons name="swap-horizontal" size={14} color="#38BDF8" />
                 <Text style={styles.heroPromoText}>Earn by settling transactions</Text>
-                <Ionicons name="chevron-forward" size={14} color="rgba(255,255,245,0.4)" />
+                <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.4)" />
               </TouchableOpacity>
             )}
           </LinearGradient>
@@ -105,19 +99,19 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         <Text style={styles.sectionLabel}>Settings</Text>
         <View style={styles.card}>
           <TouchableOpacity style={styles.row} activeOpacity={0.7}>
-            <View style={[styles.rowIcon, { backgroundColor: 'rgba(0,229,160,0.07)' }]}>
-              <Ionicons name="lock-closed-outline" size={18} color="#00E5A0" />
+            <View style={[styles.rowIcon, { backgroundColor: 'rgba(56,189,248,0.07)' }]}>
+              <Ionicons name="lock-closed-outline" size={18} color="#38BDF8" />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowTitle}>Transaction PIN</Text>
               <Text style={styles.rowSub}>Change your 4-digit PIN</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,245,0.4)" />
+            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
           </TouchableOpacity>
 
           <View style={[styles.row, styles.rowLast]}>
             <View style={[styles.rowIcon, { backgroundColor: 'rgba(255,212,96,0.1)' }]}>
-              <Ionicons name="notifications-outline" size={18} color="#FFD460" />
+              <Ionicons name="notifications-outline" size={18} color="#FFD60A" />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowTitle}>Notifications</Text>
@@ -126,7 +120,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Switch
               value={notifOn}
               onValueChange={setNotifOn}
-              trackColor={{ false: '#2A2A42', true: '#00E5A0' }}
+              trackColor={{ false: '#2A2A42', true: '#38BDF8' }}
               thumbColor="#fff"
               ios_backgroundColor="#2A2A42"
             />
@@ -138,13 +132,13 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.card}>
           <TouchableOpacity style={[styles.row, styles.rowLast]} activeOpacity={0.7}>
             <View style={[styles.rowIcon, { backgroundColor: '#2A2A42' }]}>
-              <Ionicons name="chatbubble-ellipses-outline" size={18} color="rgba(255,255,245,0.6)" />
+              <Ionicons name="chatbubble-ellipses-outline" size={18} color="rgba(255,255,255,0.6)" />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowTitle}>Help & Support</Text>
               <Text style={styles.rowSub}>Avg. response &lt;3 mins</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,245,0.4)" />
+            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
           </TouchableOpacity>
         </View>
 
@@ -164,7 +158,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#111118' },
+  safe: { flex: 1, backgroundColor: '#0A0A0C' },
   scroll: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -181,7 +175,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(0,229,160,0.12)',
+    borderColor: 'rgba(56,189,248,0.12)',
   },
   hero: { padding: 22 },
   phTop: {
@@ -201,15 +195,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 19,
     letterSpacing: -0.3,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
   },
   processorBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(0,229,160,0.12)',
+    backgroundColor: 'rgba(56,189,248,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(0,229,160,0.25)',
+    borderColor: 'rgba(56,189,248,0.25)',
     borderRadius: 6,
     paddingVertical: 3,
     paddingHorizontal: 6,
@@ -217,26 +211,26 @@ const styles = StyleSheet.create({
   processorBadgeText: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 9,
-    color: '#00E5A0',
+    color: '#38BDF8',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   phEmail: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     marginTop: 2,
   },
   phPhone: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,245,0.4)',
+    color: 'rgba(255,255,255,0.4)',
     marginTop: 1,
   },
   phStats: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,245,0.06)',
+    borderTopColor: 'rgba(255,255,255,0.06)',
     paddingTop: 14,
   },
   heroPromo: {
@@ -247,28 +241,28 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,245,0.06)',
+    borderTopColor: 'rgba(255,255,255,0.06)',
   },
   heroPromoText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 12,
-    color: 'rgba(255,255,245,0.7)',
+    color: 'rgba(255,255,255,0.7)',
   },
   phStat: { flex: 1, alignItems: 'center' },
   phStatDivider: {
     width: 1,
-    backgroundColor: 'rgba(255,255,245,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   phVal: {
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 17,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
   },
-  phValGreen: { color: '#00E5A0' },
+  phValGreen: { color: '#38BDF8' },
   phLabel: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 9,
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     marginTop: 2,
@@ -278,16 +272,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 1,
     textTransform: 'uppercase',
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     marginHorizontal: 24,
     marginBottom: 10,
   },
   card: {
     marginHorizontal: 24,
     marginBottom: 16,
-    backgroundColor: '#222236',
+    backgroundColor: '#1F1F23',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,245,0.08)',
+    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 20,
     overflow: 'hidden',
   },
@@ -298,7 +292,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,245,0.08)',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   rowLast: { borderBottomWidth: 0 },
   rowIcon: {
@@ -312,12 +306,12 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
   },
   rowSub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     marginTop: 1,
   },
   logoutBtn: {
@@ -327,7 +321,7 @@ const styles = StyleSheet.create({
   versionText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,245,0.2)',
+    color: 'rgba(255,255,255,0.2)',
     textAlign: 'center',
     paddingVertical: 12,
   },

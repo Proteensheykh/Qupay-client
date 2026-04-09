@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,16 +9,26 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { CommonActions } from '@react-navigation/native';
+import { Ionicons } from '../../components/Icon';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { ScreenHeader, GradientAvatar, CTAButton, BottomSheet, Toast } from '../../components';
+import { ScreenHeader, Avatar, CTAButton, BottomSheet, Toast } from '../../components';
 import { networkLogos } from '../../data/cryptoIcons';
 import { createTransaction } from '../../api/transactions';
+import { useTransactionStore } from '../../store/transactionStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'Confirm'>;
+type Stage = 'confirm' | 'detecting';
+
+interface RadarStep {
+  label: string;
+  sub: string;
+  icon: string;
+}
 
 const currencySymbols: Record<string, string> = {
   USDT: '', NGN: '\u20A6', GHS: '\u20B5', KES: 'KSh', INR: '\u20B9', PHP: '\u20B1', MXN: '$', PKR: 'Rs', ZAR: 'R',
@@ -61,6 +71,8 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
     corridorId,
   } = route.params;
 
+  const updateStatus = useTransactionStore((state) => state.updateStatus);
+
   const isCryptoOut = receiveCurrency === 'USDT';
   const recvSymbol = currencySymbols[receiveCurrency] || '';
   const sendSymbol = currencySymbols[sendCurrency] || '';
@@ -70,6 +82,9 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
   const feePct = isCryptoOut
     ? ((fee / amount) * 100).toFixed(2)
     : ((fee / receiveAmount) * 100).toFixed(2);
+  const firstName = recipientName.split(' ')[0];
+
+  const formatUSDT = (val: number) => val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const [selectedNetwork, setSelectedNetwork] = useState(networks[0]);
   const [showNetworkPicker, setShowNetworkPicker] = useState(false);
@@ -78,6 +93,57 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showError, setShowError] = useState(false);
+
+  const [stage, setStage] = useState<Stage>('confirm');
+  const [processingStep, setProcessingStep] = useState(0);
+  const [pulseOn, setPulseOn] = useState(true);
+  const [spinDeg, setSpinDeg] = useState(0);
+  const [transactionId, setTransactionId] = useState<string | undefined>();
+
+  const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
+  const intervalsRef = useRef<NodeJS.Timeout[]>([]);
+
+  const RADAR_STEPS: RadarStep[] = isCryptoOut
+    ? [
+        { label: 'Processing payment', sub: `Confirming your ${sendSymbol}${amount.toLocaleString()} ${sendCurrency} payment`, icon: 'card-outline' },
+        { label: 'Payment confirmed', sub: `${sendSymbol}${amount.toLocaleString()} ${sendCurrency} received`, icon: 'checkmark-circle' },
+        { label: 'Converting to crypto', sub: `${formatUSDT(receiveAmount)} USDT being prepared`, icon: 'swap-horizontal' },
+        { label: `Sending to ${firstName}`, sub: `Releasing to ${recipientNetwork} wallet`, icon: 'send' },
+        { label: 'Delivered!', sub: `${firstName} received ${formatUSDT(receiveAmount)} USDT`, icon: 'checkmark' },
+      ]
+    : [
+        { label: 'Scanning blockchain...', sub: `Looking for ${amount} ${sendCurrency} on ${selectedNetwork.name}`, icon: 'search' },
+        { label: 'Deposit detected', sub: `${amount} ${sendCurrency} confirmed on ${selectedNetwork.name}`, icon: 'checkmark-circle' },
+        { label: 'Converting to local currency', sub: `${recvSymbol}${receiveAmount.toLocaleString()} being prepared`, icon: 'swap-horizontal' },
+        { label: `Sending to ${firstName}`, sub: `Releasing to ${recipientMethod}`, icon: 'send' },
+        { label: 'Delivered!', sub: `${firstName} received ${recvSymbol}${receiveAmount.toLocaleString()}`, icon: 'checkmark' },
+      ];
+
+  useEffect(() => {
+    if (stage !== 'detecting') return;
+
+    const pulseInterval = setInterval(() => {
+      setPulseOn((p) => !p);
+    }, 800);
+    intervalsRef.current.push(pulseInterval);
+
+    const spinInterval = setInterval(() => {
+      setSpinDeg((d) => (d + 30) % 360);
+    }, 100);
+    intervalsRef.current.push(spinInterval);
+
+    return () => {
+      intervalsRef.current.forEach(clearInterval);
+      intervalsRef.current = [];
+    };
+  }, [stage]);
+
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach(clearTimeout);
+      intervalsRef.current.forEach(clearInterval);
+    };
+  }, []);
 
   const shortAddr = `${selectedNetwork.address.slice(0, 8)}\u2026${selectedNetwork.address.slice(-6)}`;
 
@@ -90,6 +156,54 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
       setTimeout(() => setCopied(false), 2500);
     }
   }, [isCryptoOut, recipientWalletAddress, selectedNetwork.address]);
+
+  const startDetectingFlow = useCallback((txId?: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    setStage('detecting');
+    setProcessingStep(0);
+
+    const t1 = setTimeout(() => {
+      setProcessingStep(1);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      if (txId) updateStatus(txId, 'DEPOSIT_CONFIRMED');
+    }, 3000);
+    timeoutsRef.current.push(t1);
+
+    const t2 = setTimeout(() => {
+      setProcessingStep(2);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      if (txId) updateStatus(txId, 'MATCHED');
+    }, 5500);
+    timeoutsRef.current.push(t2);
+
+    const t3 = setTimeout(() => {
+      setProcessingStep(3);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      if (txId) updateStatus(txId, 'SETTLEMENT_IN_PROGRESS');
+    }, 8000);
+    timeoutsRef.current.push(t3);
+
+    const t4 = setTimeout(() => {
+      setProcessingStep(4);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (txId) updateStatus(txId, 'COMPLETED');
+
+      const t5 = setTimeout(() => {
+        const tabs = navigation.getParent();
+        if (tabs) {
+          navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Amount' }] }));
+          setTimeout(() => {
+            tabs.navigate('HistoryTab', {
+              screen: 'TransferDetail',
+              params: { transferId: '1', status: 'delivered' },
+            });
+          }, 100);
+        }
+      }, 1500);
+      timeoutsRef.current.push(t5);
+    }, 10000);
+    timeoutsRef.current.push(t4);
+  }, [navigation, updateStatus]);
 
   const handleProceed = useCallback(async () => {
     setLoading(true);
@@ -112,33 +226,117 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      navigation.navigate('DepositWaiting', {
-        transactionSlug: response.slug,
-        transactionId: response.id,
-        recipientName,
-        recipientMethod,
-        recipientFlag,
-        amount,
-        receiveAmount,
-        sendCurrency,
-        recvCurrency: receiveCurrency,
-        walletAddress: selectedNetwork.address,
-        network: selectedNetwork.name,
-        recipientWalletAddress,
-        recipientNetwork,
-      });
+      setTransactionId(response.id);
+      setLoading(false);
+      startDetectingFlow(response.id);
     } catch (error) {
       setErrorMessage('Failed to create transaction. Please try again.');
       setShowError(true);
-    } finally {
       setLoading(false);
     }
   }, [
-    navigation, recipientName, recipientMethod, recipientFlag, amount, receiveAmount,
-    sendCurrency, receiveCurrency, selectedNetwork, recipientWalletAddress, recipientNetwork,
-    corridorId, isCryptoOut
+    amount, sendCurrency, receiveCurrency, receiveAmount, recipientName, recipientMethod,
+    recipientWalletAddress, recipientNetwork, selectedNetwork, corridorId, isCryptoOut,
+    startDetectingFlow
   ]);
+
+  const currentStep = RADAR_STEPS[processingStep] || RADAR_STEPS[0];
+  const isDone = processingStep >= 4;
+  const ringColor = isDone ? '#4ADE80' : '#38BDF8';
+  const gradientTop = processingStep <= 1
+    ? 'rgba(56,189,248,0.15)'
+    : processingStep <= 3
+      ? 'rgba(139,92,246,0.12)'
+      : 'rgba(74,222,128,0.12)';
+
+  if (stage === 'detecting') {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <LinearGradient
+          colors={[gradientTop, 'transparent']}
+          locations={[0, 0.6]}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+        <View style={styles.detectingContainer}>
+          <View style={styles.radarWrap}>
+            <View
+              style={[
+                styles.radarRing3,
+                {
+                  borderColor: ringColor,
+                  opacity: pulseOn ? 0.25 : 0.12,
+                  transform: [{ scale: pulseOn ? 1.02 : 1 }],
+                },
+              ]}
+            />
+            <View
+              style={[
+                styles.radarRing2,
+                {
+                  borderColor: ringColor,
+                  opacity: pulseOn ? 0.35 : 0.18,
+                  transform: [{ scale: pulseOn ? 1.03 : 1 }],
+                },
+              ]}
+            />
+            <View
+              style={[
+                styles.radarRing1,
+                {
+                  borderColor: ringColor,
+                  opacity: pulseOn ? 0.5 : 0.28,
+                },
+              ]}
+            />
+            <View
+              style={[
+                styles.radarCenter,
+                {
+                  backgroundColor: isDone ? 'rgba(74,222,128,0.15)' : 'rgba(56,189,248,0.12)',
+                  transform: isDone ? [] : [{ rotate: `${spinDeg}deg` }],
+                },
+              ]}
+            >
+              <Ionicons
+                name={currentStep.icon as any}
+                size={32}
+                color={ringColor}
+              />
+            </View>
+          </View>
+
+          <Text style={styles.detectingTitle}>{currentStep.label}</Text>
+          <Text style={styles.detectingSub}>{currentStep.sub}</Text>
+
+          <View style={styles.radarDots}>
+            {RADAR_STEPS.map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.radarDot,
+                  i <= processingStep && styles.radarDotActive,
+                  i <= processingStep && isDone && styles.radarDotDone,
+                ]}
+              />
+            ))}
+          </View>
+
+          <View style={styles.radarSummary}>
+            <Text style={styles.radarSummaryText}>
+              {sendSymbol}{amount.toLocaleString()} {sendCurrency} {'\u2192'}{' '}
+              {isCryptoOut
+                ? `${formatUSDT(receiveAmount)} USDT`
+                : `${recvSymbol}${receiveAmount.toLocaleString()} ${receiveCurrency}`}
+            </Text>
+            <Text style={styles.radarSummaryRecipient}>
+              to {recipientName} {'\u00B7'} {isCryptoOut ? recipientNetwork : recipientMethod}
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -156,14 +354,14 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
       >
         {/* Recipient strip */}
         <View style={styles.recipStrip}>
-          <GradientAvatar initials={recipientInitials} size={34} colors={recipientColors} fontSize={11} />
+          <Avatar seed={recipientName} size={34} />
           <View style={styles.rsInfo}>
             <Text style={styles.rsName}>{recipientName}</Text>
             {isCryptoOut ? (
               <View style={styles.rsWalletRow}>
                 <Text style={styles.rsWalletAddr}>{truncateAddress(recipientWalletAddress || '')}</Text>
                 <View style={styles.rsNetworkBadge}>
-                  <Ionicons name={(networkIconMap[recipientNetwork || ''] || 'layers-outline') as any} size={10} color="#00E5A0" />
+                  <Ionicons name={(networkIconMap[recipientNetwork || ''] || 'layers-outline') as any} size={10} color="#38BDF8" />
                   <Text style={styles.rsNetworkText}>{recipientNetwork}</Text>
                 </View>
               </View>
@@ -172,7 +370,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
             )}
           </View>
           <View style={styles.vtag}>
-            <Ionicons name="checkmark" size={10} color="#00E5A0" />
+            <Ionicons name="checkmark" size={10} color="#38BDF8" />
             <Text style={styles.vtagText}>Verified</Text>
           </View>
         </View>
@@ -205,7 +403,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
           <View style={styles.feeRow}>
             <Text style={styles.feeLabel}>Delivery</Text>
             <View style={styles.deliveryPill}>
-              <Ionicons name="flash" size={11} color="#00E5A0" />
+              <Ionicons name="flash" size={11} color="#38BDF8" />
               <Text style={styles.deliveryText}>~2 min via {isCryptoOut ? recipientNetwork : recipientMethod}</Text>
             </View>
           </View>
@@ -218,7 +416,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
               <View style={styles.wcHeader}>
                 <View style={styles.wcHeaderLeft}>
                   <View style={styles.wcIcon}>
-                    <Ionicons name="wallet-outline" size={18} color="#00E5A0" />
+                    <Ionicons name="wallet-outline" size={18} color="#38BDF8" />
                   </View>
                   <View>
                     <Text style={styles.wcTitle}>Recipient Wallet</Text>
@@ -233,7 +431,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
               <View style={styles.wcNetworkRow}>
                 <Text style={styles.wcNetworkLabel}>Network</Text>
                 <View style={styles.wcNetworkPill}>
-                  <Ionicons name={(networkIconMap[recipientNetwork || ''] || 'layers-outline') as any} size={14} color="#00E5A0" />
+                  <Ionicons name={(networkIconMap[recipientNetwork || ''] || 'layers-outline') as any} size={14} color="#38BDF8" />
                   <Text style={styles.wcNetworkName}>{recipientNetwork}</Text>
                 </View>
               </View>
@@ -248,7 +446,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
                 <Ionicons
                   name={copied ? 'checkmark-circle' : 'copy-outline'}
                   size={16}
-                  color={copied ? '#00E5A0' : '#FFFFF5'}
+                  color={copied ? '#38BDF8' : '#FFFFFF'}
                 />
                 <Text style={[styles.copyText, copied && styles.copyTextGreen]}>
                   {copied ? 'Copied!' : 'Copy address'}
@@ -257,7 +455,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
 
               {/* Info */}
               <View style={styles.infoRow}>
-                <Ionicons name="information-circle-outline" size={14} color="#00E5A0" />
+                <Ionicons name="information-circle-outline" size={14} color="#38BDF8" />
                 <Text style={styles.infoText}>
                   Funds will be sent as USDT on {recipientNetwork} to the recipient's wallet
                 </Text>
@@ -280,20 +478,20 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
               <View style={styles.paymentMethod}>
                 <View style={styles.pmLeft}>
                   <View style={styles.pmIconWrap}>
-                    <Ionicons name="business" size={16} color="#FFFFF5" />
+                    <Ionicons name="business" size={16} color="#FFFFFF" />
                   </View>
                   <View>
                     <Text style={styles.pmTitle}>GTBank</Text>
                     <Text style={styles.pmSub}>Account ending ****4521</Text>
                   </View>
                 </View>
-                <Ionicons name="checkmark-circle" size={20} color="#00E5A0" />
+                <Ionicons name="checkmark-circle" size={20} color="#38BDF8" />
               </View>
 
               <View style={styles.paymentMethodAlt}>
                 <View style={styles.pmLeft}>
-                  <View style={[styles.pmIconWrap, { backgroundColor: 'rgba(255,255,245,0.08)' }]}>
-                    <Ionicons name="card" size={16} color="rgba(255,255,245,0.5)" />
+                  <View style={[styles.pmIconWrap, { backgroundColor: 'rgba(255,255,255,0.08)' }]}>
+                    <Ionicons name="card" size={16} color="rgba(255,255,255,0.5)" />
                   </View>
                   <View>
                     <Text style={styles.pmTitleAlt}>Debit Card</Text>
@@ -311,7 +509,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
               <View style={styles.dcHeader}>
                 <View style={styles.dcHeaderLeft}>
                   <View style={styles.dcIcon}>
-                    <Ionicons name="wallet-outline" size={18} color="#00E5A0" />
+                    <Ionicons name="wallet-outline" size={18} color="#38BDF8" />
                   </View>
                   <View>
                     <Text style={styles.dcTitle}>Deposit Address</Text>
@@ -333,7 +531,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
                   <Text style={styles.networkIcon}>{selectedNetwork.icon}</Text>
                   <Text style={styles.networkName}>{selectedNetwork.name}</Text>
                   <Text style={styles.networkGas}>{selectedNetwork.gas} gas</Text>
-                  <Ionicons name="chevron-down" size={12} color="rgba(255,255,245,0.5)" />
+                  <Ionicons name="chevron-down" size={12} color="rgba(255,255,255,0.5)" />
                 </View>
               </TouchableOpacity>
 
@@ -348,7 +546,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
                   <Text style={styles.addrHint}>Tap to show QR code</Text>
                 </View>
                 <View style={styles.qrMini}>
-                  <Ionicons name="qr-code-outline" size={28} color="#00E5A0" />
+                  <Ionicons name="qr-code-outline" size={28} color="#38BDF8" />
                 </View>
               </TouchableOpacity>
 
@@ -357,7 +555,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
                 <Ionicons
                   name={copied ? 'checkmark-circle' : 'copy-outline'}
                   size={16}
-                  color={copied ? '#00E5A0' : '#FFFFF5'}
+                  color={copied ? '#38BDF8' : '#FFFFFF'}
                 />
                 <Text style={[styles.copyText, copied && styles.copyTextGreen]}>
                   {copied ? 'Copied!' : 'Copy address'}
@@ -366,7 +564,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
 
               {/* Warning */}
               <View style={styles.warnRow}>
-                <Ionicons name="alert-circle-outline" size={14} color="#FFD460" />
+                <Ionicons name="alert-circle-outline" size={14} color="#FFD60A" />
                 <Text style={styles.warnText}>
                   Only send {sendCurrency} on {selectedNetwork.name}. Sending other tokens or using a different network may result in loss of funds.
                 </Text>
@@ -404,7 +602,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
               <Text style={styles.cpName}>{n.name}</Text>
               <Text style={styles.cpSub}>Gas {n.gas}</Text>
             </View>
-            {selectedNetwork.id === n.id && <Ionicons name="checkmark" size={18} color="#00E5A0" />}
+            {selectedNetwork.id === n.id && <Ionicons name="checkmark" size={18} color="#38BDF8" />}
           </TouchableOpacity>
         ))}
         <View style={{ height: 40 }} />
@@ -434,7 +632,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
             <Text style={styles.qrAddr} selectable>{selectedNetwork.address}</Text>
           </View>
           <TouchableOpacity style={styles.qrCopyBtn} onPress={handleCopy} activeOpacity={0.7}>
-            <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={16} color="#111118" />
+            <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={16} color="#0A0A0C" />
             <Text style={styles.qrCopyText}>{copied ? 'Copied!' : 'Copy address'}</Text>
           </TouchableOpacity>
           <Text style={styles.qrWarn}>
@@ -448,54 +646,146 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#111118' },
+  safe: { flex: 1, backgroundColor: '#0A0A0C' },
   scroll: { flex: 1 },
+  detectingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  radarWrap: {
+    width: 220,
+    height: 220,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 40,
+  },
+  radarRing3: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    borderWidth: 2,
+  },
+  radarRing2: {
+    position: 'absolute',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    borderWidth: 2,
+  },
+  radarRing1: {
+    position: 'absolute',
+    width: 105,
+    height: 105,
+    borderRadius: 52.5,
+    borderWidth: 2.5,
+  },
+  radarCenter: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  detectingTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 22,
+    color: '#FFFFFF',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  detectingSub: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.58)',
+    textAlign: 'center',
+    paddingHorizontal: 40,
+  },
+  radarDots: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 24,
+  },
+  radarDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  radarDotActive: {
+    backgroundColor: '#38BDF8',
+  },
+  radarDotDone: {
+    backgroundColor: '#4ADE80',
+  },
+  radarSummary: {
+    alignItems: 'center',
+    marginTop: 32,
+    backgroundColor: '#17171A',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+  },
+  radarSummaryText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+    color: '#FFFFFF',
+    fontVariant: ['tabular-nums'],
+  },
+  radarSummaryRecipient: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.58)',
+    marginTop: 4,
+  },
   recipStrip: {
     marginHorizontal: 24, marginBottom: 16, flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingVertical: 10, paddingHorizontal: 14, backgroundColor: '#222236',
-    borderWidth: 1, borderColor: 'rgba(255,255,245,0.08)', borderRadius: 12,
+    paddingVertical: 10, paddingHorizontal: 14, backgroundColor: '#1F1F23',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderRadius: 12,
   },
   rsInfo: { flex: 1 },
-  rsName: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#FFFFF5' },
-  rsSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.6)' },
+  rsName: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#FFFFFF' },
+  rsSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.6)' },
   rsWalletRow: {
     flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2,
   },
   rsWalletAddr: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 10, color: 'rgba(255,255,245,0.5)',
+    fontSize: 10, color: 'rgba(255,255,255,0.5)',
   },
   rsNetworkBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: 'rgba(0,229,160,0.1)', borderRadius: 6,
+    backgroundColor: 'rgba(56,189,248,0.1)', borderRadius: 6,
     paddingVertical: 2, paddingHorizontal: 6,
   },
   rsNetworkText: {
-    fontFamily: 'Inter_600SemiBold', fontSize: 9, color: '#00E5A0',
+    fontFamily: 'Inter_600SemiBold', fontSize: 9, color: '#38BDF8',
   },
   vtag: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: 'rgba(0,229,160,0.12)', borderRadius: 20, paddingVertical: 3, paddingHorizontal: 8,
+    backgroundColor: 'rgba(56,189,248,0.12)', borderRadius: 20, paddingVertical: 3, paddingHorizontal: 8,
   },
-  vtagText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#00E5A0' },
+  vtagText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#38BDF8' },
   swapCard: {
-    marginHorizontal: 24, marginBottom: 16, backgroundColor: '#222236',
-    borderWidth: 1, borderColor: 'rgba(255,255,245,0.08)', borderRadius: 14, padding: 16,
+    marginHorizontal: 24, marginBottom: 16, backgroundColor: '#1F1F23',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderRadius: 14, padding: 16,
   },
   swapRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
   },
   swapDivider: {
-    height: 1, backgroundColor: 'rgba(255,255,245,0.08)', marginVertical: 12,
+    height: 1, backgroundColor: 'rgba(255,255,255,0.08)', marginVertical: 12,
   },
   swapLabel: {
-    fontFamily: 'Inter_400Regular', fontSize: 12, color: 'rgba(255,255,245,0.6)',
+    fontFamily: 'Inter_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.6)',
   },
   swapValue: {
-    fontFamily: 'Inter_600SemiBold', fontSize: 15, color: '#FFFFF5',
+    fontFamily: 'Inter_600SemiBold', fontSize: 15, color: '#FFFFFF',
   },
   swapValueGreen: {
-    fontFamily: 'Inter_600SemiBold', fontSize: 15, color: '#00E5A0',
+    fontFamily: 'Inter_600SemiBold', fontSize: 15, color: '#38BDF8',
   },
   metaRows: {
     marginHorizontal: 24, marginBottom: 16, gap: 8,
@@ -507,15 +797,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 4,
   },
   deliveryText: {
-    fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#00E5A0',
+    fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#38BDF8',
   },
-  feeLabel: { fontFamily: 'Inter_400Regular', fontSize: 12, color: 'rgba(255,255,245,0.6)' },
-  feeValue: { fontFamily: 'Inter_500Medium', fontSize: 12, color: '#FFFFF5', fontVariant: ['tabular-nums'] },
-  feePct: { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#00E5A0' },
-  // Wallet card for crypto-out
+  feeLabel: { fontFamily: 'Inter_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.6)' },
+  feeValue: { fontFamily: 'Inter_500Medium', fontSize: 12, color: '#FFFFFF', fontVariant: ['tabular-nums'] },
+  feePct: { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#38BDF8' },
   walletCard: {
     marginHorizontal: 24, marginBottom: 16, backgroundColor: '#1A1A2E',
-    borderWidth: 1.5, borderColor: 'rgba(0,229,160,0.2)', borderRadius: 20, overflow: 'hidden',
+    borderWidth: 1.5, borderColor: 'rgba(56,189,248,0.2)', borderRadius: 20, overflow: 'hidden',
   },
   wcHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -523,41 +812,40 @@ const styles = StyleSheet.create({
   },
   wcHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   wcIcon: {
-    width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(0,229,160,0.12)',
+    width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(56,189,248,0.12)',
     alignItems: 'center', justifyContent: 'center',
   },
-  wcTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#FFFFF5' },
-  wcSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.5)', marginTop: 1 },
+  wcTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#FFFFFF' },
+  wcSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 1 },
   wcNetworkRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingBottom: 14,
   },
-  wcNetworkLabel: { fontFamily: 'Inter_500Medium', fontSize: 12, color: 'rgba(255,255,245,0.5)' },
+  wcNetworkLabel: { fontFamily: 'Inter_500Medium', fontSize: 12, color: 'rgba(255,255,255,0.5)' },
   wcNetworkPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: 'rgba(0,229,160,0.1)', borderWidth: 1, borderColor: 'rgba(0,229,160,0.25)',
+    backgroundColor: 'rgba(56,189,248,0.1)', borderWidth: 1, borderColor: 'rgba(56,189,248,0.25)',
     borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12,
   },
-  wcNetworkName: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#FFFFF5' },
+  wcNetworkName: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#FFFFFF' },
   wcAddressBox: {
-    marginHorizontal: 16, marginBottom: 12, backgroundColor: '#111118',
-    borderWidth: 1, borderColor: 'rgba(255,255,245,0.08)', borderRadius: 14, padding: 14,
+    marginHorizontal: 16, marginBottom: 12, backgroundColor: '#0A0A0C',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderRadius: 14, padding: 14,
   },
   wcAddrMono: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 12, color: '#FFFFF5', letterSpacing: 0.3, lineHeight: 20,
+    fontSize: 12, color: '#FFFFFF', letterSpacing: 0.3, lineHeight: 20,
   },
   infoRow: {
     flexDirection: 'row', gap: 8, alignItems: 'flex-start',
     marginHorizontal: 16, marginBottom: 16,
   },
   infoText: {
-    flex: 1, fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(0,229,160,0.7)', lineHeight: 16,
+    flex: 1, fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(56,189,248,0.7)', lineHeight: 16,
   },
-  // Pay with card
   payWithCard: {
-    marginHorizontal: 24, marginBottom: 16, backgroundColor: '#222236',
-    borderWidth: 1, borderColor: 'rgba(255,255,245,0.08)', borderRadius: 16, padding: 16,
+    marginHorizontal: 24, marginBottom: 16, backgroundColor: '#1F1F23',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderRadius: 16, padding: 16,
   },
   pwHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16,
@@ -566,16 +854,16 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(26,111,255,0.15)',
     alignItems: 'center', justifyContent: 'center',
   },
-  pwTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#FFFFF5' },
-  pwSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.5)', marginTop: 1 },
+  pwTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#FFFFFF' },
+  pwSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 1 },
   paymentMethod: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: 'rgba(0,229,160,0.08)', borderWidth: 1.5, borderColor: 'rgba(0,229,160,0.3)',
+    backgroundColor: 'rgba(56,189,248,0.08)', borderWidth: 1.5, borderColor: 'rgba(56,189,248,0.3)',
     borderRadius: 12, padding: 14, marginBottom: 10,
   },
   paymentMethodAlt: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,245,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,245,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12, padding: 14,
   },
   pmLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -583,17 +871,16 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 10, backgroundColor: '#008751',
     alignItems: 'center', justifyContent: 'center',
   },
-  pmTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#FFFFF5' },
-  pmSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.5)', marginTop: 1 },
-  pmTitleAlt: { fontFamily: 'Inter_500Medium', fontSize: 13, color: 'rgba(255,255,245,0.6)' },
-  pmSubAlt: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.35)', marginTop: 1 },
+  pmTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#FFFFFF' },
+  pmSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 1 },
+  pmTitleAlt: { fontFamily: 'Inter_500Medium', fontSize: 13, color: 'rgba(255,255,255,0.6)' },
+  pmSubAlt: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 1 },
   pmRadio: {
-    width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: 'rgba(255,255,245,0.2)',
+    width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)',
   },
-  // Deposit card for crypto-in (existing)
   depositCard: {
     marginHorizontal: 24, marginBottom: 16, backgroundColor: '#1A1A2E',
-    borderWidth: 1.5, borderColor: 'rgba(0,229,160,0.2)', borderRadius: 20, overflow: 'hidden',
+    borderWidth: 1.5, borderColor: 'rgba(56,189,248,0.2)', borderRadius: 20, overflow: 'hidden',
   },
   dcHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -601,47 +888,47 @@ const styles = StyleSheet.create({
   },
   dcHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   dcIcon: {
-    width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(0,229,160,0.12)',
+    width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(56,189,248,0.12)',
     alignItems: 'center', justifyContent: 'center',
   },
-  dcTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#FFFFF5' },
-  dcSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.5)', marginTop: 1 },
+  dcTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#FFFFFF' },
+  dcSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 1 },
   networkRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingBottom: 14,
   },
-  networkLabel: { fontFamily: 'Inter_500Medium', fontSize: 12, color: 'rgba(255,255,245,0.5)' },
+  networkLabel: { fontFamily: 'Inter_500Medium', fontSize: 12, color: 'rgba(255,255,255,0.5)' },
   networkPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#222236', borderWidth: 1, borderColor: 'rgba(255,255,245,0.08)',
+    backgroundColor: '#1F1F23', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12,
   },
   networkIcon: { fontSize: 12 },
-  networkName: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#FFFFF5' },
-  networkGas: { fontFamily: 'Inter_400Regular', fontSize: 10, color: 'rgba(255,255,245,0.4)' },
+  networkName: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#FFFFFF' },
+  networkGas: { fontFamily: 'Inter_400Regular', fontSize: 10, color: 'rgba(255,255,255,0.4)' },
   addressBox: {
     marginHorizontal: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', backgroundColor: '#111118',
-    borderWidth: 1, borderColor: 'rgba(255,255,245,0.08)', borderRadius: 14, padding: 14,
+    justifyContent: 'space-between', backgroundColor: '#0A0A0C',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderRadius: 14, padding: 14,
   },
   addrLeft: { flex: 1 },
   addrMono: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 15, color: '#FFFFF5', letterSpacing: 0.5,
+    fontSize: 15, color: '#FFFFFF', letterSpacing: 0.5,
   },
-  addrHint: { fontFamily: 'Inter_400Regular', fontSize: 10, color: 'rgba(255,255,245,0.35)', marginTop: 3 },
+  addrHint: { fontFamily: 'Inter_400Regular', fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 3 },
   qrMini: {
-    width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(0,229,160,0.08)',
-    borderWidth: 1, borderColor: 'rgba(0,229,160,0.2)', alignItems: 'center', justifyContent: 'center',
+    width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(56,189,248,0.08)',
+    borderWidth: 1, borderColor: 'rgba(56,189,248,0.2)', alignItems: 'center', justifyContent: 'center',
   },
   copyBtn: {
     marginHorizontal: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'center', gap: 8, backgroundColor: '#222236',
-    borderWidth: 1, borderColor: 'rgba(255,255,245,0.08)', borderRadius: 12,
+    justifyContent: 'center', gap: 8, backgroundColor: '#1F1F23',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderRadius: 12,
     paddingVertical: 12,
   },
-  copyText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#FFFFF5' },
-  copyTextGreen: { color: '#00E5A0' },
+  copyText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#FFFFFF' },
+  copyTextGreen: { color: '#38BDF8' },
   warnRow: {
     flexDirection: 'row', gap: 8, alignItems: 'flex-start',
     marginHorizontal: 16, marginBottom: 16,
@@ -651,39 +938,39 @@ const styles = StyleSheet.create({
   },
   ctaWrap: { paddingHorizontal: 24, paddingBottom: 24 },
   ctaNote: {
-    fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.4)',
+    fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.4)',
     textAlign: 'center', marginTop: 10,
   },
   cpItem: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingVertical: 12, paddingHorizontal: 24,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,245,0.08)',
+    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)',
   },
-  cpItemSel: { backgroundColor: 'rgba(0,229,160,0.08)' },
+  cpItemSel: { backgroundColor: 'rgba(56,189,248,0.08)' },
   cpInfo: { flex: 1 },
-  cpName: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#FFFFF5' },
-  cpSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.6)' },
+  cpName: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#FFFFFF' },
+  cpSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.6)' },
   cpLogo: { width: 36, height: 36, borderRadius: 18 },
   qrSheet: { alignItems: 'center', paddingHorizontal: 24 },
   qrBox: {
-    width: 220, height: 220, backgroundColor: '#FFFFF5', borderRadius: 16,
+    width: 220, height: 220, backgroundColor: '#FFFFFF', borderRadius: 16,
     padding: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 20,
   },
   qrGrid: { flexDirection: 'row', flexWrap: 'wrap', width: 195, height: 195 },
   qrCell: { width: 15, height: 15 },
-  qrCellFilled: { backgroundColor: '#111118' },
+  qrCellFilled: { backgroundColor: '#0A0A0C' },
   qrInfo: { alignItems: 'center', marginBottom: 16 },
-  qrNetwork: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#FFFFF5', marginBottom: 6 },
+  qrNetwork: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#FFFFFF', marginBottom: 6 },
   qrAddr: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 11, color: 'rgba(255,255,245,0.6)', textAlign: 'center', lineHeight: 18,
+    fontSize: 11, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 18,
   },
   qrCopyBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#00E5A0', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 12,
+    backgroundColor: '#38BDF8', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 12,
   },
-  qrCopyText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#111118' },
+  qrCopyText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#0A0A0C' },
   qrWarn: {
-    fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.4)', textAlign: 'center',
+    fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.4)', textAlign: 'center',
   },
 });

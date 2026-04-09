@@ -9,10 +9,10 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/Icon';
 import * as Haptics from 'expo-haptics';
 import * as DocumentPicker from 'expo-document-picker';
-import { ScreenHeader, CTAButton, FormField, BottomSheet, Toast, GradientAvatar } from '../../components';
+import { ScreenHeader, CTAButton, FormField, BottomSheet, Toast, Avatar } from '../../components';
 import { useTransactionStore } from '../../store/transactionStore';
 import { useAuthStore } from '../../store/authStore';
 import { acceptTransaction, uploadSettlementProof, updateTransactionStatus } from '../../api/transactions';
@@ -38,15 +38,15 @@ const statusConfig: Record<
   TransactionStatus,
   { label: string; color: string; bgColor: string; icon: keyof typeof Ionicons.glyphMap }
 > = {
-  PENDING_DEPOSIT: { label: 'Pending Deposit', color: '#FFD460', bgColor: 'rgba(255,212,96,0.12)', icon: 'time-outline' },
-  DEPOSIT_CONFIRMED: { label: 'Ready for Settlement', color: '#00E5A0', bgColor: 'rgba(0,229,160,0.12)', icon: 'checkmark-circle-outline' },
+  PENDING_DEPOSIT: { label: 'Pending Deposit', color: '#FFD60A', bgColor: 'rgba(255,212,96,0.12)', icon: 'time-outline' },
+  DEPOSIT_CONFIRMED: { label: 'Ready for Settlement', color: '#38BDF8', bgColor: 'rgba(56,189,248,0.12)', icon: 'checkmark-circle-outline' },
   MATCHED: { label: 'Matched', color: '#1A6FFF', bgColor: 'rgba(26,111,255,0.12)', icon: 'link-outline' },
   SETTLEMENT_IN_PROGRESS: { label: 'Settlement In Progress', color: '#FF9F43', bgColor: 'rgba(255,159,67,0.12)', icon: 'hourglass-outline' },
   SETTLEMENT_PROOF_UPLOADED: { label: 'Proof Uploaded', color: '#A855F7', bgColor: 'rgba(168,85,247,0.12)', icon: 'document-attach-outline' },
-  COMPLETED: { label: 'Completed', color: '#00E5A0', bgColor: 'rgba(0,229,160,0.12)', icon: 'checkmark-done-outline' },
-  FAILED: { label: 'Failed', color: '#FF4D6A', bgColor: 'rgba(255,77,106,0.12)', icon: 'close-circle-outline' },
-  EXPIRED: { label: 'Expired', color: '#FF6B6B', bgColor: 'rgba(255,107,107,0.12)', icon: 'timer-outline' },
-  DISPUTED: { label: 'Disputed', color: '#FFD460', bgColor: 'rgba(255,212,96,0.12)', icon: 'warning-outline' },
+  COMPLETED: { label: 'Completed', color: '#4ADE80', bgColor: 'rgba(74,222,128,0.15)', icon: 'checkmark-done-outline' },
+  FAILED: { label: 'Failed', color: '#EF4444', bgColor: 'rgba(255,77,106,0.12)', icon: 'close-circle-outline' },
+  EXPIRED: { label: 'Expired', color: '#F87171', bgColor: 'rgba(255,107,107,0.12)', icon: 'timer-outline' },
+  DISPUTED: { label: 'Disputed', color: '#FFD60A', bgColor: 'rgba(255,212,96,0.12)', icon: 'warning-outline' },
 };
 
 const proofTypes: { type: ProofType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -65,14 +65,6 @@ function formatDateTime(timestamp: string): string {
     minute: '2-digit',
     hour12: true,
   });
-}
-
-function getInitials(name: string): string {
-  const parts = name.split(' ');
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
 }
 
 export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, route }) => {
@@ -95,7 +87,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
       <SafeAreaView style={styles.safe}>
         <ScreenHeader title="Transaction" onBack={() => navigation.goBack()} />
         <View style={styles.errorState}>
-          <Ionicons name="alert-circle-outline" size={48} color="rgba(255,255,245,0.3)" />
+          <Ionicons name="alert-circle-outline" size={48} color="rgba(255,255,255,0.3)" />
           <Text style={styles.errorText}>Transaction not found</Text>
         </View>
       </SafeAreaView>
@@ -241,7 +233,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
               </Text>
             </View>
             <View style={styles.arrowWrap}>
-              <Ionicons name="arrow-forward" size={18} color="rgba(255,255,245,0.4)" />
+              <Ionicons name="arrow-forward" size={18} color="rgba(255,255,255,0.4)" />
             </View>
             <View style={[styles.amountCol, { alignItems: 'flex-end' }]}>
               <Text style={styles.amountLabel}>Receive Amount</Text>
@@ -262,7 +254,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Sender Details</Text>
           <View style={styles.partyCard}>
-            <GradientAvatar initials="SN" size={44} fontSize={16} />
+            <Avatar seed={`Sender ${transaction.payerId.slice(-6)}`} size={44} />
             <View style={styles.partyInfo}>
               <Text style={styles.partyName}>Sender #{transaction.payerId.slice(-6)}</Text>
               <Text style={styles.partyRole}>Payer</Text>
@@ -278,13 +270,12 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Processor Details</Text>
             <View style={styles.partyCard}>
-              <GradientAvatar 
-                initials={currentUser && transaction.processorId === currentUser.id 
-                  ? getInitials(`${currentUser.firstName} ${currentUser.lastName}`)
-                  : 'PR'
+              <Avatar 
+                seed={currentUser && transaction.processorId === currentUser.id 
+                  ? `${currentUser.firstName} ${currentUser.lastName}`
+                  : `Processor ${transaction.processorId.slice(-6)}`
                 } 
                 size={44} 
-                fontSize={16} 
               />
               <View style={styles.partyInfo}>
                 <Text style={styles.partyName}>
@@ -296,9 +287,9 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
                 <Text style={styles.partyRole}>Settlement Processor</Text>
               </View>
               {currentUser && transaction.processorId === currentUser.id && (
-                <View style={[styles.partyBadge, { backgroundColor: 'rgba(0,229,160,0.1)' }]}>
-                  <Ionicons name="checkmark-circle" size={12} color="#00E5A0" />
-                  <Text style={[styles.partyBadgeText, { color: '#00E5A0' }]}>You</Text>
+                <View style={[styles.partyBadge, { backgroundColor: 'rgba(56,189,248,0.1)' }]}>
+                  <Ionicons name="checkmark-circle" size={12} color="#38BDF8" />
+                  <Text style={[styles.partyBadgeText, { color: '#38BDF8' }]}>You</Text>
                 </View>
               )}
             </View>
@@ -348,7 +339,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
                         : 'document-text'
                     }
                     size={18}
-                    color="#00E5A0"
+                    color="#38BDF8"
                   />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -394,7 +385,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
         )}
         {isComplete && (
           <View style={styles.completedBadge}>
-            <Ionicons name="checkmark-circle" size={20} color="#00E5A0" />
+            <Ionicons name="checkmark-circle" size={20} color="#38BDF8" />
             <Text style={styles.completedText}>Settlement Complete</Text>
           </View>
         )}
@@ -430,7 +421,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
                 <Ionicons
                   name={pt.icon}
                   size={16}
-                  color={selectedProofType === pt.type ? '#00E5A0' : 'rgba(255,255,245,0.5)'}
+                  color={selectedProofType === pt.type ? '#38BDF8' : 'rgba(255,255,255,0.5)'}
                 />
                 <Text
                   style={[
@@ -454,7 +445,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
                     <Ionicons 
                       name={selectedFile.type.includes('pdf') ? 'document-text' : 'image'} 
                       size={24} 
-                      color="#00E5A0" 
+                      color="#38BDF8" 
                     />
                   </View>
                   <View style={styles.selectedFileInfo}>
@@ -470,7 +461,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
                     style={styles.removeFileBtn}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
-                    <Ionicons name="close-circle" size={24} color="rgba(255,255,245,0.4)" />
+                    <Ionicons name="close-circle" size={24} color="rgba(255,255,255,0.4)" />
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -480,7 +471,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
                   activeOpacity={0.7}
                 >
                   <View style={styles.filePickerIconWrap}>
-                    <Ionicons name="cloud-upload-outline" size={28} color="#00E5A0" />
+                    <Ionicons name="cloud-upload-outline" size={28} color="#38BDF8" />
                   </View>
                   <Text style={styles.filePickerTitle}>Tap to select file</Text>
                   <Text style={styles.filePickerSub}>Supports images and PDFs</Text>
@@ -531,7 +522,7 @@ export const ProcessorTransactionDetailScreen: React.FC<Props> = ({ navigation, 
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#111118' },
+  safe: { flex: 1, backgroundColor: '#0A0A0C' },
   scroll: { flex: 1 },
   errorState: {
     flex: 1,
@@ -542,7 +533,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
-    color: 'rgba(255,255,245,0.5)',
+    color: 'rgba(255,255,255,0.5)',
   },
   statusBanner: {
     flexDirection: 'row',
@@ -563,7 +554,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     backgroundColor: '#1A1A2E',
     borderWidth: 1,
-    borderColor: 'rgba(0,229,160,0.2)',
+    borderColor: 'rgba(56,189,248,0.2)',
     borderRadius: 16,
     padding: 20,
   },
@@ -581,30 +572,30 @@ const styles = StyleSheet.create({
   amountLabel: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,245,0.5)',
+    color: 'rgba(255,255,255,0.5)',
     marginBottom: 4,
   },
   amountValue: {
     fontFamily: 'Inter_700Bold',
     fontSize: 18,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
   },
   receiveValue: {
     fontFamily: 'Inter_700Bold',
     fontSize: 18,
-    color: '#00E5A0',
+    color: '#38BDF8',
   },
   amountMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,245,0.08)',
+    borderTopColor: 'rgba(255,255,255,0.08)',
   },
   metaText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,245,0.5)',
+    color: 'rgba(255,255,255,0.5)',
   },
   section: {
     marginHorizontal: 24,
@@ -615,15 +606,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
-    color: 'rgba(255,255,245,0.5)',
+    color: 'rgba(255,255,255,0.5)',
     marginBottom: 10,
   },
   partyCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#222236',
+    backgroundColor: '#1F1F23',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,245,0.08)',
+    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 14,
     padding: 14,
     gap: 12,
@@ -634,13 +625,13 @@ const styles = StyleSheet.create({
   partyName: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
     marginBottom: 2,
   },
   partyRole: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,245,0.5)',
+    color: 'rgba(255,255,255,0.5)',
   },
   partyBadge: {
     flexDirection: 'row',
@@ -657,9 +648,9 @@ const styles = StyleSheet.create({
     color: '#1A6FFF',
   },
   detailCard: {
-    backgroundColor: '#222236',
+    backgroundColor: '#1F1F23',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,245,0.08)',
+    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 14,
     padding: 16,
   },
@@ -669,33 +660,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,245,0.06)',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   detailLabel: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
-    color: 'rgba(255,255,245,0.5)',
+    color: 'rgba(255,255,255,0.5)',
   },
   detailValue: {
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
     maxWidth: '60%',
     textAlign: 'right',
   },
   detailValueHighlight: {
-    color: '#00E5A0',
+    color: '#38BDF8',
   },
   walletAddr: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     fontSize: 11,
-    color: '#00E5A0',
+    color: '#38BDF8',
     maxWidth: '55%',
   },
   proofCard: {
-    backgroundColor: 'rgba(0,229,160,0.08)',
+    backgroundColor: 'rgba(56,189,248,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(0,229,160,0.2)',
+    borderColor: 'rgba(56,189,248,0.2)',
     borderRadius: 14,
     padding: 16,
   },
@@ -708,25 +699,25 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: 'rgba(0,229,160,0.15)',
+    backgroundColor: 'rgba(56,189,248,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   proofType: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 13,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
     marginBottom: 2,
   },
   proofData: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     fontSize: 11,
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
   },
   proofNotes: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,245,0.5)',
+    color: 'rgba(255,255,255,0.5)',
     marginTop: 12,
     fontStyle: 'italic',
   },
@@ -738,25 +729,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 34,
     paddingTop: 16,
-    backgroundColor: '#111118',
+    backgroundColor: '#0A0A0C',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,245,0.08)',
+    borderTopColor: 'rgba(255,255,255,0.08)',
   },
   completedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: 'rgba(0,229,160,0.1)',
+    backgroundColor: 'rgba(56,189,248,0.1)',
     borderWidth: 1.5,
-    borderColor: 'rgba(0,229,160,0.3)',
+    borderColor: 'rgba(56,189,248,0.3)',
     borderRadius: 16,
     paddingVertical: 16,
   },
   completedText: {
     fontFamily: 'Inter_700Bold',
     fontSize: 15,
-    color: '#00E5A0',
+    color: '#38BDF8',
   },
   sheetContent: {
     paddingHorizontal: 24,
@@ -766,7 +757,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     marginBottom: 10,
   },
   proofTypeRow: {
@@ -780,23 +771,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#222236',
+    backgroundColor: '#1F1F23',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,245,0.08)',
+    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 10,
     paddingVertical: 10,
   },
   proofTypeChipActive: {
-    backgroundColor: 'rgba(0,229,160,0.1)',
-    borderColor: 'rgba(0,229,160,0.4)',
+    backgroundColor: 'rgba(56,189,248,0.1)',
+    borderColor: 'rgba(56,189,248,0.4)',
   },
   proofTypeText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 11,
-    color: 'rgba(255,255,245,0.5)',
+    color: 'rgba(255,255,255,0.5)',
   },
   proofTypeTextActive: {
-    color: '#00E5A0',
+    color: '#38BDF8',
   },
   filePickerSection: {
     marginBottom: 12,
@@ -804,7 +795,7 @@ const styles = StyleSheet.create({
   filePickerBtn: {
     backgroundColor: '#1A1A2E',
     borderWidth: 2,
-    borderColor: 'rgba(0,229,160,0.3)',
+    borderColor: 'rgba(56,189,248,0.3)',
     borderStyle: 'dashed',
     borderRadius: 14,
     paddingVertical: 28,
@@ -815,7 +806,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(0,229,160,0.1)',
+    backgroundColor: 'rgba(56,189,248,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
@@ -823,20 +814,20 @@ const styles = StyleSheet.create({
   filePickerTitle: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
     marginBottom: 4,
   },
   filePickerSub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,245,0.5)',
+    color: 'rgba(255,255,255,0.5)',
   },
   selectedFileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,229,160,0.08)',
+    backgroundColor: 'rgba(56,189,248,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(0,229,160,0.3)',
+    borderColor: 'rgba(56,189,248,0.3)',
     borderRadius: 12,
     padding: 12,
     gap: 12,
@@ -845,7 +836,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: 'rgba(0,229,160,0.15)',
+    backgroundColor: 'rgba(56,189,248,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -855,13 +846,13 @@ const styles = StyleSheet.create({
   selectedFileName: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
     marginBottom: 2,
   },
   selectedFileType: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,245,0.5)',
+    color: 'rgba(255,255,255,0.5)',
   },
   removeFileBtn: {
     padding: 4,

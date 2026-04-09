@@ -22,12 +22,12 @@ const navigationTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    primary: '#00E5A0',
-    background: '#111118',
-    card: '#111118',
-    text: '#FFFFF5',
-    border: 'rgba(255,255,245,0.08)',
-    notification: '#FF4D6A',
+    primary: '#38BDF8',
+    background: '#0A0A0C',
+    card: '#0A0A0C',
+    text: '#FFFFFF',
+    border: 'rgba(255,255,255,0.06)',
+    notification: '#EF4444',
   },
 };
 
@@ -51,7 +51,7 @@ export default function App() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#111118' }} onLayout={onLayoutRootView}>
+    <View style={{ flex: 1, backgroundColor: '#0A0A0C' }} onLayout={onLayoutRootView}>
       <AuthProvider>
         <ThemeProvider>
           <NavigationContainer theme={navigationTheme}>

@@ -8,19 +8,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/Icon';
 import { useNavigation } from '@react-navigation/native';
-import { QupayLogo, GradientAvatar, BottomSheet } from '../../components';
+import { QupayLogo, Avatar, BottomSheet } from '../../components';
 import { shadows } from '../../theme/spacing';
 import { userProfile } from '../../data/mockData';
 
 type Props = { navigation: any };
 
 const recentContacts = [
-  { name: 'Emeka', initials: 'EJ', fullName: 'Emeka Johnson', colors: ['#1a6fff', '#00e5a0'] as [string, string], method: 'OPay', phone: '0812 456 7890', flag: '\u{1F1F3}\u{1F1EC}', amount: 200 },
+  { name: 'Emeka', initials: 'EJ', fullName: 'Emeka Johnson', colors: ['#1a6fff', '#38BDF8'] as [string, string], method: 'OPay', phone: '0812 456 7890', flag: '\u{1F1F3}\u{1F1EC}', amount: 200 },
   { name: 'Adaeze', initials: 'AO', fullName: 'Adaeze Obi', colors: ['#a855f7', '#1a6fff'] as [string, string], method: 'GTBank', phone: '\u00B7\u00B7\u00B7\u00B7 4521', flag: '\u{1F1F3}\u{1F1EC}', amount: 100 },
-  { name: 'Kofi', initials: 'KM', fullName: 'Kofi Mensah', colors: ['#ff9f43', '#00e5a0'] as [string, string], method: 'MTN Momo', phone: '0541 234 567', flag: '\u{1F1EC}\u{1F1ED}', amount: 50 },
-  { name: 'Chidi', initials: 'CN', fullName: 'Chidi Nwosu', colors: ['#ff6b6b', '#ffd460'] as [string, string], method: 'PalmPay', phone: '0813 456 7890', flag: '\u{1F1F3}\u{1F1EC}', amount: 30 },
+  { name: 'Kofi', initials: 'KM', fullName: 'Kofi Mensah', colors: ['#ff9f43', '#38BDF8'] as [string, string], method: 'MTN Momo', phone: '0541 234 567', flag: '\u{1F1EC}\u{1F1ED}', amount: 50 },
+  { name: 'Chidi', initials: 'CN', fullName: 'Chidi Nwosu', colors: ['#F87171', '#FFD60A'] as [string, string], method: 'PalmPay', phone: '0813 456 7890', flag: '\u{1F1F3}\u{1F1EC}', amount: 30 },
 ];
 
 export interface DestInfo {
@@ -65,14 +65,14 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
             }}
             activeOpacity={0.8}
           >
-            <GradientAvatar initials={userProfile.initials} size={38} />
+            <Avatar seed={userProfile.name} size={38} />
           </TouchableOpacity>
         </View>
 
         {/* Hero card */}
         <View style={styles.heroWrap}>
           <LinearGradient
-            colors={['#1A1A2E', '#111118']}
+            colors={['#1A1A2E', '#0A0A0C']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.hero}
@@ -116,7 +116,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
           }}
           activeOpacity={0.85}
         >
-          <Ionicons name="arrow-forward" size={20} color="#060a07" />
+          <Ionicons name="arrow-forward" size={20} color="#0A0A0C" />
           <Text style={styles.sendBtnText}>Send Money</Text>
         </TouchableOpacity>
 
@@ -152,11 +152,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
               activeOpacity={0.7}
             >
               <View style={styles.avRing}>
-                <GradientAvatar
-                  initials={c.initials}
-                  size={46}
-                  colors={c.colors}
-                />
+                <Avatar seed={c.fullName} size={46} />
               </View>
               <Text style={styles.recentName}>{c.name}</Text>
             </TouchableOpacity>
@@ -211,7 +207,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#111118' },
+  safe: { flex: 1, backgroundColor: '#0A0A0C' },
   scroll: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -227,7 +223,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(0,229,160,0.12)',
+    borderColor: 'rgba(56,189,248,0.12)',
   },
   hero: {
     padding: 20,
@@ -236,13 +232,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 22,
     letterSpacing: -0.3,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
     marginBottom: 14,
   },
   corridorBtn: {
-    backgroundColor: 'rgba(0,229,160,0.07)',
+    backgroundColor: 'rgba(56,189,248,0.07)',
     borderWidth: 1,
-    borderColor: 'rgba(0,229,160,0.1)',
+    borderColor: 'rgba(56,189,248,0.1)',
     borderRadius: 10,
     padding: 12,
     flexDirection: 'row',
@@ -256,29 +252,29 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   flagText: { fontSize: 16 },
-  arrowGreen: { color: '#00E5A0', fontSize: 14 },
+  arrowGreen: { color: '#38BDF8', fontSize: 14 },
   corridorName: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
   },
   cbRate: {
     fontFamily: 'Inter_500Medium',
     fontSize: 12,
-    color: '#00E5A0',
+    color: '#38BDF8',
     marginLeft: 'auto',
     fontVariant: ['tabular-nums'],
   },
   tapText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 10,
-    color: 'rgba(255,255,245,0.4)',
+    color: 'rgba(255,255,255,0.4)',
   },
   sendBtn: {
     marginHorizontal: 20,
     marginBottom: 24,
     paddingVertical: 18,
-    backgroundColor: '#00E5A0',
+    backgroundColor: '#38BDF8',
     borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -288,14 +284,14 @@ const styles = StyleSheet.create({
   sendBtnText: {
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 17,
-    color: '#060a07',
+    color: '#0A0A0C',
   },
   sectionLabel: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 11,
     letterSpacing: 1,
     textTransform: 'uppercase',
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     marginHorizontal: 24,
     marginBottom: 10,
   },
@@ -312,7 +308,7 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 26,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,245,0.08)',
+    borderColor: 'rgba(255,255,255,0.08)',
     padding: 2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -321,18 +317,18 @@ const styles = StyleSheet.create({
   recentName: {
     fontFamily: 'Inter_400Regular',
     fontSize: 10,
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
   },
   corrFromLabel: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     paddingHorizontal: 24,
     paddingBottom: 12,
   },
   corrFromVal: {
     fontFamily: 'Inter_600SemiBold',
-    color: '#FFFFF5',
+    color: '#FFFFFF',
   },
   cpItem: {
     flexDirection: 'row',
@@ -341,27 +337,27 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,245,0.08)',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   cpItemSel: {
-    backgroundColor: 'rgba(0,229,160,0.12)',
+    backgroundColor: 'rgba(56,189,248,0.12)',
   },
   cpFlag: { fontSize: 24, width: 32, textAlign: 'center' },
   cpInfo: { flex: 1 },
   cpName: {
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
   },
   cpSub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     marginTop: 1,
   },
   cpCheck: {
     fontSize: 16,
-    color: '#00E5A0',
+    color: '#38BDF8',
     fontFamily: 'Inter_700Bold',
   },
 });

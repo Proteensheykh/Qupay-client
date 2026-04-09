@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/Icon';
 import { QupayLogo, CTAButton, FormField, BottomSheet, Toast } from '../../components';
 import { countries, banks, networks } from '../../data/mockData';
 import { initiateRegistration } from '../../api/auth';
@@ -136,7 +136,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       role: 'PAYER',
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      email: email.trim(),
+      email: email.trim().toLowerCase(),
       password,
     };
 
@@ -180,7 +180,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       >
         <View style={styles.form}>
           <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={24} color="#FFFFF5" />
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
 
           <QupayLogo size={22} />
@@ -227,7 +227,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           {generatedUsername.length > 0 && (
             <View style={styles.usernamePreview}>
               <View style={styles.usernameIconWrap}>
-                <Ionicons name="at" size={16} color="#00E5A0" />
+                <Ionicons name="at" size={16} color="#38BDF8" />
               </View>
               <View style={styles.usernameTextWrap}>
                 <Text style={styles.usernameLabel}>Your username</Text>
@@ -265,7 +265,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             >
               <Text style={styles.prefixFlag}>{selectedCountry.flag}</Text>
               <Text style={styles.prefixCode}>{selectedCountry.code}</Text>
-              <Ionicons name="chevron-down" size={12} color="rgba(255,255,245,0.4)" />
+              <Ionicons name="chevron-down" size={12} color="rgba(255,255,255,0.4)" />
             </TouchableOpacity>
             <View
               style={[
@@ -278,7 +278,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
               <TextInput
                 style={styles.phoneInput}
                 placeholder="Enter number"
-                placeholderTextColor="rgba(255,255,245,0.4)"
+                placeholderTextColor="rgba(255,255,255,0.4)"
                 keyboardType="phone-pad"
                 value={phone}
                 onChangeText={(text) => {
@@ -294,10 +294,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 accessibilityLabel="Phone number"
               />
               {phoneValid && !getFieldError('phone') && (
-                <Ionicons name="checkmark" size={16} color="#00E5A0" />
+                <Ionicons name="checkmark" size={16} color="#38BDF8" />
               )}
               {getFieldError('phone') && (
-                <Ionicons name="alert-circle" size={16} color="#FF6B6B" />
+                <Ionicons name="alert-circle" size={16} color="#F87171" />
               )}
             </View>
           </View>
@@ -320,7 +320,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             accessibilityLabel="Password"
             rightIcon={
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color="rgba(255,255,245,0.4)" />
+                <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color="rgba(255,255,255,0.4)" />
               </TouchableOpacity>
             }
           />
@@ -340,7 +340,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             accessibilityLabel="Confirm password"
             rightIcon={
               <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={20} color="rgba(255,255,245,0.4)" />
+                <Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={20} color="rgba(255,255,255,0.4)" />
               </TouchableOpacity>
             }
           />
@@ -394,7 +394,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.countrySub}>{c.reg} {'\u00B7'} {c.code}</Text>
             </View>
             {selectedCountry.code === c.code && (
-              <Ionicons name="checkmark" size={18} color="#00E5A0" />
+              <Ionicons name="checkmark" size={18} color="#38BDF8" />
             )}
           </TouchableOpacity>
         ))}
@@ -412,7 +412,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       >
         <View style={styles.form}>
           <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={24} color="#FFFFF5" />
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
 
           <QupayLogo size={22} />
@@ -445,7 +445,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={selectedBank ? styles.selectValue : styles.selectPlaceholder}>
                 {selectedBank || 'Select your bank'}
               </Text>
-              <Ionicons name="chevron-down" size={16} color="rgba(255,255,245,0.4)" />
+              <Ionicons name="chevron-down" size={16} color="rgba(255,255,255,0.4)" />
             </TouchableOpacity>
 
             <FormField
@@ -462,8 +462,8 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
 
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconWrap, { backgroundColor: 'rgba(0,229,160,0.12)' }]}>
-                <Ionicons name="wallet-outline" size={18} color="#00E5A0" />
+              <View style={[styles.sectionIconWrap, { backgroundColor: 'rgba(56,189,248,0.12)' }]}>
+                <Ionicons name="wallet-outline" size={18} color="#38BDF8" />
               </View>
               <View>
                 <Text style={styles.sectionTitle}>USDT Wallet</Text>
@@ -492,7 +492,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={selectedNetwork ? styles.selectValue : styles.selectPlaceholder}>
                 {selectedNetwork || 'Select network'}
               </Text>
-              <Ionicons name="chevron-down" size={16} color="rgba(255,255,245,0.4)" />
+              <Ionicons name="chevron-down" size={16} color="rgba(255,255,255,0.4)" />
             </TouchableOpacity>
           </View>
 
@@ -537,7 +537,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.pickerItemText}>{bank.name}</Text>
             {bank.popular && <Text style={styles.popularBadge}>Popular</Text>}
             {selectedBank === bank.name && (
-              <Ionicons name="checkmark" size={18} color="#00E5A0" />
+              <Ionicons name="checkmark" size={18} color="#38BDF8" />
             )}
           </TouchableOpacity>
         ))}
@@ -562,13 +562,13 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             }}
             activeOpacity={0.7}
           >
-            <Ionicons name={network.icon as any} size={20} color="#00E5A0" style={{ marginRight: 12 }} />
+            <Ionicons name={network.icon as any} size={20} color="#38BDF8" style={{ marginRight: 12 }} />
             <View style={{ flex: 1 }}>
               <Text style={styles.pickerItemText}>{network.name}</Text>
               <Text style={styles.pickerItemSub}>Gas: {network.gasEstimate}</Text>
             </View>
             {selectedNetwork === network.name && (
-              <Ionicons name="checkmark" size={18} color="#00E5A0" />
+              <Ionicons name="checkmark" size={18} color="#38BDF8" />
             )}
           </TouchableOpacity>
         ))}
@@ -592,7 +592,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#111118' },
+  safe: { flex: 1, backgroundColor: '#0A0A0C' },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
   form: { paddingHorizontal: 28, paddingTop: 16 },
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#222236',
+    backgroundColor: '#1F1F23',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -609,16 +609,16 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 26,
     letterSpacing: -0.3,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
     marginBottom: 8,
     lineHeight: 31,
   },
-  greenText: { color: '#00E5A0' },
+  greenText: { color: '#38BDF8' },
   desc: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
     lineHeight: 21,
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     marginBottom: 24,
   },
   nameRow: {
@@ -631,9 +631,9 @@ const styles = StyleSheet.create({
   usernamePreview: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,229,160,0.08)',
+    backgroundColor: 'rgba(56,189,248,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(0,229,160,0.2)',
+    borderColor: 'rgba(56,189,248,0.2)',
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: 'rgba(0,229,160,0.15)',
+    backgroundColor: 'rgba(56,189,248,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -653,16 +653,16 @@ const styles = StyleSheet.create({
   usernameLabel: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,245,0.5)',
+    color: 'rgba(255,255,255,0.5)',
     marginBottom: 2,
   },
   usernameValue: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 15,
-    color: '#00E5A0',
+    color: '#38BDF8',
   },
   usernameBadge: {
-    backgroundColor: 'rgba(0,229,160,0.15)',
+    backgroundColor: 'rgba(56,189,248,0.15)',
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -670,14 +670,14 @@ const styles = StyleSheet.create({
   usernameBadgeText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 10,
-    color: '#00E5A0',
+    color: '#38BDF8',
   },
   phoneLabel: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 11,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     marginBottom: 8,
   },
   phoneGroup: {
@@ -689,9 +689,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#222236',
+    backgroundColor: '#1F1F23',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,245,0.08)',
+    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     paddingHorizontal: 14,
   },
@@ -699,24 +699,24 @@ const styles = StyleSheet.create({
   prefixCode: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
   },
   phoneField: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#222236',
+    backgroundColor: '#1F1F23',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,245,0.08)',
+    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     paddingHorizontal: 16,
     gap: 8,
   },
   phoneFieldFocused: {
-    borderColor: 'rgba(0,229,160,0.4)',
+    borderColor: 'rgba(56,189,248,0.4)',
   },
   phoneFieldOk: {
-    borderColor: 'rgba(0,229,160,0.5)',
+    borderColor: 'rgba(56,189,248,0.5)',
   },
   phoneFieldError: {
     borderColor: 'rgba(255,107,107,0.6)',
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
   phoneError: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: '#FF6B6B',
+    color: '#F87171',
     marginBottom: 12,
     marginTop: -6,
   },
@@ -732,7 +732,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
     paddingVertical: 14,
     letterSpacing: 1,
   },
@@ -744,29 +744,29 @@ const styles = StyleSheet.create({
   termsText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
     paddingBottom: 8,
   },
   termsLink: {
-    color: '#00E5A0',
+    color: '#38BDF8',
     fontFamily: 'Inter_600SemiBold',
   },
   switchText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
     marginTop: 8,
   },
   switchLink: {
-    color: '#00E5A0',
+    color: '#38BDF8',
     fontFamily: 'Inter_600SemiBold',
   },
   skipText: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
     paddingVertical: 12,
   },
@@ -777,28 +777,28 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,245,0.08)',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   countryItemSel: {
-    backgroundColor: 'rgba(0,229,160,0.08)',
+    backgroundColor: 'rgba(56,189,248,0.08)',
   },
   countryFlag: { fontSize: 24 },
   countryInfo: { flex: 1 },
   countryName: {
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
   },
   countrySub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     marginTop: 1,
   },
   sectionCard: {
     backgroundColor: '#1A1A2E',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,245,0.08)',
+    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -820,12 +820,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: 'Inter_700Bold',
     fontSize: 15,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
   },
   sectionSubtitle: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,245,0.5)',
+    color: 'rgba(255,255,255,0.5)',
     marginTop: 2,
   },
   fieldLabel: {
@@ -833,16 +833,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     marginBottom: 8,
   },
   selectField: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#222236',
+    backgroundColor: '#1F1F23',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,245,0.08)',
+    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -851,12 +851,12 @@ const styles = StyleSheet.create({
   selectValue: {
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
   },
   selectPlaceholder: {
     fontFamily: 'Inter_400Regular',
     fontSize: 16,
-    color: 'rgba(255,255,245,0.4)',
+    color: 'rgba(255,255,255,0.4)',
   },
   pickerItem: {
     flexDirection: 'row',
@@ -864,28 +864,28 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,245,0.08)',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   pickerItemSel: {
-    backgroundColor: 'rgba(0,229,160,0.08)',
+    backgroundColor: 'rgba(56,189,248,0.08)',
   },
   pickerItemText: {
     flex: 1,
     fontFamily: 'Inter_500Medium',
     fontSize: 15,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
   },
   pickerItemSub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: 'rgba(255,255,245,0.5)',
+    color: 'rgba(255,255,255,0.5)',
     marginTop: 2,
   },
   popularBadge: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 10,
-    color: '#00E5A0',
-    backgroundColor: 'rgba(0,229,160,0.12)',
+    color: '#38BDF8',
+    backgroundColor: 'rgba(56,189,248,0.12)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,

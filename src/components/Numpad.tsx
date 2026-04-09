@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from './Icon';
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
 
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   numKeyText: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 28,
-    color: '#FFFFF5',
+    color: '#FFFFFF',
   },
   numKeyTextCompact: {
     fontSize: 24,

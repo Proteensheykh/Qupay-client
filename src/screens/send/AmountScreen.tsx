@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '../../components/Icon';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { ScreenHeader, CTAButton, BottomSheet } from '../../components';
 import { useAuthStore } from '../../store/authStore';
@@ -20,15 +20,15 @@ import type { SendFlowParamList } from '../../navigation/AppNavigator';
 type Props = NativeStackScreenProps<SendFlowParamList, 'Amount'>;
 
 const currencies = [
-  { code: 'USDT', name: 'Tether', icon: '\u{1FA99}', color: '#26A17B', symbol: '' },
-  { code: 'NGN', name: 'Nigerian Naira', icon: '\u{1F1F3}\u{1F1EC}', color: '#008751', symbol: '\u20A6' },
-  { code: 'GHS', name: 'Ghanaian Cedi', icon: '\u{1F1EC}\u{1F1ED}', color: '#CE1126', symbol: '\u20B5' },
-  { code: 'KES', name: 'Kenyan Shilling', icon: '\u{1F1F0}\u{1F1EA}', color: '#006600', symbol: 'KSh' },
-  { code: 'INR', name: 'Indian Rupee', icon: '\u{1F1EE}\u{1F1F3}', color: '#FF9933', symbol: '\u20B9' },
-  { code: 'PHP', name: 'Philippine Peso', icon: '\u{1F1F5}\u{1F1ED}', color: '#0038A8', symbol: '\u20B1' },
-  { code: 'MXN', name: 'Mexican Peso', icon: '\u{1F1F2}\u{1F1FD}', color: '#006847', symbol: '$' },
-  { code: 'PKR', name: 'Pakistani Rupee', icon: '\u{1F1F5}\u{1F1F0}', color: '#01411C', symbol: 'Rs' },
-  { code: 'ZAR', name: 'South African Rand', icon: '\u{1F1FF}\u{1F1E6}', color: '#007749', symbol: 'R' },
+  { code: 'USDT', name: 'Tether', icon: '🪙', color: '#26A17B', symbol: '' },
+  { code: 'NGN', name: 'Nigerian Naira', icon: '🇳🇬', color: '#008751', symbol: '₦' },
+  { code: 'GHS', name: 'Ghanaian Cedi', icon: '🇬🇭', color: '#CE1126', symbol: '₵' },
+  { code: 'KES', name: 'Kenyan Shilling', icon: '🇰🇪', color: '#006600', symbol: 'KSh' },
+  { code: 'INR', name: 'Indian Rupee', icon: '🇮🇳', color: '#FF9933', symbol: '₹' },
+  { code: 'PHP', name: 'Philippine Peso', icon: '🇵🇭', color: '#0038A8', symbol: '₱' },
+  { code: 'MXN', name: 'Mexican Peso', icon: '🇲🇽', color: '#006847', symbol: '$' },
+  { code: 'PKR', name: 'Pakistani Rupee', icon: '🇵🇰', color: '#01411C', symbol: 'Rs' },
+  { code: 'ZAR', name: 'South African Rand', icon: '🇿🇦', color: '#007749', symbol: 'R' },
 ];
 
 const usdtRates: Record<string, number> = {
@@ -36,7 +36,7 @@ const usdtRates: Record<string, number> = {
 };
 
 const currencySymbols: Record<string, string> = {
-  USDT: '', NGN: '\u20A6', GHS: '\u20B5', KES: 'KSh', INR: '\u20B9', PHP: '\u20B1', MXN: '$', PKR: 'Rs', ZAR: 'R',
+  USDT: '', NGN: '₦', GHS: '₵', KES: 'KSh', INR: '₹', PHP: '₱', MXN: '$', PKR: 'Rs', ZAR: 'R',
 };
 
 const getRate = (from: string, to: string): number => {
@@ -55,6 +55,29 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
   const [showReceivePicker, setShowReceivePicker] = useState(false);
   const [amount, setAmount] = useState('');
   const [showProcessorPromo, setShowProcessorPromo] = useState(false);
+
+  const handleAmountChange = useCallback((text: string) => {
+    // Remove any non-numeric characters except decimal point
+    let cleaned = text.replace(/[^0-9.]/g, '');
+    
+    // Prevent multiple decimal points
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      cleaned = parts[0] + '.' + parts.slice(1).join('');
+    }
+    
+    // Limit decimal places to 2
+    if (parts.length === 2 && parts[1].length > 2) {
+      cleaned = parts[0] + '.' + parts[1].slice(0, 2);
+    }
+    
+    // Prevent leading zeros (except for "0." decimal)
+    if (cleaned.length > 1 && cleaned[0] === '0' && cleaned[1] !== '.') {
+      cleaned = cleaned.slice(1);
+    }
+    
+    setAmount(cleaned);
+  }, []);
   const rootNavigation = useNavigation();
   const user = useAuthStore((state) => state.user);
   const isPayer = user?.role === 'PAYER';
@@ -119,7 +142,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
             activeOpacity={0.8}
           >
             <View style={styles.promoIconWrap}>
-              <Ionicons name="swap-horizontal" size={16} color="#00E5A0" />
+              <Ionicons name="swap-horizontal" size={16} color="#38BDF8" />
             </View>
             <View style={styles.promoTextWrap}>
               <Text style={styles.promoTitle}>Earn with Qupay</Text>
@@ -130,10 +153,11 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               style={styles.promoDismiss}
             >
-              <Ionicons name="close" size={16} color="rgba(255,255,245,0.4)" />
+              <Ionicons name="close" size={16} color="rgba(255,255,255,0.4)" />
             </TouchableOpacity>
           </TouchableOpacity>
         )}
+
         <View style={styles.amountCard}>
           <View style={styles.acSection}>
             <Text style={styles.acLabel}>You send</Text>
@@ -141,17 +165,23 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
               <TextInput
                 style={styles.amountInput}
                 value={amount}
-                onChangeText={setAmount}
-                keyboardType="numeric"
+                onChangeText={handleAmountChange}
+                keyboardType="decimal-pad"
                 placeholder="0"
-                placeholderTextColor="rgba(255,255,245,0.25)"
+                placeholderTextColor="rgba(255,255,255,0.25)"
+                selectionColor="#38BDF8"
+                cursorColor="#38BDF8"
+                underlineColorAndroid="transparent"
+                autoCorrect={false}
+                autoCapitalize="none"
+                inputMode="decimal"
               />
               <TouchableOpacity style={styles.sendCurrPill} onPress={() => setShowSendPicker(true)} activeOpacity={0.7}>
                 <View style={[styles.cpIconWrapSmall, { backgroundColor: selectedSendCurrency.color + '20' }]}>
                   <Text style={styles.currFlagIcon}>{selectedSendCurrency.icon}</Text>
                 </View>
                 <Text style={styles.currText}>{selectedSendCurrency.code}</Text>
-                <Ionicons name="chevron-down" size={14} color="rgba(255,255,245,0.5)" />
+                <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.5)" />
               </TouchableOpacity>
             </View>
           </View>
@@ -176,14 +206,14 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
                   ? receivingCrypto
                     ? receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                     : `${selectedReceiveCurrency.symbol}${receiveAmount.toLocaleString()}`
-                  : '\u2014'}
+                  : '—'}
               </Text>
               <TouchableOpacity style={styles.recvCurrPill} onPress={() => setShowReceivePicker(true)} activeOpacity={0.7}>
                 <View style={[styles.cpIconWrapSmall, { backgroundColor: selectedReceiveCurrency.color + '20' }]}>
                   <Text style={styles.currFlagIcon}>{selectedReceiveCurrency.icon}</Text>
                 </View>
                 <Text style={styles.currText}>{selectedReceiveCurrency.code}</Text>
-                <Ionicons name="chevron-down" size={14} color="rgba(255,255,245,0.5)" />
+                <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.5)" />
               </TouchableOpacity>
             </View>
           </View>
@@ -213,7 +243,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.cpName}>{c.code}</Text>
               <Text style={styles.cpSub}>{c.name}</Text>
             </View>
-            {selectedSendCurrency.code === c.code && <Ionicons name="checkmark" size={18} color="#00E5A0" />}
+            {selectedSendCurrency.code === c.code && <Ionicons name="checkmark" size={18} color="#38BDF8" />}
           </TouchableOpacity>
         ))}
         <View style={{ height: 40 }} />
@@ -234,7 +264,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.cpName}>{c.code}</Text>
               <Text style={styles.cpSub}>{c.name}</Text>
             </View>
-            {selectedReceiveCurrency.code === c.code && <Ionicons name="checkmark" size={18} color="#00E5A0" />}
+            {selectedReceiveCurrency.code === c.code && <Ionicons name="checkmark" size={18} color="#38BDF8" />}
           </TouchableOpacity>
         ))}
         <View style={{ height: 40 }} />
@@ -244,7 +274,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#111118' },
+  safe: { flex: 1, backgroundColor: '#0A0A0C' },
   scroll: { flex: 1 },
   promoBanner: {
     flexDirection: 'row',
@@ -252,9 +282,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     marginTop: 8,
     marginBottom: 4,
-    backgroundColor: 'rgba(0,229,160,0.08)',
+    backgroundColor: 'rgba(56,189,248,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(0,229,160,0.2)',
+    borderColor: 'rgba(56,189,248,0.2)',
     borderRadius: 12,
     padding: 12,
     gap: 10,
@@ -263,7 +293,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: 'rgba(0,229,160,0.15)',
+    backgroundColor: 'rgba(56,189,248,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -273,62 +303,73 @@ const styles = StyleSheet.create({
   promoTitle: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 13,
-    color: '#00E5A0',
+    color: '#38BDF8',
   },
   promoSub: {
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
-    color: 'rgba(255,255,245,0.6)',
+    color: 'rgba(255,255,255,0.6)',
     marginTop: 1,
   },
   promoDismiss: {
     padding: 4,
   },
   amountCard: {
-    marginHorizontal: 24, marginTop: 8, marginBottom: 12, backgroundColor: '#222236',
-    borderWidth: 1, borderColor: 'rgba(255,255,245,0.08)', borderRadius: 20, overflow: 'hidden',
+    marginHorizontal: 24, marginTop: 8, marginBottom: 12, backgroundColor: '#1F1F23',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderRadius: 20, overflow: 'hidden',
   },
   acSection: { paddingVertical: 20, paddingHorizontal: 20 },
-  acSectionRecv: { paddingVertical: 16, paddingHorizontal: 20, paddingBottom: 20, backgroundColor: '#2A2A42' },
+  acSectionRecv: { paddingVertical: 16, paddingHorizontal: 20, paddingBottom: 20, backgroundColor: '#17171A' },
   acLabel: {
     fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 1,
-    textTransform: 'uppercase', color: 'rgba(255,255,245,0.6)', marginBottom: 8,
+    textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 8,
   },
   acRowSpaced: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  amountInput: { flex: 1, fontFamily: 'Inter_800ExtraBold', fontSize: 36, color: '#FFFFF5', minWidth: 60, maxWidth: '55%' },
-  recvAmount: { flex: 1, fontFamily: 'Inter_800ExtraBold', fontSize: 32, color: '#00E5A0' },
+  amountInput: {
+    flex: 1,
+    fontFamily: 'Inter_700Bold',
+    fontSize: 36,
+    color: '#FFFFFF',
+    minWidth: 60,
+    maxWidth: '55%',
+    padding: 0,
+    margin: 0,
+    borderWidth: 0,
+    outlineStyle: 'none',
+  } as any,
+  recvAmount: { flex: 1, fontFamily: 'Inter_700Bold', fontSize: 32, color: '#38BDF8' },
   sendCurrPill: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#2A2A42', borderWidth: 1.5, borderColor: 'rgba(0,229,160,0.3)',
+    backgroundColor: '#17171A', borderWidth: 1.5, borderColor: 'rgba(56,189,248,0.3)',
     borderRadius: 24, paddingVertical: 10, paddingHorizontal: 14,
     minWidth: 125,
   },
   recvCurrPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#333350', borderWidth: 1.5, borderColor: 'rgba(0,229,160,0.25)',
+    backgroundColor: '#26262A', borderWidth: 1.5, borderColor: 'rgba(56,189,248,0.25)',
     borderRadius: 24, paddingVertical: 8, paddingHorizontal: 12,
     minWidth: 125,
   },
   cpIconWrapSmall: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   currFlagIcon: { fontSize: 16 },
-  currText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#FFFFF5' },
+  currText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#FFFFFF' },
   rateDivider: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, gap: 10 },
-  rateLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,245,0.08)' },
+  rateLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' },
   ratePill: {
-    backgroundColor: '#111118', borderWidth: 1, borderColor: 'rgba(0,229,160,0.25)',
+    backgroundColor: '#0A0A0C', borderWidth: 1, borderColor: 'rgba(56,189,248,0.25)',
     borderRadius: 24, paddingVertical: 5, paddingHorizontal: 12,
   },
-  ratePillText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#00E5A0', fontVariant: ['tabular-nums'] },
+  ratePillText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#38BDF8', fontVariant: ['tabular-nums'] },
   ctaWrap: { paddingHorizontal: 24, paddingBottom: 24 },
   cpItem: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingVertical: 12, paddingHorizontal: 24,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,245,0.08)',
+    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)',
   },
-  cpItemSel: { backgroundColor: 'rgba(0,229,160,0.08)' },
+  cpItemSel: { backgroundColor: 'rgba(56,189,248,0.08)' },
   cpIconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   cpIcon: { fontSize: 18 },
   cpInfo: { flex: 1 },
-  cpName: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#FFFFF5' },
-  cpSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,245,0.6)' },
+  cpName: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#FFFFFF' },
+  cpSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.6)' },
 });
