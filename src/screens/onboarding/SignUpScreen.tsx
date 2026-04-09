@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,16 +10,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { QupayLogo, CTAButton, FormField, BottomSheet, Toast } from '../../components';
-import { countries } from '../../data/mockData';
+import { countries, banks, networks } from '../../data/mockData';
 import { initiateRegistration } from '../../api/auth';
 import { isApiError } from '../../api/client';
+import { useAuthStore } from '../../store/authStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
 import type { InitiateRegistrationRequest } from '../../types/auth';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'SignUp'>;
 
+type Step = 1 | 2;
+
 export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
+  const [step, setStep] = useState<Step>(1);
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -37,6 +42,22 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
+  const [selectedBank, setSelectedBank] = useState<string | null>(null);
+  const [accountNumber, setAccountNumber] = useState('');
+  const [walletAddress, setWalletAddress] = useState('');
+  const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null);
+  const [showBankPicker, setShowBankPicker] = useState(false);
+  const [showNetworkPicker, setShowNetworkPicker] = useState(false);
+
+  const { setBankDetails, setWalletDetails, setUsername } = useAuthStore();
+
+  const generatedUsername = useMemo(() => {
+    const first = firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    const last = lastName.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!first && !last) return '';
+    return `${first}${last}`;
+  }, [firstName, lastName]);
+
   const firstNameValid = firstName.trim().length >= 2;
   const lastNameValid = lastName.trim().length >= 2;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -44,6 +65,11 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const passwordValid = password.length >= 8;
   const confirmPasswordValid = confirmPassword === password && confirmPassword.length > 0;
   const allFieldsValid = firstNameValid && lastNameValid && emailValid && phoneValid && passwordValid && confirmPasswordValid;
+
+  const bankAccountValid = selectedBank && accountNumber.length >= 10;
+  const walletValid = walletAddress.length >= 26 && selectedNetwork;
+
+  const availableBanks = banks[selectedCountry.name] || banks['Nigeria'] || [];
 
   const getFieldError = (field: string): string | undefined => {
     if (fieldErrors[field]) return fieldErrors[field];
@@ -73,10 +99,35 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     setFieldErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
-  const handleSendCode = useCallback(async () => {
+  const handleContinueToFinancial = () => {
+    if (allFieldsValid) {
+      setStep(2);
+    }
+  };
+
+  const handleBack = () => {
+    if (step === 2) {
+      setStep(1);
+    } else {
+      navigation.goBack();
+    }
+  };
+
+  const handleSubmitRegistration = useCallback(async (saveFinancialDetails: boolean) => {
     if (!allFieldsValid) return;
     setLoading(true);
     setShowError(false);
+
+    if (saveFinancialDetails) {
+      if (bankAccountValid) {
+        setBankDetails({ bankName: selectedBank!, accountNumber });
+      }
+      if (walletValid) {
+        setWalletDetails({ address: walletAddress, network: selectedNetwork! });
+      }
+    }
+
+    setUsername(generatedUsername);
 
     const normalizedPhone = phone.replace(/^0+/, '');
     const phoneNumber = `${selectedCountry.code}${normalizedPhone}`;
@@ -102,8 +153,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       
       if (lowerMessage.includes('phone')) {
         setFieldErrors((prev) => ({ ...prev, phone: message }));
+        setStep(1);
       } else if (lowerMessage.includes('email')) {
         setFieldErrors((prev) => ({ ...prev, email: message }));
+        setStep(1);
       } else {
         setErrorMessage(message);
         setShowError(true);
@@ -111,22 +164,25 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, [allFieldsValid, phone, selectedCountry, navigation, firstName, lastName, email, password]);
+  }, [
+    allFieldsValid, phone, selectedCountry, navigation,
+    firstName, lastName, email, password, bankAccountValid, walletValid,
+    selectedBank, accountNumber, walletAddress, selectedNetwork,
+    setBankDetails, setWalletDetails, setUsername, generatedUsername
+  ]);
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <Toast
-        visible={showError}
-        message={errorMessage}
-        type="error"
-        onDismiss={() => setShowError(false)}
-      />
+  const renderStep1 = () => (
+    <>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.form}>
+          <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
+            <Ionicons name="arrow-back" size={24} color="#FFFFF5" />
+          </TouchableOpacity>
+
           <QupayLogo size={22} />
           <View style={{ height: 28 }} />
           <Text style={styles.headline}>
@@ -167,6 +223,21 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
               />
             </View>
           </View>
+
+          {generatedUsername.length > 0 && (
+            <View style={styles.usernamePreview}>
+              <View style={styles.usernameIconWrap}>
+                <Ionicons name="at" size={16} color="#00E5A0" />
+              </View>
+              <View style={styles.usernameTextWrap}>
+                <Text style={styles.usernameLabel}>Your username</Text>
+                <Text style={styles.usernameValue}>@{generatedUsername}</Text>
+              </View>
+              <View style={styles.usernameBadge}>
+                <Text style={styles.usernameBadgeText}>Auto-generated</Text>
+              </View>
+            </View>
+          )}
 
           <FormField
             label="Email Address"
@@ -280,10 +351,9 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
 
       <View style={styles.bottomArea}>
         <CTAButton
-          title="Send Code"
-          onPress={handleSendCode}
+          title="Continue"
+          onPress={handleContinueToFinancial}
           disabled={!allFieldsValid}
-          loading={loading}
           style={styles.cta}
         />
         <Text style={styles.termsText}>
@@ -314,6 +384,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             onPress={() => {
               setSelectedCountry(c);
               setShowCountryPicker(false);
+              setSelectedBank(null);
             }}
             activeOpacity={0.7}
           >
@@ -329,6 +400,193 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         ))}
         <View style={{ height: 40 }} />
       </BottomSheet>
+    </>
+  );
+
+  const renderStep2 = () => (
+    <>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.form}>
+          <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
+            <Ionicons name="arrow-back" size={24} color="#FFFFF5" />
+          </TouchableOpacity>
+
+          <QupayLogo size={22} />
+          <View style={{ height: 28 }} />
+          <Text style={styles.headline}>
+            Almost done!{'\n'}
+            <Text style={styles.greenText}>Payment details</Text>
+          </Text>
+          <Text style={styles.desc}>
+            Add your payment details for faster transfers via @username. This is optional — you can add them later.
+          </Text>
+
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIconWrap}>
+                <Ionicons name="business-outline" size={18} color="#1A6FFF" />
+              </View>
+              <View>
+                <Text style={styles.sectionTitle}>Bank Account</Text>
+                <Text style={styles.sectionSubtitle}>For receiving local currency</Text>
+              </View>
+            </View>
+
+            <Text style={styles.fieldLabel}>Bank</Text>
+            <TouchableOpacity
+              style={styles.selectField}
+              onPress={() => setShowBankPicker(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={selectedBank ? styles.selectValue : styles.selectPlaceholder}>
+                {selectedBank || 'Select your bank'}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color="rgba(255,255,245,0.4)" />
+            </TouchableOpacity>
+
+            <FormField
+              label="Account Number"
+              placeholder="Enter account number"
+              keyboardType="number-pad"
+              value={accountNumber}
+              onChangeText={setAccountNumber}
+              maxLength={15}
+              isValid={accountNumber.length >= 10}
+              accessibilityLabel="Account number"
+            />
+          </View>
+
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIconWrap, { backgroundColor: 'rgba(0,229,160,0.12)' }]}>
+                <Ionicons name="wallet-outline" size={18} color="#00E5A0" />
+              </View>
+              <View>
+                <Text style={styles.sectionTitle}>USDT Wallet</Text>
+                <Text style={styles.sectionSubtitle}>For receiving crypto payments</Text>
+              </View>
+            </View>
+
+            <FormField
+              label="Wallet Address"
+              placeholder="0x..."
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={walletAddress}
+              onChangeText={setWalletAddress}
+              maxLength={66}
+              isValid={walletAddress.length >= 26}
+              accessibilityLabel="Wallet address"
+            />
+
+            <Text style={styles.fieldLabel}>Network</Text>
+            <TouchableOpacity
+              style={styles.selectField}
+              onPress={() => setShowNetworkPicker(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={selectedNetwork ? styles.selectValue : styles.selectPlaceholder}>
+                {selectedNetwork || 'Select network'}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color="rgba(255,255,245,0.4)" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ height: 16 }} />
+        </View>
+      </ScrollView>
+
+      <View style={styles.bottomArea}>
+        <CTAButton
+          title="Continue"
+          onPress={() => handleSubmitRegistration(true)}
+          loading={loading}
+          style={styles.cta}
+        />
+        <TouchableOpacity
+          onPress={() => handleSubmitRegistration(false)}
+          activeOpacity={0.7}
+          disabled={loading}
+        >
+          <Text style={styles.skipText}>Skip for now</Text>
+        </TouchableOpacity>
+      </View>
+
+      <BottomSheet
+        visible={showBankPicker}
+        onClose={() => setShowBankPicker(false)}
+        title="Select Bank"
+      >
+        {availableBanks.map((bank) => (
+          <TouchableOpacity
+            key={bank.id}
+            style={[
+              styles.pickerItem,
+              selectedBank === bank.name && styles.pickerItemSel,
+            ]}
+            onPress={() => {
+              setSelectedBank(bank.name);
+              setShowBankPicker(false);
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.pickerItemText}>{bank.name}</Text>
+            {bank.popular && <Text style={styles.popularBadge}>Popular</Text>}
+            {selectedBank === bank.name && (
+              <Ionicons name="checkmark" size={18} color="#00E5A0" />
+            )}
+          </TouchableOpacity>
+        ))}
+        <View style={{ height: 40 }} />
+      </BottomSheet>
+
+      <BottomSheet
+        visible={showNetworkPicker}
+        onClose={() => setShowNetworkPicker(false)}
+        title="Select Network"
+      >
+        {networks.map((network) => (
+          <TouchableOpacity
+            key={network.id}
+            style={[
+              styles.pickerItem,
+              selectedNetwork === network.name && styles.pickerItemSel,
+            ]}
+            onPress={() => {
+              setSelectedNetwork(network.name);
+              setShowNetworkPicker(false);
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name={network.icon as any} size={20} color="#00E5A0" style={{ marginRight: 12 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.pickerItemText}>{network.name}</Text>
+              <Text style={styles.pickerItemSub}>Gas: {network.gasEstimate}</Text>
+            </View>
+            {selectedNetwork === network.name && (
+              <Ionicons name="checkmark" size={18} color="#00E5A0" />
+            )}
+          </TouchableOpacity>
+        ))}
+        <View style={{ height: 40 }} />
+      </BottomSheet>
+    </>
+  );
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <Toast
+        visible={showError}
+        message={errorMessage}
+        type="error"
+        onDismiss={() => setShowError(false)}
+      />
+      {step === 1 && renderStep1()}
+      {step === 2 && renderStep2()}
     </SafeAreaView>
   );
 };
@@ -337,7 +595,16 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#111118' },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
-  form: { paddingHorizontal: 28, paddingTop: 36 },
+  form: { paddingHorizontal: 28, paddingTop: 16 },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#222236',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
   headline: {
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 26,
@@ -360,6 +627,50 @@ const styles = StyleSheet.create({
   },
   nameField: {
     flex: 1,
+  },
+  usernamePreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,229,160,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,229,160,0.2)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    gap: 10,
+  },
+  usernameIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0,229,160,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  usernameTextWrap: {
+    flex: 1,
+  },
+  usernameLabel: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 11,
+    color: 'rgba(255,255,245,0.5)',
+    marginBottom: 2,
+  },
+  usernameValue: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+    color: '#00E5A0',
+  },
+  usernameBadge: {
+    backgroundColor: 'rgba(0,229,160,0.15)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  usernameBadgeText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 10,
+    color: '#00E5A0',
   },
   phoneLabel: {
     fontFamily: 'Inter_600SemiBold',
@@ -446,11 +757,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: 'rgba(255,255,245,0.6)',
     textAlign: 'center',
-    marginTop: 16,
+    marginTop: 8,
   },
   switchLink: {
     color: '#00E5A0',
     fontFamily: 'Inter_600SemiBold',
+  },
+  skipText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    color: 'rgba(255,255,245,0.6)',
+    textAlign: 'center',
+    paddingVertical: 12,
   },
   countryItem: {
     flexDirection: 'row',
@@ -476,5 +794,101 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: 'rgba(255,255,245,0.6)',
     marginTop: 1,
+  },
+  sectionCard: {
+    backgroundColor: '#1A1A2E',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,245,0.08)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  sectionIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(26,111,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 15,
+    color: '#FFFFF5',
+  },
+  sectionSubtitle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: 'rgba(255,255,245,0.5)',
+    marginTop: 2,
+  },
+  fieldLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: 'rgba(255,255,245,0.6)',
+    marginBottom: 8,
+  },
+  selectField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#222236',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,245,0.08)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 12,
+  },
+  selectValue: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 16,
+    color: '#FFFFF5',
+  },
+  selectPlaceholder: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    color: 'rgba(255,255,245,0.4)',
+  },
+  pickerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,245,0.08)',
+  },
+  pickerItemSel: {
+    backgroundColor: 'rgba(0,229,160,0.08)',
+  },
+  pickerItemText: {
+    flex: 1,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
+    color: '#FFFFF5',
+  },
+  pickerItemSub: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: 'rgba(255,255,245,0.5)',
+    marginTop: 2,
+  },
+  popularBadge: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 10,
+    color: '#00E5A0',
+    backgroundColor: 'rgba(0,229,160,0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginRight: 8,
   },
 });
