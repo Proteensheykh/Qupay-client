@@ -3,11 +3,19 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Switch } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProfileStackParamList } from '../../navigation/AppNavigator';
 import { QupayLogo, GradientAvatar, CTAButton } from '../../components';
 import { userProfile } from '../../data/mockData';
 import { useAuthStore } from '../../store/authStore';
 
-export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
+type ProfileScreenNavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
+
+interface Props {
+  navigation?: ProfileScreenNavigationProp;
+}
+
+export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [notifOn, setNotifOn] = useState(true);
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
@@ -22,6 +30,7 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
   const initials = user
     ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
     : userProfile.initials;
+  const isProcessor = user?.role === 'BOTH' || user?.role === 'MP';
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -48,7 +57,15 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
                 fontSize={20}
               />
               <View style={styles.phInfo}>
-                <Text style={styles.phName}>{displayName}</Text>
+                <View style={styles.nameRow}>
+                  <Text style={styles.phName}>{displayName}</Text>
+                  {isProcessor && (
+                    <View style={styles.processorBadge}>
+                      <Ionicons name="swap-horizontal" size={10} color="#00E5A0" />
+                      <Text style={styles.processorBadgeText}>Processor</Text>
+                    </View>
+                  )}
+                </View>
                 <Text style={styles.phEmail}>{displayEmail}</Text>
                 <Text style={styles.phPhone}>{displayPhone}</Text>
               </View>
@@ -69,6 +86,18 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
                 <Text style={styles.phLabel}>Member</Text>
               </View>
             </View>
+
+            {user?.role === 'PAYER' && (
+              <TouchableOpacity
+                style={styles.heroPromo}
+                onPress={() => navigation?.navigate('ProcessorOnboarding')}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="swap-horizontal" size={14} color="#00E5A0" />
+                <Text style={styles.heroPromoText}>Earn by settling transactions</Text>
+                <Ionicons name="chevron-forward" size={14} color="rgba(255,255,245,0.4)" />
+              </TouchableOpacity>
+            )}
           </LinearGradient>
         </View>
 
@@ -162,11 +191,35 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   phInfo: { flex: 1 },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
   phName: {
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 19,
     letterSpacing: -0.3,
     color: '#FFFFF5',
+  },
+  processorBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,229,160,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,229,160,0.25)',
+    borderRadius: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+  },
+  processorBadgeText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 9,
+    color: '#00E5A0',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   phEmail: {
     fontFamily: 'Inter_400Regular',
@@ -185,6 +238,21 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,245,0.06)',
     paddingTop: 14,
+  },
+  heroPromo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,245,0.06)',
+  },
+  heroPromoText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    color: 'rgba(255,255,245,0.7)',
   },
   phStat: { flex: 1, alignItems: 'center' },
   phStatDivider: {
