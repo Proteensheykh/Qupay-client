@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
-import type { InitiateRegistrationRequest } from '../types/auth';
+import type { InitiateRegistrationRequest, UserRole } from '../types/auth';
 
 // Screens
 import { SplashScreen } from '../screens/onboarding/SplashScreen';
@@ -34,6 +34,11 @@ import { ConfirmScreen } from '../screens/send/ConfirmScreen';
 import { DepositWaitingScreen } from '../screens/send/DepositWaitingScreen';
 import { SuccessScreen } from '../screens/send/SuccessScreen';
 
+// Processor Screens
+import { TransactionStreamScreen } from '../screens/processor/TransactionStreamScreen';
+import { ProcessorTransactionDetailScreen } from '../screens/processor/ProcessorTransactionDetailScreen';
+import { ProcessorOnboardingScreen } from '../screens/settings/ProcessorOnboardingScreen';
+
 // ─── Param lists ───
 export type OnboardingStackParamList = {
   Splash: undefined;
@@ -58,6 +63,7 @@ export type HistoryStackParamList = {
 
 export type ProfileStackParamList = {
   Profile: undefined;
+  ProcessorOnboarding: undefined;
 };
 
 export type SendFlowParamList = {
@@ -81,8 +87,11 @@ export type SendFlowParamList = {
     recipientFlag: string;
     recipientWalletAddress?: string;
     recipientNetwork?: string;
+    corridorId?: string;
   };
   DepositWaiting: {
+    transactionSlug?: string;
+    transactionId?: string;
     recipientName?: string;
     recipientInitials?: string;
     recipientMethod?: string;
@@ -97,6 +106,7 @@ export type SendFlowParamList = {
     recipientNetwork?: string;
   };
   Success: {
+    transactionSlug?: string;
     recipientName?: string;
     recipientInitials?: string;
     recipientMethod?: string;
@@ -110,9 +120,15 @@ export type SendFlowParamList = {
   };
 };
 
+export type ProcessorStackParamList = {
+  TransactionStream: undefined;
+  ProcessorTransactionDetail: { transactionId: string; slug: string };
+};
+
 export type MainTabParamList = {
   HistoryTab: undefined;
   SendTab: undefined;
+  ProcessorTab: undefined;
   ProfileTab: undefined;
 };
 
@@ -131,6 +147,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 const HistoryStackNav = createNativeStackNavigator<HistoryStackParamList>();
 const ProfileStackNav = createNativeStackNavigator<ProfileStackParamList>();
 const SendFlowStack = createNativeStackNavigator<SendFlowParamList>();
+const ProcessorStackNav = createNativeStackNavigator<ProcessorStackParamList>();
 
 // ─── Stack screens ───
 function OnboardingNavigator() {
@@ -165,6 +182,7 @@ function ProfileStackNavigator() {
       screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
     >
       <ProfileStackNav.Screen name="Profile" component={ProfileScreen} />
+      <ProfileStackNav.Screen name="ProcessorOnboarding" component={ProcessorOnboardingScreen} />
     </ProfileStackNav.Navigator>
   );
 }
@@ -183,10 +201,48 @@ function SendTabNavigator() {
   );
 }
 
+function ProcessorStackNavigator() {
+  return (
+    <ProcessorStackNav.Navigator
+      screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
+    >
+      <ProcessorStackNav.Screen name="TransactionStream" component={TransactionStreamScreen} />
+      <ProcessorStackNav.Screen name="ProcessorTransactionDetail" component={ProcessorTransactionDetailScreen} />
+    </ProcessorStackNav.Navigator>
+  );
+}
+
+function getTabIcon(routeName: string, focused: boolean): keyof typeof Ionicons.glyphMap {
+  switch (routeName) {
+    case 'HistoryTab':
+      return focused ? 'time' : 'time-outline';
+    case 'SendTab':
+      return focused ? 'send' : 'send-outline';
+    case 'ProcessorTab':
+      return focused ? 'swap-horizontal' : 'swap-horizontal-outline';
+    case 'ProfileTab':
+      return focused ? 'person' : 'person-outline';
+    default:
+      return 'ellipse';
+  }
+}
+
 function MainTabs() {
+  const user = useAuthStore((state) => state.user);
+  const role: UserRole = user?.role || 'PAYER';
+
+  const showHistory = role === 'PAYER' || role === 'BOTH' || role === 'ADMIN';
+  const showSend = role === 'PAYER' || role === 'BOTH' || role === 'ADMIN';
+  const showProcessor = role === 'MP' || role === 'BOTH' || role === 'ADMIN';
+
+  const getInitialRoute = (): keyof MainTabParamList => {
+    if (role === 'MP') return 'ProcessorTab';
+    return 'SendTab';
+  };
+
   return (
     <Tab.Navigator
-      initialRouteName="SendTab"
+      initialRouteName={getInitialRoute()}
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
@@ -206,32 +262,32 @@ function MainTabs() {
           textTransform: 'uppercase' as const,
         },
         tabBarIcon: ({ focused, color }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = 'ellipse';
-          switch (route.name) {
-            case 'HistoryTab':
-              iconName = focused ? 'time' : 'time-outline';
-              break;
-            case 'SendTab':
-              iconName = focused ? 'send' : 'send-outline';
-              break;
-            case 'ProfileTab':
-              iconName = focused ? 'person' : 'person-outline';
-              break;
-          }
+          const iconName = getTabIcon(route.name, focused);
           return <Ionicons name={iconName} size={20} color={color} />;
         },
       })}
     >
-      <Tab.Screen
-        name="HistoryTab"
-        component={HistoryStackNavigator}
-        options={{ tabBarLabel: 'HISTORY' }}
-      />
-      <Tab.Screen
-        name="SendTab"
-        component={SendTabNavigator}
-        options={{ tabBarLabel: 'SEND' }}
-      />
+      {showHistory && (
+        <Tab.Screen
+          name="HistoryTab"
+          component={HistoryStackNavigator}
+          options={{ tabBarLabel: 'HISTORY' }}
+        />
+      )}
+      {showSend && (
+        <Tab.Screen
+          name="SendTab"
+          component={SendTabNavigator}
+          options={{ tabBarLabel: 'SEND' }}
+        />
+      )}
+      {showProcessor && (
+        <Tab.Screen
+          name="ProcessorTab"
+          component={ProcessorStackNavigator}
+          options={{ tabBarLabel: 'PROCESS' }}
+        />
+      )}
       <Tab.Screen
         name="ProfileTab"
         component={ProfileStackNavigator}
