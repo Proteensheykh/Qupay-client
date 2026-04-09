@@ -68,6 +68,7 @@ export interface UserProfileResponse {
   firstName: string;
   lastName: string;
   email: string;
+  username: string;
   walletAddress: string | null;
   mobileMoney: string | null;
   role: UserRole;

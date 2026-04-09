@@ -127,7 +127,8 @@ apiClient.interceptors.response.use(
 
     const isAuthEndpoint = originalRequest?.url?.includes('/v1/auth/login') ||
       originalRequest?.url?.includes('/v1/auth/token/refresh') ||
-      originalRequest?.url?.includes('/v1/auth/register');
+      originalRequest?.url?.includes('/v1/auth/register') ||
+      originalRequest?.url?.includes('/v1/auth/logout');
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
@@ -149,7 +150,7 @@ apiClient.interceptors.response.use(
       if (!refreshToken) {
         if (__DEV__) console.log('🔴 [Auth] No refresh token available, logging out');
         isRefreshing = false;
-        await logout();
+        await logout(true);
         return Promise.reject(new ApiError('Session expired', 401));
       }
 
@@ -178,7 +179,7 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         if (__DEV__) console.error('🔴 [Auth] Token refresh failed:', refreshError);
         processQueue(refreshError, null);
-        await logout();
+        await logout(true);
         return Promise.reject(new ApiError('Session expired', 401));
       } finally {
         isRefreshing = false;

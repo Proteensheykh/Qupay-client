@@ -5,6 +5,10 @@ export const StorageKeys = {
   ACCESS_TOKEN: 'access_token',
   REFRESH_TOKEN: 'refresh_token',
   USER_DATA: 'user_data',
+  BANK_DETAILS: 'bank_details',
+  WALLET_DETAILS: 'wallet_details',
+  USERNAME: 'username',
+  PROCESSOR_PROMO_DISMISSED: 'processor_promo_dismissed',
 } as const;
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];
@@ -39,5 +43,8 @@ export async function clearAll(): Promise<void> {
     deleteItem(StorageKeys.ACCESS_TOKEN),
     deleteItem(StorageKeys.REFRESH_TOKEN),
     deleteItem(StorageKeys.USER_DATA),
+    deleteItem(StorageKeys.BANK_DETAILS),
+    deleteItem(StorageKeys.WALLET_DETAILS),
+    deleteItem(StorageKeys.USERNAME),
   ]);
 }
