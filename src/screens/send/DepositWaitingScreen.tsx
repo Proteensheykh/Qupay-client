@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTransactionStore } from '../../store/transactionStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
 
@@ -27,6 +28,8 @@ const truncateAddress = (addr: string): string => {
 
 export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => {
   const {
+    transactionId,
+    transactionSlug,
     recipientName = 'Emeka Johnson',
     recipientMethod = 'OPay',
     recipientFlag = '\u{1F1F3}\u{1F1EC}',
@@ -38,6 +41,8 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
     recipientWalletAddress,
     recipientNetwork,
   } = route.params || {};
+
+  const updateStatus = useTransactionStore((state) => state.updateStatus);
 
   const isCryptoOut = recvCurrency === 'USDT';
   const sendSymbol = currencySymbols[sendCurrency] || '';
@@ -86,6 +91,9 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
         : i === 1 ? { ...s, state: 'active' }
         : s
       ));
+      if (transactionId) {
+        updateStatus(transactionId, 'DEPOSIT_CONFIRMED');
+      }
     }, 4000);
 
     const t2 = setTimeout(() => {
@@ -94,15 +102,25 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
         : i === 2 ? { ...s, state: 'active' }
         : s
       ));
+      if (transactionId) {
+        updateStatus(transactionId, 'MATCHED');
+      }
     }, 6000);
 
     const t3 = setTimeout(() => {
       setSteps((prev) => prev.map((s) => ({ ...s, state: 'done' })));
+      if (transactionId) {
+        updateStatus(transactionId, 'SETTLEMENT_IN_PROGRESS');
+      }
     }, 8000);
 
     const t4 = setTimeout(() => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (transactionId) {
+        updateStatus(transactionId, 'COMPLETED');
+      }
       navigation.replace('Success', {
+        transactionSlug,
         recipientName,
         recipientMethod,
         recipientFlag,
@@ -116,7 +134,7 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
     }, 9500);
 
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [navigation, recipientName, recipientMethod, recipientFlag, amount, receiveAmount, recvCurrency, sendCurrency, recipientWalletAddress, recipientNetwork]);
+  }, [navigation, recipientName, recipientMethod, recipientFlag, amount, receiveAmount, recvCurrency, sendCurrency, recipientWalletAddress, recipientNetwork, transactionId, transactionSlug, updateStatus]);
 
   const pulseScale = pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.4] });
   const pulseOpacity = pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0] });
@@ -144,6 +162,13 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
       <View style={styles.container}>
         {/* Top section */}
         <View style={styles.top}>
+          {/* Transaction slug badge */}
+          {transactionSlug && (
+            <View style={styles.slugBadge}>
+              <Text style={styles.slugText}>{transactionSlug}</Text>
+            </View>
+          )}
+
           {/* Scanning indicator */}
           <View style={styles.scanWrap}>
             {!detected && (
@@ -232,7 +257,22 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#111118' },
   container: { flex: 1, justifyContent: 'space-between' },
-  top: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 24 },
+  top: { alignItems: 'center', paddingTop: 32, paddingHorizontal: 24 },
+  slugBadge: {
+    backgroundColor: 'rgba(0,229,160,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,229,160,0.2)',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    marginBottom: 20,
+  },
+  slugText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 13,
+    color: '#00E5A0',
+    letterSpacing: 0.5,
+  },
   scanWrap: { width: 100, height: 100, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
   pulseRing: {
     position: 'absolute', width: 100, height: 100, borderRadius: 50,

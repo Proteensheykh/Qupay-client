@@ -12,8 +12,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { ScreenHeader, GradientAvatar, CTAButton, BottomSheet } from '../../components';
+import { ScreenHeader, GradientAvatar, CTAButton, BottomSheet, Toast } from '../../components';
 import { networkLogos } from '../../data/cryptoIcons';
+import { createTransaction } from '../../api/transactions';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
 
@@ -57,6 +58,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
     recipientFlag,
     recipientWalletAddress,
     recipientNetwork,
+    corridorId,
   } = route.params;
 
   const isCryptoOut = receiveCurrency === 'USDT';
@@ -73,6 +75,9 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
   const [showNetworkPicker, setShowNetworkPicker] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showError, setShowError] = useState(false);
 
   const shortAddr = `${selectedNetwork.address.slice(0, 8)}\u2026${selectedNetwork.address.slice(-6)}`;
 
@@ -86,24 +91,63 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   }, [isCryptoOut, recipientWalletAddress, selectedNetwork.address]);
 
-  const handleProceed = useCallback(() => {
-    navigation.navigate('DepositWaiting', {
-      recipientName,
-      recipientMethod,
-      recipientFlag,
-      amount,
-      receiveAmount,
-      sendCurrency,
-      recvCurrency: receiveCurrency,
-      walletAddress: selectedNetwork.address,
-      network: selectedNetwork.name,
-      recipientWalletAddress,
-      recipientNetwork,
-    });
-  }, [navigation, recipientName, recipientMethod, recipientFlag, amount, receiveAmount, sendCurrency, receiveCurrency, selectedNetwork, recipientWalletAddress, recipientNetwork]);
+  const handleProceed = useCallback(async () => {
+    setLoading(true);
+    setShowError(false);
+
+    try {
+      const response = await createTransaction({
+        corridorId: corridorId || 'sg-ng',
+        sendAmount: amount,
+        sendCurrency,
+        receiveCurrency,
+        receiveAmount,
+        recipientName,
+        recipientAccountType: isCryptoOut ? 'wallet' : (recipientMethod?.toLowerCase().includes('bank') ? 'bank' : 'mobile_money'),
+        recipientAccountLabel: recipientMethod || 'Unknown',
+        recipientWalletAddress,
+        recipientNetwork,
+        depositNetwork: selectedNetwork.name,
+        depositAddress: selectedNetwork.address,
+      });
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      navigation.navigate('DepositWaiting', {
+        transactionSlug: response.slug,
+        transactionId: response.id,
+        recipientName,
+        recipientMethod,
+        recipientFlag,
+        amount,
+        receiveAmount,
+        sendCurrency,
+        recvCurrency: receiveCurrency,
+        walletAddress: selectedNetwork.address,
+        network: selectedNetwork.name,
+        recipientWalletAddress,
+        recipientNetwork,
+      });
+    } catch (error) {
+      setErrorMessage('Failed to create transaction. Please try again.');
+      setShowError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    navigation, recipientName, recipientMethod, recipientFlag, amount, receiveAmount,
+    sendCurrency, receiveCurrency, selectedNetwork, recipientWalletAddress, recipientNetwork,
+    corridorId, isCryptoOut
+  ]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <Toast
+        visible={showError}
+        message={errorMessage}
+        type="error"
+        onDismiss={() => setShowError(false)}
+      />
       <ScreenHeader title="Confirm" onBack={() => navigation.goBack()} />
       <ScrollView
         style={styles.scroll}
@@ -336,6 +380,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
           <CTAButton
             title={isCryptoOut ? 'Pay Now' : 'Proceed'}
             onPress={handleProceed}
+            loading={loading}
           />
           <Text style={styles.ctaNote}>
             {isCryptoOut
