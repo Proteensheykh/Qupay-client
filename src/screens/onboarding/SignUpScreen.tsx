@@ -10,10 +10,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
 import { QupayLogo, CTAButton, FormField, BottomSheet, Toast } from '../../components';
-import { countries, banks, networks } from '../../data/mockData';
+import { countries } from '../../data/mockData';
 import { initiateRegistration } from '../../api/auth';
 import { isApiError } from '../../api/client';
-import { useAuthStore } from '../../store/authStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
 import type { InitiateRegistrationRequest } from '../../types/auth';
@@ -21,10 +20,10 @@ import { useTheme } from '../../theme';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'SignUp'>;
 
-type Step = 'personal' | 'security' | 'payment';
+type Step = 'personal' | 'security';
 
-const TOTAL_STEPS = 3;
-const STEP_INDEX: Record<Step, number> = { personal: 0, security: 1, payment: 2 };
+const TOTAL_STEPS = 2;
+const STEP_INDEX: Record<Step, number> = { personal: 0, security: 1 };
 
 export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
@@ -45,15 +44,6 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const [selectedBank, setSelectedBank] = useState<string | null>(null);
-  const [accountNumber, setAccountNumber] = useState('');
-  const [walletAddress, setWalletAddress] = useState('');
-  const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null);
-  const [showBankPicker, setShowBankPicker] = useState(false);
-  const [showNetworkPicker, setShowNetworkPicker] = useState(false);
-
-  const { setBankDetails, setWalletDetails } = useAuthStore();
-
   const firstNameValid = firstName.trim().length >= 2;
   const lastNameValid = lastName.trim().length >= 2;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -63,11 +53,6 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const personalStepValid = firstNameValid && lastNameValid && emailValid;
   const securityStepValid = phoneValid && passwordValid;
   const allFieldsValid = personalStepValid && securityStepValid;
-
-  const bankAccountValid = selectedBank && accountNumber.length >= 10;
-  const walletValid = walletAddress.length >= 26 && selectedNetwork;
-
-  const availableBanks = banks[selectedCountry.name] || banks['Nigeria'] || [];
 
   const getFieldError = (field: string): string | undefined => {
     if (fieldErrors[field]) return fieldErrors[field];
@@ -95,24 +80,14 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const handleBack = () => {
-    if (step === 'payment') setStep('security');
-    else if (step === 'security') setStep('personal');
+    if (step === 'security') setStep('personal');
     else navigation.goBack();
   };
 
-  const handleSubmitRegistration = useCallback(async (saveFinancialDetails: boolean) => {
+  const handleSubmitRegistration = useCallback(async () => {
     if (!allFieldsValid) return;
     setLoading(true);
     setShowError(false);
-
-    if (saveFinancialDetails) {
-      if (bankAccountValid) {
-        setBankDetails({ bankName: selectedBank!, accountNumber });
-      }
-      if (walletValid) {
-        setWalletDetails({ address: walletAddress, network: selectedNetwork! });
-      }
-    }
 
     const normalizedPhone = phone.replace(/^0+/, '');
     const phoneNumber = `${selectedCountry.code}${normalizedPhone}`;
@@ -149,12 +124,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, [
-    allFieldsValid, phone, selectedCountry, navigation,
-    firstName, lastName, email, password, bankAccountValid, walletValid,
-    selectedBank, accountNumber, walletAddress, selectedNetwork,
-    setBankDetails, setWalletDetails,
-  ]);
+  }, [allFieldsValid, phone, selectedCountry, navigation, firstName, lastName, email, password]);
 
   const renderProgressDots = () => {
     const currentIndex = STEP_INDEX[step];
@@ -377,8 +347,9 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.bottomArea}>
         <CTAButton
           title="Continue"
-          onPress={() => setStep('payment')}
+          onPress={handleSubmitRegistration}
           disabled={!securityStepValid}
+          loading={loading}
           style={styles.cta}
         />
         <Text style={[styles.termsText, { color: theme.text.secondary }]}>
@@ -404,7 +375,6 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             onPress={() => {
               setSelectedCountry(c);
               setShowCountryPicker(false);
-              setSelectedBank(null);
             }}
             activeOpacity={0.7}
           >
@@ -414,215 +384,6 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={[styles.countrySub, { color: theme.text.secondary }]}>{c.reg} {'\u00B7'} {c.code}</Text>
             </View>
             {selectedCountry.code === c.code && (
-              <Ionicons name="checkmark" size={18} color={theme.secondary.main} />
-            )}
-          </TouchableOpacity>
-        ))}
-        <View style={{ height: 40 }} />
-      </BottomSheet>
-    </>
-  );
-
-  // ─── Step 3: Payment details ────────────────────────────────────────
-  const renderPaymentStep = () => (
-    <>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.form}>
-          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { backgroundColor: theme.background.surface }]} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
-          </TouchableOpacity>
-
-          <QupayLogo size={22} />
-          <View style={{ height: 20 }} />
-          {renderProgressDots()}
-
-          <Text style={[styles.headline, { color: theme.text.primary }]}>
-            Almost done!{'\n'}
-            <Text style={{ color: theme.secondary.main }}>Payment details</Text>
-          </Text>
-          <Text style={[styles.desc, { color: theme.text.secondary }]}>
-            Add your payment details for faster transfers via @username. This is optional — you can add them later.
-          </Text>
-
-          <View
-            style={[
-              styles.sectionCard,
-              {
-                backgroundColor: theme.background.paper,
-                borderColor: theme.inputBorder,
-              },
-            ]}
-          >
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconWrap, { backgroundColor: theme.info.bg }]}>
-                <Ionicons name="business-outline" size={18} color={theme.secondary.main} />
-              </View>
-              <View>
-                <Text style={[styles.sectionTitle, { color: theme.text.primary }]}>Bank Account</Text>
-                <Text style={[styles.sectionSubtitle, { color: theme.text.muted }]}>For receiving local currency</Text>
-              </View>
-            </View>
-
-            <Text style={[styles.fieldLabel, { color: theme.text.secondary }]}>Bank</Text>
-            <TouchableOpacity
-              style={[
-                styles.selectField,
-                {
-                  backgroundColor: theme.background.surface,
-                  borderColor: theme.inputBorder,
-                },
-              ]}
-              onPress={() => setShowBankPicker(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={selectedBank ? [styles.selectValue, { color: theme.text.primary }] : [styles.selectPlaceholder, { color: theme.text.muted }]}>
-                {selectedBank || 'Select your bank'}
-              </Text>
-              <Ionicons name="chevron-down" size={16} color={theme.text.muted} />
-            </TouchableOpacity>
-
-            <FormField
-              label="Account Number"
-              placeholder="Enter account number"
-              keyboardType="number-pad"
-              value={accountNumber}
-              onChangeText={setAccountNumber}
-              maxLength={15}
-              isValid={accountNumber.length >= 10}
-              accessibilityLabel="Account number"
-            />
-          </View>
-
-          <View
-            style={[
-              styles.sectionCard,
-              {
-                backgroundColor: theme.background.paper,
-                borderColor: theme.inputBorder,
-              },
-            ]}
-          >
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconWrap, { backgroundColor: theme.info.bg }]}>
-                <Ionicons name="wallet-outline" size={18} color={theme.secondary.main} />
-              </View>
-              <View>
-                <Text style={[styles.sectionTitle, { color: theme.text.primary }]}>USDT Wallet</Text>
-                <Text style={[styles.sectionSubtitle, { color: theme.text.muted }]}>For receiving crypto payments</Text>
-              </View>
-            </View>
-
-            <FormField
-              label="Wallet Address"
-              placeholder="0x..."
-              autoCapitalize="none"
-              autoCorrect={false}
-              value={walletAddress}
-              onChangeText={setWalletAddress}
-              maxLength={66}
-              isValid={walletAddress.length >= 26}
-              accessibilityLabel="Wallet address"
-            />
-
-            <Text style={[styles.fieldLabel, { color: theme.text.secondary }]}>Network</Text>
-            <TouchableOpacity
-              style={[
-                styles.selectField,
-                {
-                  backgroundColor: theme.background.surface,
-                  borderColor: theme.inputBorder,
-                },
-              ]}
-              onPress={() => setShowNetworkPicker(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={selectedNetwork ? [styles.selectValue, { color: theme.text.primary }] : [styles.selectPlaceholder, { color: theme.text.muted }]}>
-                {selectedNetwork || 'Select network'}
-              </Text>
-              <Ionicons name="chevron-down" size={16} color={theme.text.muted} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={{ height: 16 }} />
-        </View>
-      </ScrollView>
-
-      <View style={styles.bottomArea}>
-        <CTAButton
-          title="Continue"
-          onPress={() => handleSubmitRegistration(true)}
-          loading={loading}
-          style={styles.cta}
-        />
-        <TouchableOpacity
-          onPress={() => handleSubmitRegistration(false)}
-          activeOpacity={0.7}
-          disabled={loading}
-        >
-          <Text style={[styles.skipText, { color: theme.text.secondary }]}>Skip for now</Text>
-        </TouchableOpacity>
-      </View>
-
-      <BottomSheet
-        visible={showBankPicker}
-        onClose={() => setShowBankPicker(false)}
-        title="Select Bank"
-      >
-        {availableBanks.map((bank) => (
-          <TouchableOpacity
-            key={bank.id}
-            style={[
-              styles.pickerItem,
-              { borderBottomColor: theme.inputBorder },
-              selectedBank === bank.name && { backgroundColor: theme.info.bg },
-            ]}
-            onPress={() => {
-              setSelectedBank(bank.name);
-              setShowBankPicker(false);
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.pickerItemText, { color: theme.text.primary }]}>{bank.name}</Text>
-            {bank.popular && (
-              <Text style={[styles.popularBadge, { color: theme.secondary.main, backgroundColor: theme.info.bg }]}>Popular</Text>
-            )}
-            {selectedBank === bank.name && (
-              <Ionicons name="checkmark" size={18} color={theme.secondary.main} />
-            )}
-          </TouchableOpacity>
-        ))}
-        <View style={{ height: 40 }} />
-      </BottomSheet>
-
-      <BottomSheet
-        visible={showNetworkPicker}
-        onClose={() => setShowNetworkPicker(false)}
-        title="Select Network"
-      >
-        {networks.map((network) => (
-          <TouchableOpacity
-            key={network.id}
-            style={[
-              styles.pickerItem,
-              { borderBottomColor: theme.inputBorder },
-              selectedNetwork === network.name && { backgroundColor: theme.info.bg },
-            ]}
-            onPress={() => {
-              setSelectedNetwork(network.name);
-              setShowNetworkPicker(false);
-            }}
-            activeOpacity={0.7}
-          >
-            <Ionicons name={network.icon as any} size={20} color={theme.secondary.main} style={{ marginRight: 12 }} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.pickerItemText, { color: theme.text.primary }]}>{network.name}</Text>
-              <Text style={[styles.pickerItemSub, { color: theme.text.muted }]}>Gas: {network.gasEstimate}</Text>
-            </View>
-            {selectedNetwork === network.name && (
               <Ionicons name="checkmark" size={18} color={theme.secondary.main} />
             )}
           </TouchableOpacity>
@@ -642,7 +403,6 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       />
       {step === 'personal' && renderPersonalStep()}
       {step === 'security' && renderSecurityStep()}
-      {step === 'payment' && renderPaymentStep()}
     </SafeAreaView>
   );
 };
@@ -699,7 +459,7 @@ const styles = StyleSheet.create({
   nameField: {
     flex: 1,
   },
-  // Unified phone card (country + input in one container)
+
   phoneCard: {
     borderRadius: 16,
     borderWidth: 1,
@@ -775,12 +535,6 @@ const styles = StyleSheet.create({
   switchLink: {
     fontFamily: 'Inter_600SemiBold',
   },
-  skipText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 14,
-    textAlign: 'center',
-    paddingVertical: 12,
-  },
   countryItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -799,83 +553,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
     marginTop: 1,
-  },
-  sectionCard: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
-  },
-  sectionIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sectionTitle: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 15,
-  },
-  sectionSubtitle: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  fieldLabel: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 11,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
-  selectField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1.5,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 12,
-  },
-  selectValue: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 16,
-  },
-  selectPlaceholder: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 16,
-  },
-  pickerItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderBottomWidth: 1,
-  },
-  pickerItemText: {
-    flex: 1,
-    fontFamily: 'Inter_500Medium',
-    fontSize: 15,
-  },
-  pickerItemSub: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  popularBadge: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginRight: 8,
   },
 });

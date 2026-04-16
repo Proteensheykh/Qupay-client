@@ -4,16 +4,6 @@ import { serverLogout } from '../api/auth';
 import * as storage from './secureStorage';
 import { StorageKeys } from './secureStorage';
 
-export interface BankDetails {
-  bankName: string;
-  accountNumber: string;
-}
-
-export interface WalletDetails {
-  address: string;
-  network: string;
-}
-
 interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
@@ -21,14 +11,10 @@ interface AuthState {
   isAuthenticated: boolean;
   isHydrated: boolean;
   isPinLocked: boolean;
-  bankDetails: BankDetails | null;
-  walletDetails: WalletDetails | null;
 
   setTokens: (tokens: AuthTokenResponse) => Promise<void>;
   setUser: (user: UserProfileResponse, lockIfPinSet?: boolean) => void;
   setPinLocked: (value: boolean) => void;
-  setBankDetails: (details: BankDetails | null) => void;
-  setWalletDetails: (details: WalletDetails | null) => void;
   logout: (skipServerCall?: boolean) => Promise<void>;
   hydrate: () => Promise<void>;
 }
@@ -40,8 +26,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   isHydrated: false,
   isPinLocked: false,
-  bankDetails: null,
-  walletDetails: null,
 
   setTokens: async (tokens: AuthTokenResponse) => {
     await storage.setItem(StorageKeys.ACCESS_TOKEN, tokens.accessToken);
@@ -66,24 +50,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isPinLocked: value });
   },
 
-  setBankDetails: (details: BankDetails | null) => {
-    if (details) {
-      storage.setItem(StorageKeys.BANK_DETAILS, JSON.stringify(details));
-    } else {
-      storage.deleteItem(StorageKeys.BANK_DETAILS);
-    }
-    set({ bankDetails: details });
-  },
-
-  setWalletDetails: (details: WalletDetails | null) => {
-    if (details) {
-      storage.setItem(StorageKeys.WALLET_DETAILS, JSON.stringify(details));
-    } else {
-      storage.deleteItem(StorageKeys.WALLET_DETAILS);
-    }
-    set({ walletDetails: details });
-  },
-
   logout: async (skipServerCall = false) => {
     const { refreshToken } = get();
     
@@ -102,46 +68,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user: null,
       isAuthenticated: false,
       isPinLocked: false,
-      bankDetails: null,
-      walletDetails: null,
     });
   },
 
   hydrate: async () => {
     try {
-      const [accessToken, refreshToken, userDataStr, bankDetailsStr, walletDetailsStr] = await Promise.all([
+      const [accessToken, refreshToken, userDataStr] = await Promise.all([
         storage.getItem(StorageKeys.ACCESS_TOKEN),
         storage.getItem(StorageKeys.REFRESH_TOKEN),
         storage.getItem(StorageKeys.USER_DATA),
-        storage.getItem(StorageKeys.BANK_DETAILS),
-        storage.getItem(StorageKeys.WALLET_DETAILS),
       ]);
 
       let user: UserProfileResponse | null = null;
-      let bankDetails: BankDetails | null = null;
-      let walletDetails: WalletDetails | null = null;
 
       if (userDataStr) {
         try {
           user = JSON.parse(userDataStr) as UserProfileResponse;
         } catch {
           user = null;
-        }
-      }
-
-      if (bankDetailsStr) {
-        try {
-          bankDetails = JSON.parse(bankDetailsStr) as BankDetails;
-        } catch {
-          bankDetails = null;
-        }
-      }
-
-      if (walletDetailsStr) {
-        try {
-          walletDetails = JSON.parse(walletDetailsStr) as WalletDetails;
-        } catch {
-          walletDetails = null;
         }
       }
 
@@ -155,8 +99,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isAuthenticated,
         isPinLocked: isAuthenticated && hasPin,
         isHydrated: true,
-        bankDetails,
-        walletDetails,
       });
     } catch (error) {
       console.error('Failed to hydrate auth state:', error);

@@ -19,14 +19,14 @@ import { useTheme } from '../../theme';
 export const ProcessorOnboardingScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation();
-  const { user, setUser, bankDetails, walletDetails, setBankDetails, setWalletDetails } = useAuthStore();
+  const { user, setUser } = useAuthStore();
 
   const [nin, setNin] = useState('');
   const [address, setAddress] = useState('');
-  const [selectedBank, setSelectedBank] = useState<string | null>(bankDetails?.bankName ?? null);
-  const [accountNumber, setAccountNumber] = useState(bankDetails?.accountNumber ?? '');
-  const [walletAddress, setWalletAddress] = useState(walletDetails?.address ?? '');
-  const [selectedNetwork, setSelectedNetwork] = useState<string | null>(walletDetails?.network ?? null);
+  const [selectedBank, setSelectedBank] = useState<string | null>(null);
+  const [accountNumber, setAccountNumber] = useState('');
+  const [walletAddress, setWalletAddress] = useState('');
+  const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null);
 
   const [showBankPicker, setShowBankPicker] = useState(false);
   const [showNetworkPicker, setShowNetworkPicker] = useState(false);
@@ -51,9 +51,6 @@ export const ProcessorOnboardingScreen: React.FC = () => {
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      setBankDetails({ bankName: selectedBank!, accountNumber });
-      setWalletDetails({ address: walletAddress, network: selectedNetwork! });
 
       const updatedUser = {
         ...user,
@@ -188,11 +185,6 @@ export const ProcessorOnboardingScreen: React.FC = () => {
                   For receiving settlements
                 </Text>
               </View>
-              {bankDetails && (
-                <View style={[styles.prefillBadge, { backgroundColor: theme.info.bg }]}>
-                  <Text style={[styles.prefillBadgeText, { color: theme.secondary.main }]}>Pre-filled</Text>
-                </View>
-              )}
             </View>
 
             <Text style={[styles.fieldLabel, { color: theme.text.secondary }]}>Bank</Text>
@@ -248,11 +240,6 @@ export const ProcessorOnboardingScreen: React.FC = () => {
                   For receiving crypto payments
                 </Text>
               </View>
-              {walletDetails && (
-                <View style={[styles.prefillBadge, { backgroundColor: theme.info.bg }]}>
-                  <Text style={[styles.prefillBadgeText, { color: theme.secondary.main }]}>Pre-filled</Text>
-                </View>
-              )}
             </View>
 
             <FormField
@@ -480,15 +467,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
     marginTop: 2,
-  },
-  prefillBadge: {
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  prefillBadgeText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 10,
   },
   fieldLabel: {
     fontFamily: 'Inter_600SemiBold',
