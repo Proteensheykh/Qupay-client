@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,16 @@ import {
   StyleSheet,
   FlatList,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
 import * as Clipboard from 'expo-clipboard';
 import { ScreenHeader, Avatar, CTAButton, BottomSheet } from '../../components';
-import { banks, Bank, networks, walletContacts, Network } from '../../data/mockData';
+import { networks, walletContacts, Network } from '../../data/mockData';
+import { getBanks, validateBankAccount } from '../../api/banks';
+import type { BankResponse } from '../../api/banks';
+import { isApiError } from '../../api/client';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
 import { useTheme } from '../../theme';
@@ -103,24 +107,91 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
   const [walletAddress, setWalletAddress] = useState('');
   const [walletAddressTouched, setWalletAddressTouched] = useState(false);
 
-  const countryBanks = banks['Nigeria'] || [];
-  const popularBanks = useMemo(() => countryBanks.filter((b) => b.popular), [countryBanks]);
+  // Banks from API
+  const [banks, setBanks] = useState<BankResponse[]>([]);
+  const [banksLoading, setBanksLoading] = useState(true);
+
+  // Bank validation state
+  const [bankValidationState, setBankValidationState] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
+  const [bankValidationError, setBankValidationError] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    getBanks()
+      .then((data) => {
+        if (mounted) setBanks(data);
+      })
+      .catch(() => {
+        // Keep empty array on error
+      })
+      .finally(() => {
+        if (mounted) setBanksLoading(false);
+      });
+    return () => { mounted = false; };
+  }, []);
+
+  const validateBankDetails = useCallback(async () => {
+    if (!selectedBank || bankAccountNumber.length < 10) {
+      return;
+    }
+
+    setBankValidationState('validating');
+    setBankValidationError('');
+    setBankAccountName('');
+
+    try {
+      const result = await validateBankAccount({
+        bankCode: selectedBank,
+        accountNumber: bankAccountNumber,
+      });
+      setBankAccountName(result.accountName);
+      setBankValidationState('valid');
+    } catch (err) {
+      const message = isApiError(err) ? err.message : 'Could not verify account details';
+      setBankValidationError(message);
+      setBankValidationState('invalid');
+    }
+  }, [selectedBank, bankAccountNumber]);
+
+  const handleAccountNumberChange = useCallback((text: string) => {
+    const digits = text.replace(/\D/g, '');
+    setBankAccountNumber(digits);
+    if (bankValidationState !== 'idle') {
+      setBankValidationState('idle');
+      setBankAccountName('');
+      setBankValidationError('');
+    }
+  }, [bankValidationState]);
+
+  const handleAccountNumberBlur = useCallback(() => {
+    if (selectedBank && bankAccountNumber.length === 10) {
+      validateBankDetails();
+    }
+  }, [selectedBank, bankAccountNumber, validateBankDetails]);
+
   const filteredBanks = useMemo(() => {
-    if (!bankSearch.trim()) return countryBanks;
+    if (!bankSearch.trim()) return banks;
     const search = bankSearch.toLowerCase();
-    return countryBanks.filter((b) => b.name.toLowerCase().includes(search));
-  }, [countryBanks, bankSearch]);
-  const bankFormValid = selectedBank && bankAccountNumber.length >= 8 && bankAccountName.trim().length >= 2;
+    return banks.filter((b) => b.bankName.toLowerCase().includes(search));
+  }, [banks, bankSearch]);
+
+  const bankFormValid = selectedBank && bankAccountNumber.length === 10 && bankValidationState === 'valid' && bankAccountName.trim().length >= 2;
 
   const walletAddressValid = isValidWalletAddress(walletAddress);
   const walletAddressError = walletAddressTouched && walletAddress.length > 0 && !walletAddressValid;
 
-  const selectBank = useCallback((bank: Bank) => {
-    setSelectedBank(bank.id);
-    setBankName(bank.name);
+  const selectBank = useCallback((bank: BankResponse) => {
+    setSelectedBank(bank.bankCode);
+    setBankName(bank.bankName);
     setShowBankListSheet(false);
     setBankSearch('');
-  }, []);
+    // Reset validation when bank changes
+    if (bankAccountNumber.length === 10) {
+      setBankValidationState('idle');
+      setBankAccountName('');
+      setBankValidationError('');
+    }
+  }, [bankAccountNumber]);
 
   const handleInput = useCallback(
     (val: string) => {
@@ -584,73 +655,79 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             <Ionicons name="chevron-down" size={16} color={theme.text.muted} />
           </TouchableOpacity>
 
-          {popularBanks.length > 0 && (
-            <>
-              <Text style={[styles.bankSubLabel, { color: theme.text.muted }]}>Quick Select</Text>
-              <View style={styles.bankPicker}>
-                {popularBanks.map((b) => (
-                  <TouchableOpacity
-                    key={b.id}
-                    style={[
-                      styles.bankChip,
-                      { backgroundColor: theme.background.surface, borderColor: theme.inputBorder },
-                      selectedBank === b.id && {
-                        borderColor: theme.secondary.main,
-                        backgroundColor: theme.info.bg,
-                      },
-                    ]}
-                    onPress={() => selectBank(b)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.bankChipText,
-                        { color: selectedBank === b.id ? theme.secondary.main : theme.text.secondary },
-                      ]}
-                    >
-                      {b.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </>
-          )}
 
           <Text style={[styles.bankLabel, { color: theme.text.secondary }]}>Account Number</Text>
-          <TextInput
-            style={[
-              styles.bankInput,
-              {
-                backgroundColor: theme.background.surface,
-                borderColor: theme.inputBorder,
-                color: theme.text.primary,
-              },
-            ]}
-            placeholder="Enter account number"
-            placeholderTextColor={theme.text.muted}
-            keyboardType="number-pad"
-            value={bankAccountNumber}
-            onChangeText={setBankAccountNumber}
-            maxLength={20}
-          />
+          <View style={styles.accountNumberRow}>
+            <TextInput
+              style={[
+                styles.bankInput,
+                styles.accountNumberInput,
+                {
+                  backgroundColor: theme.background.surface,
+                  borderColor: bankValidationState === 'valid' 
+                    ? theme.secondary.main 
+                    : bankValidationState === 'invalid' 
+                      ? theme.error.main 
+                      : theme.inputBorder,
+                  color: theme.text.primary,
+                },
+              ]}
+              placeholder="Enter 10-digit account number"
+              placeholderTextColor={theme.text.muted}
+              keyboardType="number-pad"
+              value={bankAccountNumber}
+              onChangeText={handleAccountNumberChange}
+              onBlur={handleAccountNumberBlur}
+              maxLength={10}
+              editable={bankValidationState !== 'validating'}
+            />
+            {bankValidationState === 'validating' && (
+              <View style={styles.validationIndicator}>
+                <ActivityIndicator size="small" color={theme.secondary.main} />
+              </View>
+            )}
+            {bankValidationState === 'valid' && (
+              <View style={styles.validationIndicator}>
+                <Ionicons name="checkmark-circle" size={20} color={theme.secondary.main} />
+              </View>
+            )}
+            {bankValidationState === 'invalid' && (
+              <View style={styles.validationIndicator}>
+                <Ionicons name="alert-circle" size={20} color={theme.error.main} />
+              </View>
+            )}
+          </View>
+          {bankValidationState === 'invalid' && (
+            <Text style={[styles.validationErrorText, { color: theme.error.main }]}>
+              {bankValidationError || 'Invalid account details'}
+            </Text>
+          )}
 
           <Text style={[styles.bankLabel, { color: theme.text.secondary }]}>Account Holder Name</Text>
-          <TextInput
+          <View
             style={[
               styles.bankInput,
+              styles.accountNameDisplay,
               {
                 backgroundColor: theme.background.surface,
-                borderColor: theme.inputBorder,
-                color: theme.text.primary,
+                borderColor: bankValidationState === 'valid' ? theme.secondary.main : theme.inputBorder,
               },
             ]}
-            placeholder="Enter account holder name"
-            placeholderTextColor={theme.text.muted}
-            autoCapitalize="words"
-            value={bankAccountName}
-            onChangeText={setBankAccountName}
-            maxLength={60}
-          />
+          >
+            {bankValidationState === 'validating' ? (
+              <Text style={[styles.accountNamePlaceholder, { color: theme.text.muted }]}>
+                Verifying account...
+              </Text>
+            ) : bankAccountName ? (
+              <Text style={[styles.accountNameText, { color: theme.text.primary }]}>
+                {bankAccountName}
+              </Text>
+            ) : (
+              <Text style={[styles.accountNamePlaceholder, { color: theme.text.muted }]}>
+                {bankValidationState === 'invalid' ? '—' : 'Will be auto-filled after verification'}
+              </Text>
+            )}
+          </View>
 
           <CTAButton
             title="Continue"
@@ -715,47 +792,53 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
               </TouchableOpacity>
             )}
           </View>
-          <FlatList
-            data={filteredBanks}
-            keyExtractor={(item) => item.id}
-            style={styles.bankList}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.bankListItem,
-                  { borderBottomColor: theme.divider },
-                  selectedBank === item.id && [styles.bankListItemSelected, { backgroundColor: theme.info.bg }],
-                ]}
-                onPress={() => selectBank(item)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.bankListIcon, { backgroundColor: theme.divider }]}>
-                  <Ionicons
-                    name="business"
-                    size={16}
-                    color={selectedBank === item.id ? theme.secondary.main : theme.text.secondary}
-                  />
-                </View>
-                <Text
+          {banksLoading ? (
+            <View style={styles.emptyList}>
+              <ActivityIndicator size="large" color={theme.secondary.main} />
+            </View>
+          ) : (
+            <FlatList
+              data={filteredBanks}
+              keyExtractor={(item) => item.bankCode}
+              style={styles.bankList}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => (
+                <TouchableOpacity
                   style={[
-                    styles.bankListName,
-                    { color: selectedBank === item.id ? theme.secondary.main : theme.text.primary },
+                    styles.bankListItem,
+                    { borderBottomColor: theme.divider },
+                    selectedBank === item.bankCode && [styles.bankListItemSelected, { backgroundColor: theme.info.bg }],
                   ]}
+                  onPress={() => selectBank(item)}
+                  activeOpacity={0.7}
                 >
-                  {item.name}
-                </Text>
-                {selectedBank === item.id && <Ionicons name="checkmark" size={18} color={theme.secondary.main} />}
-              </TouchableOpacity>
-            )}
-            ListEmptyComponent={
-              <View style={styles.emptyList}>
-                <Ionicons name="search-outline" size={32} color={theme.text.muted} />
-                <Text style={[styles.emptyListText, { color: theme.text.muted }]}>No banks found</Text>
-              </View>
-            }
-          />
+                  <View style={[styles.bankListIcon, { backgroundColor: theme.divider }]}>
+                    <Ionicons
+                      name="business"
+                      size={16}
+                      color={selectedBank === item.bankCode ? theme.secondary.main : theme.text.secondary}
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.bankListName,
+                      { color: selectedBank === item.bankCode ? theme.secondary.main : theme.text.primary },
+                    ]}
+                  >
+                    {item.bankName}
+                  </Text>
+                  {selectedBank === item.bankCode && <Ionicons name="checkmark" size={18} color={theme.secondary.main} />}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <View style={styles.emptyList}>
+                  <Ionicons name="search-outline" size={32} color={theme.text.muted} />
+                  <Text style={[styles.emptyListText, { color: theme.text.muted }]}>No banks found</Text>
+                </View>
+              }
+            />
+          )}
         </View>
       </BottomSheet>
     </SafeAreaView>
@@ -1110,13 +1193,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginBottom: 8,
   },
-  bankSubLabel: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 10,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
   bankDropdown: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1132,22 +1208,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 15,
   },
-  bankPicker: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-  },
-  bankChip: {
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-  },
-  bankChipText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 12,
-  },
   bankInput: {
     borderWidth: 1.5,
     borderRadius: 12,
@@ -1156,6 +1216,36 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 15,
     marginBottom: 16,
+  },
+  accountNumberRow: {
+    position: 'relative',
+  },
+  accountNumberInput: {
+    paddingRight: 44,
+  },
+  validationIndicator: {
+    position: 'absolute',
+    right: 14,
+    top: 14,
+  },
+  validationErrorText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    marginTop: -12,
+    marginBottom: 16,
+  },
+  accountNameDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 50,
+  },
+  accountNameText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
+  },
+  accountNamePlaceholder: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
   },
   bankListContainer: {
     paddingHorizontal: 24,

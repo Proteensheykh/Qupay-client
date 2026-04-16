@@ -54,6 +54,7 @@ export type OnboardingStackParamList = {
   ResetPassword: {
     email: string;
     cooldownSeconds: number;
+    sessionToken: string;
   };
 };
 

@@ -25,7 +25,7 @@ const OTP_LENGTH = 6;
 
 export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
   const { theme } = useTheme();
-  const { email, cooldownSeconds: initialCooldown } = route.params;
+  const { email, cooldownSeconds: initialCooldown, sessionToken } = route.params;
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -63,10 +63,7 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
   const handleResend = useCallback(async () => {
     if (resendTimer > 0) return;
     try {
-      const response = await resendOtp({
-        email,
-        purpose: 'PASSWORD_RESET',
-      });
+      const response = await resendOtp({ email });
       setResendTimer(response.cooldownSeconds);
       setCode('');
       setError(null);
@@ -88,7 +85,7 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
 
     try {
       await completePasswordReset({
-        email,
+        sessionToken,
         otp: code,
         newPassword,
       });
@@ -103,7 +100,7 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
     } finally {
       setLoading(false);
     }
-  }, [allFieldsValid, email, code, newPassword, navigation]);
+  }, [allFieldsValid, sessionToken, code, newPassword, navigation]);
 
   const focusInput = useCallback(() => {
     inputRef.current?.focus();

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,23 +7,40 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
 import { CommonActions, useNavigation } from '@react-navigation/native';
 import { CTAButton, FormField, BottomSheet, Toast } from '../../components';
-import { banks, networks } from '../../data/mockData';
+import { networks } from '../../data/mockData';
 import { useAuthStore } from '../../store/authStore';
 import { useTheme } from '../../theme';
+import { getBanks } from '../../api/banks';
+import type { BankResponse } from '../../api/banks';
+import { bindBankAccount, bindCryptoWallet } from '../../api/users';
+import { getProfile } from '../../api/auth';
+import { isApiError } from '../../api/client';
+import type { CryptoNetwork } from '../../types/auth';
+
+const NETWORK_TO_API: Record<string, CryptoNetwork> = {
+  'Ethereum': 'ERC20',
+  'Polygon': 'ERC20',
+  'Arbitrum': 'ERC20',
+  'Base': 'ERC20',
+  'Solana': 'SOLANA',
+  'Tron': 'TRC20',
+  'BNB Chain': 'BEP20',
+};
 
 export const ProcessorOnboardingScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation();
-  const { user, setUser } = useAuthStore();
+  const { setUser } = useAuthStore();
 
   const [nin, setNin] = useState('');
   const [address, setAddress] = useState('');
-  const [selectedBank, setSelectedBank] = useState<string | null>(null);
+  const [selectedBank, setSelectedBank] = useState<BankResponse | null>(null);
   const [accountNumber, setAccountNumber] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null);
@@ -35,7 +52,23 @@ export const ProcessorOnboardingScreen: React.FC = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const availableBanks = banks['Nigeria'] || [];
+  const [banks, setBanks] = useState<BankResponse[]>([]);
+  const [banksLoading, setBanksLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    getBanks()
+      .then((data) => {
+        if (mounted) setBanks(data);
+      })
+      .catch(() => {
+        if (mounted) setErrorMessage('Failed to load banks');
+      })
+      .finally(() => {
+        if (mounted) setBanksLoading(false);
+      });
+    return () => { mounted = false; };
+  }, []);
 
   const ninValid = nin.replace(/\D/g, '').length >= 11;
   const addressValid = address.trim().length >= 10;
@@ -45,18 +78,26 @@ export const ProcessorOnboardingScreen: React.FC = () => {
   const allFieldsValid = ninValid && addressValid && bankAccountValid && walletValid;
 
   const handleSubmit = async () => {
-    if (!allFieldsValid || !user) return;
+    if (!allFieldsValid || !selectedBank || !selectedNetwork) return;
 
     setLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const networkCode = NETWORK_TO_API[selectedNetwork] || 'ERC20';
 
-      const updatedUser = {
-        ...user,
-        role: 'BOTH' as const,
-      };
-      setUser(updatedUser);
+      await Promise.all([
+        bindBankAccount({
+          bankCode: selectedBank.code,
+          accountNumber,
+        }),
+        bindCryptoWallet({
+          network: networkCode,
+          address: walletAddress,
+        }),
+      ]);
+
+      const updatedProfile = await getProfile();
+      setUser(updatedProfile);
 
       setShowSuccess(true);
       setTimeout(() => {
@@ -74,8 +115,9 @@ export const ProcessorOnboardingScreen: React.FC = () => {
           })
         );
       }, 1500);
-    } catch {
-      setErrorMessage('Something went wrong. Please try again.');
+    } catch (err) {
+      const message = isApiError(err) ? err.message : 'Something went wrong. Please try again.';
+      setErrorMessage(message);
       setShowError(true);
     } finally {
       setLoading(false);
@@ -198,18 +240,25 @@ export const ProcessorOnboardingScreen: React.FC = () => {
               ]}
               onPress={() => setShowBankPicker(true)}
               activeOpacity={0.7}
+              disabled={banksLoading}
             >
-              <Text
-                style={[
-                  selectedBank ? styles.selectValue : styles.selectPlaceholder,
-                  {
-                    color: selectedBank ? theme.text.primary : theme.text.muted,
-                  },
-                ]}
-              >
-                {selectedBank || 'Select your bank'}
-              </Text>
-              <Ionicons name="chevron-down" size={16} color={theme.text.muted} />
+              {banksLoading ? (
+                <ActivityIndicator size="small" color={theme.text.muted} />
+              ) : (
+                <>
+                  <Text
+                    style={[
+                      selectedBank ? styles.selectValue : styles.selectPlaceholder,
+                      {
+                        color: selectedBank ? theme.text.primary : theme.text.muted,
+                      },
+                    ]}
+                  >
+                    {selectedBank?.name || 'Select your bank'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={16} color={theme.text.muted} />
+                </>
+              )}
             </TouchableOpacity>
 
             <FormField
@@ -311,32 +360,22 @@ export const ProcessorOnboardingScreen: React.FC = () => {
         title="Select Bank"
       >
         <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
-          {availableBanks.map((bank) => (
+          {banks.map((bank) => (
             <TouchableOpacity
-              key={bank.id}
+              key={bank.code}
               style={[
                 styles.pickerItem,
                 { borderBottomColor: theme.inputBorder },
-                selectedBank === bank.name && { backgroundColor: theme.info.bg },
+                selectedBank?.code === bank.code && { backgroundColor: theme.info.bg },
               ]}
               onPress={() => {
-                setSelectedBank(bank.name);
+                setSelectedBank(bank);
                 setShowBankPicker(false);
               }}
               activeOpacity={0.7}
             >
               <Text style={[styles.pickerItemText, { color: theme.text.primary }]}>{bank.name}</Text>
-              {bank.popular && (
-                <Text
-                  style={[
-                    styles.popularBadge,
-                    { color: theme.secondary.main, backgroundColor: theme.info.bg },
-                  ]}
-                >
-                  Popular
-                </Text>
-              )}
-              {selectedBank === bank.name && (
+              {selectedBank?.code === bank.code && (
                 <Ionicons name="checkmark" size={18} color={theme.secondary.main} />
               )}
             </TouchableOpacity>
@@ -536,13 +575,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
     marginTop: 2,
-  },
-  popularBadge: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginRight: 8,
   },
 });

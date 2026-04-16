@@ -51,10 +51,7 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
   const handleResend = useCallback(async () => {
     if (resendTimer > 0) return;
     try {
-      const response = await resendOtp({
-        email: registrationPayload.email,
-        purpose: 'REGISTRATION',
-      });
+      const response = await resendOtp({ email: registrationPayload.email });
       setResendTimer(response.cooldownSeconds);
       setCode('');
       setError(null);
@@ -72,6 +69,7 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
     try {
       const response = await completeRegistration({
         phoneNumber,
+        countryCode: registrationPayload.countryCode,
         otp: code,
       });
       await setTokens(response);

@@ -9,11 +9,11 @@ import type {
   ResendOtpRequest,
   LogoutRequest,
   InitiatePasswordResetRequest,
+  PasswordResetInitiatedResponse,
   CompletePasswordResetRequest,
   UserProfileResponse,
   SetPinRequest,
   VerifyPinRequest,
-  VerifyPinResponse,
   ChangePinRequest,
   CompletePinResetRequest,
 } from '../types/auth';
@@ -69,8 +69,8 @@ export async function serverLogout(request: LogoutRequest): Promise<void> {
 
 export async function initiatePasswordReset(
   request: InitiatePasswordResetRequest
-): Promise<OtpInitiatedResponse> {
-  const response = await apiClient.post<OtpInitiatedResponse>(
+): Promise<PasswordResetInitiatedResponse> {
+  const response = await apiClient.post<PasswordResetInitiatedResponse>(
     '/v1/auth/password/reset/initiate',
     request
   );
@@ -92,9 +92,13 @@ export async function setPin(request: SetPinRequest): Promise<void> {
   await apiClient.post('/v1/users/me/pin', request);
 }
 
-export async function verifyPin(request: VerifyPinRequest): Promise<VerifyPinResponse> {
-  const response = await apiClient.post<VerifyPinResponse>('/v1/users/me/pin/verify', request);
-  return response.data;
+export async function verifyPin(request: VerifyPinRequest): Promise<boolean> {
+  try {
+    await apiClient.post('/v1/users/me/pin/verify', request);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function changePin(request: ChangePinRequest): Promise<void> {

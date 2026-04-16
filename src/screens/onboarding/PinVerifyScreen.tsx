@@ -48,9 +48,9 @@ export const PinVerifyScreen: React.FC<Props> = ({ navigation }) => {
     setLoading(true);
 
     try {
-      const response = await verifyPin({ pin });
-      if (__DEV__) console.log('🔐 [PinVerify] Response:', response);
-      if (response.valid) {
+      const valid = await verifyPin({ pin });
+      if (__DEV__) console.log('🔐 [PinVerify] Valid:', valid);
+      if (valid) {
         setPinLocked(false);
       } else {
         setError('Incorrect PIN');

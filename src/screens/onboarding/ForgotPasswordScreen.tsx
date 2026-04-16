@@ -33,6 +33,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
       navigation.navigate('ResetPassword', {
         email: normalizedEmail,
         cooldownSeconds: response.cooldownSeconds,
+        sessionToken: response.sessionToken,
       });
     } catch (error) {
       const message = isApiError(error) ? error.message : 'Failed to send reset code';

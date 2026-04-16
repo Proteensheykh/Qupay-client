@@ -90,18 +90,18 @@ export const userProfile = {
 };
 
 export const countries = [
-  { flag: '🇸🇬', name: 'Singapore', code: '+65', reg: 'MAS regulated', currency: 'SGD' },
-  { flag: '🇬🇧', name: 'United Kingdom', code: '+44', reg: 'FCA regulated', currency: 'GBP' },
-  { flag: '🇺🇸', name: 'United States', code: '+1', reg: 'FinCEN regulated', currency: 'USD' },
-  { flag: '🇦🇪', name: 'UAE', code: '+971', reg: 'VARA regulated', currency: 'AED' },
-  { flag: '🇳🇬', name: 'Nigeria', code: '+234', reg: 'SEC/CBN regulated', currency: 'NGN' },
-  { flag: '🇬🇭', name: 'Ghana', code: '+233', reg: 'BoG regulated', currency: 'GHS' },
-  { flag: '🇰🇪', name: 'Kenya', code: '+254', reg: 'CBK regulated', currency: 'KES' },
-  { flag: '🇮🇳', name: 'India', code: '+91', reg: 'RBI regulated', currency: 'INR' },
-  { flag: '🇵🇭', name: 'Philippines', code: '+63', reg: 'BSP regulated', currency: 'PHP' },
-  { flag: '🇲🇽', name: 'Mexico', code: '+52', reg: 'CNBV regulated', currency: 'MXN' },
-  { flag: '🇵🇰', name: 'Pakistan', code: '+92', reg: 'SBP regulated', currency: 'PKR' },
-  { flag: '🇿🇦', name: 'South Africa', code: '+27', reg: 'SARB regulated', currency: 'ZAR' },
+  { flag: '🇸🇬', name: 'Singapore', code: '+65', iso: 'SG', reg: 'MAS regulated', currency: 'SGD' },
+  { flag: '🇬🇧', name: 'United Kingdom', code: '+44', iso: 'GB', reg: 'FCA regulated', currency: 'GBP' },
+  { flag: '🇺🇸', name: 'United States', code: '+1', iso: 'US', reg: 'FinCEN regulated', currency: 'USD' },
+  { flag: '🇦🇪', name: 'UAE', code: '+971', iso: 'AE', reg: 'VARA regulated', currency: 'AED' },
+  { flag: '🇳🇬', name: 'Nigeria', code: '+234', iso: 'NG', reg: 'SEC/CBN regulated', currency: 'NGN' },
+  { flag: '🇬🇭', name: 'Ghana', code: '+233', iso: 'GH', reg: 'BoG regulated', currency: 'GHS' },
+  { flag: '🇰🇪', name: 'Kenya', code: '+254', iso: 'KE', reg: 'CBK regulated', currency: 'KES' },
+  { flag: '🇮🇳', name: 'India', code: '+91', iso: 'IN', reg: 'RBI regulated', currency: 'INR' },
+  { flag: '🇵🇭', name: 'Philippines', code: '+63', iso: 'PH', reg: 'BSP regulated', currency: 'PHP' },
+  { flag: '🇲🇽', name: 'Mexico', code: '+52', iso: 'MX', reg: 'CNBV regulated', currency: 'MXN' },
+  { flag: '🇵🇰', name: 'Pakistan', code: '+92', iso: 'PK', reg: 'SBP regulated', currency: 'PKR' },
+  { flag: '🇿🇦', name: 'South Africa', code: '+27', iso: 'ZA', reg: 'SARB regulated', currency: 'ZAR' },
 ];
 
 export const destinationCountries = [
