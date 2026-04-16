@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -33,8 +33,6 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [username, setUsernameLocal] = useState('');
-  const [usernameManuallyEdited, setUsernameManuallyEdited] = useState(false);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -54,29 +52,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const [showBankPicker, setShowBankPicker] = useState(false);
   const [showNetworkPicker, setShowNetworkPicker] = useState(false);
 
-  const { setBankDetails, setWalletDetails, setUsername } = useAuthStore();
-
-  const autoUsername = useMemo(() => {
-    const first = firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-    const last = lastName.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (!first && !last) return '';
-    return `${first}${last}`;
-  }, [firstName, lastName]);
-
-  // Keep username in sync with name fields until the user edits it themselves
-  React.useEffect(() => {
-    if (!usernameManuallyEdited) {
-      setUsernameLocal(autoUsername);
-    }
-  }, [autoUsername, usernameManuallyEdited]);
-
-  const handleUsernameChange = (text: string) => {
-    const sanitized = text.toLowerCase().replace(/[^a-z0-9._]/g, '');
-    setUsernameLocal(sanitized);
-    setUsernameManuallyEdited(true);
-  };
-
-  const usernameValid = username.length >= 3;
+  const { setBankDetails, setWalletDetails } = useAuthStore();
 
   const firstNameValid = firstName.trim().length >= 2;
   const lastNameValid = lastName.trim().length >= 2;
@@ -84,7 +60,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const phoneValid = phone.length >= 8;
   const passwordValid = password.length >= 8;
 
-  const personalStepValid = firstNameValid && lastNameValid && usernameValid && emailValid;
+  const personalStepValid = firstNameValid && lastNameValid && emailValid;
   const securityStepValid = phoneValid && passwordValid;
   const allFieldsValid = personalStepValid && securityStepValid;
 
@@ -106,8 +82,6 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         return !emailValid ? 'Please enter a valid email address' : undefined;
       case 'phone':
         return !phoneValid ? 'Please enter a valid phone number' : undefined;
-      case 'username':
-        return !usernameValid ? 'Username must be at least 3 characters' : undefined;
       case 'password':
         return !passwordValid ? 'Password must be at least 8 characters' : undefined;
       default:
@@ -139,8 +113,6 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         setWalletDetails({ address: walletAddress, network: selectedNetwork! });
       }
     }
-
-    setUsername(username);
 
     const normalizedPhone = phone.replace(/^0+/, '');
     const phoneNumber = `${selectedCountry.code}${normalizedPhone}`;
@@ -181,7 +153,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     allFieldsValid, phone, selectedCountry, navigation,
     firstName, lastName, email, password, bankAccountValid, walletValid,
     selectedBank, accountNumber, walletAddress, selectedNetwork,
-    setBankDetails, setWalletDetails, setUsername, username,
+    setBankDetails, setWalletDetails,
   ]);
 
   const renderProgressDots = () => {
@@ -255,30 +227,6 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
               />
             </View>
           </View>
-
-          <Text style={[styles.sectionLabel, { color: theme.text.muted }]}>Username</Text>
-          <FormField
-            placeholder="Choose a username"
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={username}
-            onChangeText={handleUsernameChange}
-            onBlur={() => markTouched('username')}
-            maxLength={30}
-            isValid={usernameValid}
-            error={getFieldError('username')}
-            accessibilityLabel="Username"
-            leftIcon={
-              <Text style={[styles.atPrefix, { color: theme.text.muted }]}>@</Text>
-            }
-            rightIcon={
-              !usernameManuallyEdited && username.length > 0 ? (
-                <View style={[styles.autoTag, { backgroundColor: theme.info.bg }]}>
-                  <Text style={[styles.autoTagText, { color: theme.secondary.main }]}>Auto</Text>
-                </View>
-              ) : undefined
-            }
-          />
 
           <Text style={[styles.sectionLabel, { color: theme.text.muted }]}>Email</Text>
           <FormField
@@ -751,20 +699,6 @@ const styles = StyleSheet.create({
   nameField: {
     flex: 1,
   },
-  atPrefix: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 16,
-  },
-  autoTag: {
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  autoTagText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 10,
-  },
-
   // Unified phone card (country + input in one container)
   phoneCard: {
     borderRadius: 16,

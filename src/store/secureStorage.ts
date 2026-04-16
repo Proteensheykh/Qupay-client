@@ -7,7 +7,6 @@ export const StorageKeys = {
   USER_DATA: 'user_data',
   BANK_DETAILS: 'bank_details',
   WALLET_DETAILS: 'wallet_details',
-  USERNAME: 'username',
   PROCESSOR_PROMO_DISMISSED: 'processor_promo_dismissed',
   THEME_PREFERENCE: 'theme_preference',
 } as const;
@@ -46,6 +45,5 @@ export async function clearAll(): Promise<void> {
     deleteItem(StorageKeys.USER_DATA),
     deleteItem(StorageKeys.BANK_DETAILS),
     deleteItem(StorageKeys.WALLET_DETAILS),
-    deleteItem(StorageKeys.USERNAME),
   ]);
 }

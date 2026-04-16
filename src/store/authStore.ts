@@ -23,14 +23,12 @@ interface AuthState {
   isPinLocked: boolean;
   bankDetails: BankDetails | null;
   walletDetails: WalletDetails | null;
-  username: string | null;
 
   setTokens: (tokens: AuthTokenResponse) => Promise<void>;
   setUser: (user: UserProfileResponse, lockIfPinSet?: boolean) => void;
   setPinLocked: (value: boolean) => void;
   setBankDetails: (details: BankDetails | null) => void;
   setWalletDetails: (details: WalletDetails | null) => void;
-  setUsername: (username: string | null) => void;
   logout: (skipServerCall?: boolean) => Promise<void>;
   hydrate: () => Promise<void>;
 }
@@ -44,7 +42,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isPinLocked: false,
   bankDetails: null,
   walletDetails: null,
-  username: null,
 
   setTokens: async (tokens: AuthTokenResponse) => {
     await storage.setItem(StorageKeys.ACCESS_TOKEN, tokens.accessToken);
@@ -87,15 +84,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ walletDetails: details });
   },
 
-  setUsername: (username: string | null) => {
-    if (username) {
-      storage.setItem(StorageKeys.USERNAME, username);
-    } else {
-      storage.deleteItem(StorageKeys.USERNAME);
-    }
-    set({ username });
-  },
-
   logout: async (skipServerCall = false) => {
     const { refreshToken } = get();
     
@@ -116,19 +104,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isPinLocked: false,
       bankDetails: null,
       walletDetails: null,
-      username: null,
     });
   },
 
   hydrate: async () => {
     try {
-      const [accessToken, refreshToken, userDataStr, bankDetailsStr, walletDetailsStr, username] = await Promise.all([
+      const [accessToken, refreshToken, userDataStr, bankDetailsStr, walletDetailsStr] = await Promise.all([
         storage.getItem(StorageKeys.ACCESS_TOKEN),
         storage.getItem(StorageKeys.REFRESH_TOKEN),
         storage.getItem(StorageKeys.USER_DATA),
         storage.getItem(StorageKeys.BANK_DETAILS),
         storage.getItem(StorageKeys.WALLET_DETAILS),
-        storage.getItem(StorageKeys.USERNAME),
       ]);
 
       let user: UserProfileResponse | null = null;
@@ -171,7 +157,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isHydrated: true,
         bankDetails,
         walletDetails,
-        username,
       });
     } catch (error) {
       console.error('Failed to hydrate auth state:', error);
