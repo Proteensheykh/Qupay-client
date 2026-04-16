@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
-import { useNavigation, CommonActions } from '@react-navigation/native';
 import { ScreenHeader, CTAButton, BottomSheet } from '../../components';
-import { useAuthStore } from '../../store/authStore';
-import * as storage from '../../store/secureStorage';
-import { StorageKeys } from '../../store/secureStorage';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
 import { useTheme } from '../../theme';
@@ -56,62 +52,25 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
   const [showSendPicker, setShowSendPicker] = useState(false);
   const [showReceivePicker, setShowReceivePicker] = useState(false);
   const [amount, setAmount] = useState('');
-  const [showProcessorPromo, setShowProcessorPromo] = useState(false);
 
   const handleAmountChange = useCallback((text: string) => {
-    // Remove any non-numeric characters except decimal point
     let cleaned = text.replace(/[^0-9.]/g, '');
     
-    // Prevent multiple decimal points
     const parts = cleaned.split('.');
     if (parts.length > 2) {
       cleaned = parts[0] + '.' + parts.slice(1).join('');
     }
     
-    // Limit decimal places to 2
     if (parts.length === 2 && parts[1].length > 2) {
       cleaned = parts[0] + '.' + parts[1].slice(0, 2);
     }
     
-    // Prevent leading zeros (except for "0." decimal)
     if (cleaned.length > 1 && cleaned[0] === '0' && cleaned[1] !== '.') {
       cleaned = cleaned.slice(1);
     }
     
     setAmount(cleaned);
   }, []);
-  const rootNavigation = useNavigation();
-  const user = useAuthStore((state) => state.user);
-  const isPayer = user?.role === 'PAYER';
-
-  useEffect(() => {
-    if (isPayer) {
-      storage.getItem(StorageKeys.PROCESSOR_PROMO_DISMISSED).then((value) => {
-        if (value !== 'true') {
-          setShowProcessorPromo(true);
-        }
-      });
-    }
-  }, [isPayer]);
-
-  const dismissProcessorPromo = useCallback(async () => {
-    setShowProcessorPromo(false);
-    await storage.setItem(StorageKeys.PROCESSOR_PROMO_DISMISSED, 'true');
-  }, []);
-
-  const navigateToProcessorOnboarding = useCallback(() => {
-    rootNavigation.dispatch(
-      CommonActions.navigate({
-        name: 'Main',
-        params: {
-          screen: 'ProfileTab',
-          params: {
-            screen: 'ProcessorOnboarding',
-          },
-        },
-      })
-    );
-  }, [rootNavigation]);
 
   const rate = getRate(selectedSendCurrency.code, selectedReceiveCurrency.code);
   const numAmount = parseFloat(amount) || 0;
@@ -137,35 +96,6 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {showProcessorPromo && (
-          <TouchableOpacity
-            style={[
-              styles.promoBanner,
-              {
-                backgroundColor: theme.info.bg,
-                borderColor: `${theme.secondary.main}33`,
-              },
-            ]}
-            onPress={navigateToProcessorOnboarding}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.promoIconWrap, { backgroundColor: theme.info.bg }]}>
-              <Ionicons name="swap-horizontal" size={16} color={theme.secondary.main} />
-            </View>
-            <View style={styles.promoTextWrap}>
-              <Text style={[styles.promoTitle, { color: theme.secondary.main }]}>Earn with Qupay</Text>
-              <Text style={[styles.promoSub, { color: theme.text.secondary }]}>Settle transactions as a Processor</Text>
-            </View>
-            <TouchableOpacity
-              onPress={dismissProcessorPromo}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              style={styles.promoDismiss}
-            >
-              <Ionicons name="close" size={16} color={theme.text.muted} />
-            </TouchableOpacity>
-          </TouchableOpacity>
-        )}
-
         <View
           style={[
             styles.amountCard,
@@ -328,39 +258,6 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { flex: 1 },
-  promoBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 24,
-    marginTop: 8,
-    marginBottom: 4,
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    gap: 10,
-  },
-  promoIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  promoTextWrap: {
-    flex: 1,
-  },
-  promoTitle: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 13,
-  },
-  promoSub: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
-    marginTop: 1,
-  },
-  promoDismiss: {
-    padding: 4,
-  },
   amountCard: {
     marginHorizontal: 24, marginTop: 8, marginBottom: 12,
     borderWidth: 1, borderRadius: 20, overflow: 'hidden',

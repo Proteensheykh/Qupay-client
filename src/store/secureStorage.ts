@@ -5,7 +5,6 @@ export const StorageKeys = {
   ACCESS_TOKEN: 'access_token',
   REFRESH_TOKEN: 'refresh_token',
   USER_DATA: 'user_data',
-  PROCESSOR_PROMO_DISMISSED: 'processor_promo_dismissed',
   THEME_PREFERENCE: 'theme_preference',
 } as const;
 

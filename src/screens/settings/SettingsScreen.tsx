@@ -94,17 +94,6 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               </View>
             </View>
 
-            {user?.role === 'PAYER' && (
-              <TouchableOpacity
-                style={[styles.heroPromo, { borderTopColor: theme.divider }]}
-                onPress={() => navigation?.navigate('ProcessorOnboarding')}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="swap-horizontal" size={14} color={theme.secondary.main} />
-                <Text style={[styles.heroPromoText, { color: theme.text.secondary }]}>Earn by settling transactions</Text>
-                <Ionicons name="chevron-forward" size={14} color={theme.text.muted} />
-              </TouchableOpacity>
-            )}
           </LinearGradient>
         </View>
 
@@ -263,19 +252,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderTopWidth: 1,
     paddingTop: 14,
-  },
-  heroPromo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 16,
-    paddingTop: 14,
-    borderTopWidth: 1,
-  },
-  heroPromoText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 12,
   },
   phStat: { flex: 1, alignItems: 'center' },
   phStatDivider: {
