@@ -10,13 +10,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
-import { ScreenHeader } from '../../components';
+import { ScreenHeader, StatusBadge } from '../../components';
 import { useTransactionStore } from '../../store/transactionStore';
 import { useAuthStore } from '../../store/authStore';
 import type { TransactionStatus, TransactionDetail } from '../../types/transaction';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ProcessorStackParamList } from '../../navigation/AppNavigator';
-import { useTheme } from '../../theme';
+import { palette } from '../../theme/colors';
+import { borders } from '../../theme/elevation';
 
 type Props = NativeStackScreenProps<ProcessorStackParamList, 'TransactionStream'>;
 
@@ -34,7 +35,7 @@ const currencySymbols: Record<string, string> = {
   ZAR: 'R',
 };
 
-const tabs: { key: TabType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+const tabs: { key: TabType; label: string; icon: string }[] = [
   { key: 'stream', label: 'Stream', icon: 'flash-outline' },
   { key: 'in_progress', label: 'In Progress', icon: 'hourglass-outline' },
   { key: 'completed', label: 'Completed', icon: 'checkmark-done-outline' },
@@ -52,8 +53,46 @@ function timeAgo(timestamp: string): string {
   return `${days}d ago`;
 }
 
+function statusLabel(status: TransactionStatus): string {
+  const labels: Record<TransactionStatus, string> = {
+    PENDING_DEPOSIT: 'Pending',
+    DEPOSIT_CONFIRMED: 'Ready',
+    MATCHED: 'Matched',
+    SETTLEMENT_IN_PROGRESS: 'Settling',
+    SETTLEMENT_PROOF_UPLOADED: 'Proof Sent',
+    COMPLETED: 'Completed',
+    FAILED: 'Failed',
+    EXPIRED: 'Expired',
+    DISPUTED: 'Disputed',
+  };
+  return labels[status];
+}
+
+function statusBadgeVariant(
+  status: TransactionStatus
+): 'success' | 'warning' | 'error' | 'info' | 'neutral' {
+  switch (status) {
+    case 'COMPLETED':
+      return 'success';
+    case 'FAILED':
+    case 'EXPIRED':
+      return 'error';
+    case 'PENDING_DEPOSIT':
+    case 'SETTLEMENT_IN_PROGRESS':
+    case 'DISPUTED':
+      return 'warning';
+    case 'DEPOSIT_CONFIRMED':
+    case 'MATCHED':
+    case 'SETTLEMENT_PROOF_UPLOADED':
+      return 'info';
+    default:
+      return 'neutral';
+  }
+}
+
 export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
-  const { theme } = useTheme();
+  const backdrop = palette.grey[900];
+  const hairline = palette.material.lightThin;
   const [activeTab, setActiveTab] = useState<TabType>('stream');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,69 +101,6 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
   const transactions = useTransactionStore((state) => state.transactions);
   const user = useAuthStore((state) => state.user);
   const currentUserId = user?.id;
-
-  const statusConfig = useMemo(
-    (): Record<
-      TransactionStatus,
-      { label: string; color: string; bgColor: string; icon: keyof typeof Ionicons.glyphMap }
-    > => ({
-      PENDING_DEPOSIT: {
-        label: 'Pending',
-        color: theme.warning.main,
-        bgColor: theme.warning.bg,
-        icon: 'time-outline',
-      },
-      DEPOSIT_CONFIRMED: {
-        label: 'Ready',
-        color: theme.secondary.main,
-        bgColor: theme.info.bg,
-        icon: 'checkmark-circle-outline',
-      },
-      MATCHED: {
-        label: 'Matched',
-        color: theme.info.main,
-        bgColor: theme.info.bg,
-        icon: 'link-outline',
-      },
-      SETTLEMENT_IN_PROGRESS: {
-        label: 'Settling',
-        color: theme.warning.main,
-        bgColor: theme.warning.bg,
-        icon: 'hourglass-outline',
-      },
-      SETTLEMENT_PROOF_UPLOADED: {
-        label: 'Proof Sent',
-        color: theme.secondary.main,
-        bgColor: theme.info.bg,
-        icon: 'document-attach-outline',
-      },
-      COMPLETED: {
-        label: 'Completed',
-        color: theme.success.main,
-        bgColor: theme.success.bg,
-        icon: 'checkmark-done-outline',
-      },
-      FAILED: {
-        label: 'Failed',
-        color: theme.error.main,
-        bgColor: theme.error.bg,
-        icon: 'close-circle-outline',
-      },
-      EXPIRED: {
-        label: 'Expired',
-        color: theme.error.light,
-        bgColor: theme.error.bg,
-        icon: 'timer-outline',
-      },
-      DISPUTED: {
-        label: 'Disputed',
-        color: theme.warning.main,
-        bgColor: theme.warning.bg,
-        icon: 'warning-outline',
-      },
-    }),
-    [theme]
-  );
 
   const isSearching = searchQuery.trim().length > 0;
 
@@ -189,55 +165,28 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const renderItem = ({ item }: { item: TransactionDetail }) => {
-    const status = statusConfig[item.status];
     const recvSymbol = currencySymbols[item.receiveCurrency] || '';
+    const amountLine = `${item.sendAmount} ${item.sendCurrency} \u2192 ${recvSymbol}${item.receiveAmount.toLocaleString()} ${item.receiveCurrency}`;
 
     return (
       <TouchableOpacity
-        style={[styles.card, { backgroundColor: theme.background.paper, borderColor: theme.inputBorder }]}
+        style={[styles.row, { borderBottomColor: hairline }]}
         onPress={() => handleTransactionPress(item.id, item.slug)}
         activeOpacity={0.7}
       >
-        <View style={styles.cardTop}>
-          <View
-            style={[
-              styles.slugBadge,
-              {
-                backgroundColor: `${theme.secondary.main}1A`,
-                borderColor: `${theme.secondary.main}33`,
-              },
-            ]}
-          >
-            <Text style={[styles.slugText, { color: theme.secondary.main }]}>{item.slug}</Text>
-          </View>
-          <Text style={[styles.timeText, { color: theme.text.secondary }]}>{timeAgo(item.createdAt)}</Text>
+        <View style={styles.rowMain}>
+          <Text style={[styles.amountLine, { color: palette.grey[300] }]} numberOfLines={2}>
+            {amountLine}
+          </Text>
+          <Text style={[styles.slugText, { color: palette.grey[500] }]} numberOfLines={1}>
+            {item.slug}
+          </Text>
         </View>
-
-        <View style={styles.cardMiddle}>
-          <View style={styles.amountRow}>
-            <Text style={[styles.sendAmount, { color: theme.text.primary }]}>
-              {item.sendAmount} {item.sendCurrency}
-            </Text>
-            <Ionicons name="arrow-forward" size={14} color={theme.text.muted} />
-            <Text style={[styles.receiveAmount, { color: theme.secondary.main }]}>
-              {recvSymbol}
-              {item.receiveAmount.toLocaleString()} {item.receiveCurrency}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={[styles.corridorText, { color: theme.text.secondary }]}>{item.corridorDisplay}</Text>
-            <Text style={{ color: theme.text.muted }}>{'\u00B7'}</Text>
-            <Text style={[styles.methodText, { color: theme.text.secondary }]}>{item.recipientAccountLabel}</Text>
-          </View>
+        <View style={styles.rowMeta}>
+          <StatusBadge label={statusLabel(item.status)} variant={statusBadgeVariant(item.status)} />
+          <Text style={[styles.timeText, { color: palette.grey[500] }]}>{timeAgo(item.createdAt)}</Text>
         </View>
-
-        <View style={styles.cardBottom}>
-          <View style={[styles.statusPill, { backgroundColor: status.bgColor }]}>
-            <Ionicons name={status.icon} size={12} color={status.color} />
-            <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={theme.text.disabled} />
-        </View>
+        <Ionicons name="chevron-forward" size={18} color={palette.grey[600]} />
       </TouchableOpacity>
     );
   };
@@ -280,11 +229,11 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
     if (isSearching) {
       return (
         <View style={styles.emptyState}>
-          <View style={[styles.emptyIcon, { backgroundColor: theme.background.surface }]}>
-            <Ionicons name="search-outline" size={36} color={theme.text.disabled} />
+          <View style={[styles.emptyIcon, { backgroundColor: palette.grey[800] }]}>
+            <Ionicons name="search-outline" size={36} color={palette.grey[600]} />
           </View>
-          <Text style={[styles.emptyTitle, { color: theme.text.primary }]}>No results</Text>
-          <Text style={[styles.emptySub, { color: theme.text.secondary }]}>
+          <Text style={[styles.emptyTitle, { color: palette.grey[300] }]}>No results</Text>
+          <Text style={[styles.emptySub, { color: palette.grey[500] }]}>
             No transactions found matching "{searchQuery}"
           </Text>
         </View>
@@ -294,17 +243,17 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
     const { title, sub } = getEmptyMessage();
     return (
       <View style={styles.emptyState}>
-        <View style={[styles.emptyIcon, { backgroundColor: theme.background.surface }]}>
-          <Ionicons name="swap-horizontal-outline" size={36} color={theme.text.disabled} />
+        <View style={[styles.emptyIcon, { backgroundColor: palette.grey[800] }]}>
+          <Ionicons name="swap-horizontal-outline" size={36} color={palette.grey[600]} />
         </View>
-        <Text style={[styles.emptyTitle, { color: theme.text.primary }]}>{title}</Text>
-        <Text style={[styles.emptySub, { color: theme.text.secondary }]}>{sub}</Text>
+        <Text style={[styles.emptyTitle, { color: palette.grey[300] }]}>{title}</Text>
+        <Text style={[styles.emptySub, { color: palette.grey[500] }]}>{sub}</Text>
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: backdrop }]} edges={['top']}>
       <ScreenHeader title="Processor" />
 
       <View style={styles.searchContainer}>
@@ -312,21 +261,22 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
           style={[
             styles.searchBar,
             {
-              backgroundColor: theme.background.surface,
-              borderColor: searchFocused ? `${theme.secondary.main}66` : theme.inputBorder,
+              backgroundColor: palette.grey[800],
+              borderColor: searchFocused ? `${palette.royal[500]}66` : hairline,
             },
+            borders.hairline.dark,
           ]}
         >
           <Ionicons
             name="search"
             size={18}
-            color={searchFocused ? theme.secondary.main : theme.text.disabled}
+            color={searchFocused ? palette.royal[500] : palette.grey[600]}
           />
           <TextInput
             ref={searchRef}
-            style={[styles.searchInput, { color: theme.text.primary }]}
+            style={[styles.searchInput, { color: palette.grey[300] }]}
             placeholder="Search by slug or ID (e.g. QP-X7K2M9)"
-            placeholderTextColor={theme.text.disabled}
+            placeholderTextColor={palette.grey[600]}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onFocus={() => setSearchFocused(true)}
@@ -343,7 +293,7 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
               }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="close-circle" size={18} color={theme.text.muted} />
+              <Ionicons name="close-circle" size={18} color={palette.grey[500]} />
             </TouchableOpacity>
           )}
         </View>
@@ -361,12 +311,13 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
                 style={[
                   styles.tab,
                   {
-                    backgroundColor: theme.background.surface,
-                    borderColor: theme.inputBorder,
+                    backgroundColor: palette.grey[800],
+                    borderColor: hairline,
                   },
+                  borders.hairline.dark,
                   isActive && {
-                    backgroundColor: `${theme.secondary.main}1A`,
-                    borderColor: `${theme.secondary.main}4D`,
+                    backgroundColor: `${palette.royal[500]}1A`,
+                    borderColor: `${palette.royal[500]}4D`,
                   },
                 ]}
                 onPress={() => setActiveTab(tab.key)}
@@ -375,13 +326,13 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
                 <Ionicons
                   name={tab.icon}
                   size={16}
-                  color={isActive ? theme.secondary.main : theme.text.muted}
+                  color={isActive ? palette.royal[500] : palette.grey[500]}
                 />
                 <Text
                   style={[
                     styles.tabLabel,
-                    { color: theme.text.secondary },
-                    isActive && { color: theme.secondary.main, fontFamily: 'Inter_600SemiBold' },
+                    { color: palette.grey[500] },
+                    isActive && { color: palette.royal[500], fontFamily: 'Inter_600SemiBold' },
                   ]}
                 >
                   {tab.label}
@@ -390,15 +341,15 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
                   <View
                     style={[
                       styles.tabBadge,
-                      { backgroundColor: theme.action.selected },
-                      isActive && { backgroundColor: `${theme.secondary.main}33` },
+                      { backgroundColor: 'rgba(251,251,253,0.10)' },
+                      isActive && { backgroundColor: `${palette.royal[500]}33` },
                     ]}
                   >
                     <Text
                       style={[
                         styles.tabBadgeText,
-                        { color: theme.text.secondary },
-                        isActive && { color: theme.secondary.main },
+                        { color: palette.grey[500] },
+                        isActive && { color: palette.royal[500] },
                       ]}
                     >
                       {count}
@@ -412,7 +363,7 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
       )}
 
       {displayTransactions.length > 0 && (
-        <Text style={[styles.countText, { color: theme.text.secondary }]}>
+        <Text style={[styles.countText, { color: palette.grey[500] }]}>
           {isSearching ? `${displayTransactions.length} result${displayTransactions.length !== 1 ? 's' : ''}` : `${displayTransactions.length} transaction${displayTransactions.length !== 1 ? 's' : ''}`}
         </Text>
       )}
@@ -429,9 +380,9 @@ export const TransactionStreamScreen: React.FC<Props> = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={theme.secondary.main}
-            colors={[theme.secondary.main]}
-            progressBackgroundColor={theme.background.surface}
+            tintColor={palette.royal[500]}
+            colors={[palette.royal[500]]}
+            progressBackgroundColor={palette.grey[800]}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -447,10 +398,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  rowMain: {
+    flex: 1,
+    minWidth: 0,
+  },
+  rowMeta: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
     borderRadius: 12,
     paddingHorizontal: 14,
     gap: 10,
@@ -502,82 +468,23 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   listContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
     paddingBottom: 24,
   },
-  card: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-  },
-  cardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  slugBadge: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-  },
   slugText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 12,
-    letterSpacing: 0.5,
+    fontFamily: 'Inter_400Regular',
+    fontSize: 11,
+    letterSpacing: 0.3,
+    marginTop: 4,
+  },
+  amountLine: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    fontVariant: ['tabular-nums'],
   },
   timeText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-  },
-  cardMiddle: {
-    marginBottom: 12,
-  },
-  amountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  sendAmount: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 15,
-  },
-  receiveAmount: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 15,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  corridorText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
-  },
-  methodText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 13,
-  },
-  cardBottom: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    borderRadius: 20,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-  },
-  statusText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 11,
   },
   emptyContainer: {
     flex: 1,

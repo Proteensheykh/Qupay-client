@@ -1,28 +1,30 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../theme';
+import { palette } from '../theme/colors';
+import { borders } from '../theme/elevation';
 
 interface GradientAvatarProps {
   initials: string;
   size?: number;
   colors?: readonly [string, string, ...string[]];
   fontSize?: number;
-  borderWidth?: number;
-  borderColor?: string;
+  withRing?: boolean;
 }
 
 export const GradientAvatar: React.FC<GradientAvatarProps> = ({
   initials,
   size = 44,
-  colors: colorsProp,
+  colors: _colors,
   fontSize,
-  borderWidth,
-  borderColor,
+  withRing = true,
 }) => {
-  const { theme, gradient } = useTheme();
-  const colors = colorsProp ?? (gradient.avatar1 as readonly [string, string, ...string[]]);
-  const fs = fontSize || size * 0.3;
+  const { mode } = useTheme();
+  const fs = fontSize || size * 0.36;
+
+  const ringStyle =
+    withRing && mode === 'dark' ? borders.hairline.dark : undefined;
+
   return (
     <View
       style={[
@@ -31,32 +33,26 @@ export const GradientAvatar: React.FC<GradientAvatarProps> = ({
           height: size,
           borderRadius: size / 2,
           overflow: 'hidden',
+          backgroundColor: palette.royal[700],
+          alignItems: 'center',
+          justifyContent: 'center',
         },
-        borderWidth ? { borderWidth, borderColor: borderColor || theme.inputBorder } : undefined,
+        ringStyle,
       ]}
       accessible
       accessibilityLabel={`Avatar for ${initials}`}
       accessibilityRole="image"
     >
-      <LinearGradient
-        colors={colors as [string, string, ...string[]]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradient}
-      >
-        <Text style={[styles.initials, { fontSize: fs, color: theme.text.primary }]}>{initials}</Text>
-      </LinearGradient>
+      <Text style={[styles.initials, { fontSize: fs, color: palette.royal[300] }]}>
+        {initials}
+      </Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   initials: {
     fontFamily: 'Inter_700Bold',
+    letterSpacing: -0.5,
   },
 });

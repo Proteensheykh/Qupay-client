@@ -1,186 +1,196 @@
 import { TextStyle } from 'react-native';
 
-// Reskinned to match /Users/fubara/qupay tokens — local design tops out at
-// Inter_700Bold (no ExtraBold). We keep the `extraBold` key for API compat
-// but point it at Inter_700Bold so the whole system dims without per-screen
-// edits. Letter-spacing kept slightly tight to preserve display rhythm.
+/**
+ * Qupay typography tokens — sourced from Squid Router CSS variables
+ *
+ * Geist Variable at weight 400 only. Hierarchy via size + color, not weight.
+ * Font sizes rounded from Squid's rem-based scale (at 16px root).
+ */
 export const fontFamily = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semiBold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
-  extraBold: 'Inter_700Bold',
+  regular: 'Geist_400Regular',
+  // Legacy aliases — all map to Geist 400 since Squid uses 400 everywhere
+  medium: 'Geist_400Regular',
+  semiBold: 'Geist_400Regular',
+  bold: 'Geist_400Regular',
+  extraBold: 'Geist_400Regular',
 };
 
 type TypographyVariant = TextStyle;
 
 export const typography: Record<string, TypographyVariant> = {
-  // Display — big headlines, Syne-style tight letter spacing
+  // Display — heading-large (70px) and heading-medium (49px)
   display1: {
-    fontFamily: fontFamily.extraBold,
-    fontSize: 36,
-    lineHeight: 42,
-    letterSpacing: -1.35,
+    fontFamily: fontFamily.regular,
+    fontSize: 70,
+    lineHeight: 76,
+    letterSpacing: -1.4,
   },
   display2: {
-    fontFamily: fontFamily.extraBold,
-    fontSize: 28,
-    lineHeight: 34,
-    letterSpacing: -0.8,
+    fontFamily: fontFamily.regular,
+    fontSize: 49,
+    lineHeight: 56,
+    letterSpacing: -0.98,
   },
-  // Headings — Syne weight 800 style
+
+  // Headings
   h1: {
-    fontFamily: fontFamily.extraBold,
-    fontSize: 32,
-    lineHeight: 35,
-    letterSpacing: -0.5,
+    fontFamily: fontFamily.regular,
+    fontSize: 35,
+    lineHeight: 42,
+    letterSpacing: -0.7,
   },
   h2: {
-    fontFamily: fontFamily.extraBold,
-    fontSize: 26,
-    lineHeight: 31,
-    letterSpacing: -0.3,
+    fontFamily: fontFamily.regular,
+    fontSize: 28,
+    lineHeight: 34,
+    letterSpacing: -0.56,
   },
   h3: {
-    fontFamily: fontFamily.bold,
+    fontFamily: fontFamily.regular,
     fontSize: 22,
     lineHeight: 28,
-    letterSpacing: -0.3,
+    letterSpacing: -0.22,
   },
   h4: {
-    fontFamily: fontFamily.bold,
+    fontFamily: fontFamily.regular,
     fontSize: 18,
     lineHeight: 24,
   },
   h5: {
-    fontFamily: fontFamily.bold,
+    fontFamily: fontFamily.regular,
     fontSize: 16,
     lineHeight: 22,
   },
-  // Body — DM Sans style
+
+  // Body — body-large (28px), body-medium (22px), body-small (18px)
   body: {
     fontFamily: fontFamily.regular,
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 18,
+    lineHeight: 26,
   },
   bodyMedium: {
-    fontFamily: fontFamily.medium,
-    fontSize: 15,
-    lineHeight: 22,
+    fontFamily: fontFamily.regular,
+    fontSize: 22,
+    lineHeight: 30,
   },
   bodySm: {
     fontFamily: fontFamily.regular,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
   },
   bodySmMedium: {
-    fontFamily: fontFamily.medium,
-    fontSize: 13,
-    lineHeight: 18,
+    fontFamily: fontFamily.regular,
+    fontSize: 14,
+    lineHeight: 20,
   },
+
   // Subheaders
   subheader1: {
-    fontFamily: fontFamily.semiBold,
+    fontFamily: fontFamily.regular,
     fontSize: 14,
     lineHeight: 20,
   },
   subheader2: {
-    fontFamily: fontFamily.semiBold,
+    fontFamily: fontFamily.regular,
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.3,
   },
-  // Captions & labels
+
+  // Captions & labels — caption (14px)
   caption: {
     fontFamily: fontFamily.regular,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 14,
+    lineHeight: 20,
   },
   captionMedium: {
-    fontFamily: fontFamily.medium,
-    fontSize: 12,
-    lineHeight: 16,
+    fontFamily: fontFamily.regular,
+    fontSize: 14,
+    lineHeight: 20,
   },
   label: {
-    fontFamily: fontFamily.semiBold,
+    fontFamily: fontFamily.regular,
     fontSize: 11,
     lineHeight: 14,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
   labelSm: {
-    fontFamily: fontFamily.semiBold,
+    fontFamily: fontFamily.regular,
     fontSize: 10,
     lineHeight: 13,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
   labelXs: {
-    fontFamily: fontFamily.semiBold,
+    fontFamily: fontFamily.regular,
     fontSize: 9,
     lineHeight: 12,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
-  // Buttons — Syne-style
+
+  // Buttons — all weight 400 per Squid
   buttonL: {
-    fontFamily: fontFamily.extraBold,
-    fontSize: 17,
-    lineHeight: 22,
+    fontFamily: fontFamily.regular,
+    fontSize: 18,
+    lineHeight: 24,
   },
   buttonM: {
-    fontFamily: fontFamily.extraBold,
+    fontFamily: fontFamily.regular,
     fontSize: 16,
     lineHeight: 22,
   },
   buttonS: {
-    fontFamily: fontFamily.bold,
+    fontFamily: fontFamily.regular,
     fontSize: 14,
     lineHeight: 20,
   },
-  // Numbers / values — DM Mono style (tabular)
+
+  // Numbers / values — tabular with tight tracking
   value: {
-    fontFamily: fontFamily.extraBold,
-    fontSize: 38,
-    lineHeight: 44,
-    letterSpacing: -1.5,
+    fontFamily: fontFamily.regular,
+    fontSize: 70,
+    lineHeight: 76,
+    letterSpacing: -1.4,
     fontVariant: ['tabular-nums'],
   },
   valueLg: {
-    fontFamily: fontFamily.extraBold,
-    fontSize: 36,
-    lineHeight: 42,
-    letterSpacing: -1,
+    fontFamily: fontFamily.regular,
+    fontSize: 49,
+    lineHeight: 56,
+    letterSpacing: -0.98,
     fontVariant: ['tabular-nums'],
   },
   valueMd: {
-    fontFamily: fontFamily.extraBold,
-    fontSize: 22,
-    lineHeight: 28,
-    letterSpacing: -0.3,
+    fontFamily: fontFamily.regular,
+    fontSize: 28,
+    lineHeight: 34,
+    letterSpacing: -0.56,
     fontVariant: ['tabular-nums'],
   },
   valueSm: {
-    fontFamily: fontFamily.bold,
+    fontFamily: fontFamily.regular,
+    fontSize: 22,
+    lineHeight: 28,
+    fontVariant: ['tabular-nums'],
+  },
+  valueXs: {
+    fontFamily: fontFamily.regular,
     fontSize: 18,
     lineHeight: 24,
     fontVariant: ['tabular-nums'],
   },
-  valueXs: {
-    fontFamily: fontFamily.bold,
-    fontSize: 17,
-    lineHeight: 22,
-    fontVariant: ['tabular-nums'],
-  },
+
   // Mono-style text (rates, references, timers)
   mono: {
-    fontFamily: fontFamily.medium,
-    fontSize: 13,
-    lineHeight: 18,
+    fontFamily: fontFamily.regular,
+    fontSize: 14,
+    lineHeight: 20,
     fontVariant: ['tabular-nums'],
   },
   monoSm: {
-    fontFamily: fontFamily.medium,
+    fontFamily: fontFamily.regular,
     fontSize: 12,
     lineHeight: 16,
     fontVariant: ['tabular-nums'],
@@ -191,6 +201,14 @@ export const typography: Record<string, TypographyVariant> = {
     lineHeight: 14,
     fontVariant: ['tabular-nums'],
   },
+
+  // Numpad key text
+  numKeyText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 28,
+    lineHeight: 34,
+  },
+
   // Legacy compat
   description: {
     fontFamily: fontFamily.regular,
@@ -198,42 +216,42 @@ export const typography: Record<string, TypographyVariant> = {
     lineHeight: 20,
   },
   main14: {
-    fontFamily: fontFamily.semiBold,
+    fontFamily: fontFamily.regular,
     fontSize: 14,
     lineHeight: 20,
   },
   main12: {
-    fontFamily: fontFamily.semiBold,
+    fontFamily: fontFamily.regular,
     fontSize: 12,
     lineHeight: 16,
   },
   main16: {
-    fontFamily: fontFamily.semiBold,
+    fontFamily: fontFamily.regular,
     fontSize: 16,
     lineHeight: 22,
   },
   main21: {
-    fontFamily: fontFamily.bold,
+    fontFamily: fontFamily.regular,
     fontSize: 21,
     lineHeight: 28,
   },
   secondary14: {
-    fontFamily: fontFamily.medium,
+    fontFamily: fontFamily.regular,
     fontSize: 14,
     lineHeight: 20,
   },
   secondary12: {
-    fontFamily: fontFamily.medium,
+    fontFamily: fontFamily.regular,
     fontSize: 12,
     lineHeight: 16,
   },
   secondary16: {
-    fontFamily: fontFamily.medium,
+    fontFamily: fontFamily.regular,
     fontSize: 16,
     lineHeight: 22,
   },
   secondary21: {
-    fontFamily: fontFamily.medium,
+    fontFamily: fontFamily.regular,
     fontSize: 21,
     lineHeight: 28,
   },

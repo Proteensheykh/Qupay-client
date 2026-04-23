@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
-import { QupayLogo, CTAButton } from '../../components';
+import { QupayLogo, CTAButton, MuralBackdrop } from '../../components';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
-import { useTheme } from '../../theme';
+import { useTheme, typography, radii } from '../../theme';
+import { palette } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'Splash'>;
 
@@ -36,14 +37,20 @@ export const SplashScreen: React.FC<Props> = ({ navigation }) => {
   }, [fadeAnim]);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.marketing.ground }]}>
+      <MuralBackdrop />
       <View style={styles.container}>
         <View style={styles.content}>
-          <QupayLogo size={28} />
+          <View style={styles.logoMark}>
+            <QupayLogo size={40} variant="mark" />
+            <View style={styles.progressTrack} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: 42 }}>
+              <View style={[styles.progressFill, { width: '42%' }]} />
+            </View>
+          </View>
           <View style={styles.spacer} />
           <Text style={[styles.headline, { color: theme.text.primary }]}>
             Quick payments,{'\n'}in any currency,{'\n'}
-            <Text style={{ color: theme.secondary.main }}>
+            <Text style={{ color: palette.royal[500] }}>
               to <Animated.Text style={{ opacity: fadeAnim }}>{words[currentIndex]}</Animated.Text>
             </Text>
           </Text>
@@ -61,17 +68,17 @@ export const SplashScreen: React.FC<Props> = ({ navigation }) => {
             ]}
           >
             <View style={styles.statItem}>
-              <Text style={[styles.statVal, { color: theme.secondary.main }]}>54+</Text>
+              <Text style={[styles.statVal, { color: palette.royal[500] }]}>54+</Text>
               <Text style={[styles.statLabel, { color: theme.text.secondary }]}>Countries</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: theme.inputBorder }]} />
             <View style={styles.statItem}>
-              <Text style={[styles.statVal, { color: theme.secondary.main }]}>No fees</Text>
+              <Text style={[styles.statVal, { color: palette.royal[500] }]}>No fees</Text>
               <Text style={[styles.statLabel, { color: theme.text.secondary }]}>Zero cost</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: theme.inputBorder }]} />
             <View style={styles.statItem}>
-              <Text style={[styles.statVal, { color: theme.secondary.main }]}>Quick</Text>
+              <Text style={[styles.statVal, { color: palette.royal[500] }]}>Quick</Text>
               <Text style={[styles.statLabel, { color: theme.text.secondary }]}>Delivery</Text>
             </View>
           </View>
@@ -85,7 +92,7 @@ export const SplashScreen: React.FC<Props> = ({ navigation }) => {
           />
           <TouchableOpacity onPress={() => navigation.navigate('SignIn')} activeOpacity={0.7}>
             <Text style={[styles.loginText, { color: theme.text.secondary }]}>
-              Already have an account? <Text style={[styles.loginLink, { color: theme.secondary.main }]}>Log in</Text>
+              Already have an account? <Text style={[styles.loginLink, { color: palette.royal[500] }]}>Log in</Text>
             </Text>
           </TouchableOpacity>
           <View style={styles.footer}>
@@ -105,24 +112,38 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
+    zIndex: 1,
   },
   content: {
     paddingHorizontal: 28,
     paddingTop: 40,
   },
+  logoMark: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  progressTrack: {
+    marginTop: 20,
+    width: 120,
+    height: 4,
+    borderRadius: radii.pill,
+    backgroundColor: palette.material.lightThin,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: radii.pill,
+    backgroundColor: palette.royal[500],
+  },
   spacer: {
     height: 36,
   },
   headline: {
-    fontFamily: 'Inter_800ExtraBold',
-    fontSize: 32,
-    lineHeight: 35,
-    letterSpacing: -0.5,
+    ...typography.h2,
     marginBottom: 12,
   },
   description: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
+    ...typography.bodySm,
     lineHeight: 23,
     marginBottom: 32,
   },
@@ -143,15 +164,11 @@ const styles = StyleSheet.create({
     width: 1,
   },
   statVal: {
-    fontFamily: 'Inter_800ExtraBold',
-    fontSize: 18,
+    ...typography.h4,
     marginBottom: 2,
   },
   statLabel: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 9,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    ...typography.labelXs,
   },
   bottom: {
     paddingHorizontal: 24,
@@ -161,13 +178,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   loginText: {
-    fontFamily: 'Inter_400Regular',
+    ...typography.bodySm,
     fontSize: 11,
     textAlign: 'center',
     marginBottom: 20,
   },
   loginLink: {
-    fontFamily: 'Inter_600SemiBold',
+    ...typography.bodySm,
+    fontSize: 11,
   },
   footer: {
     flexDirection: 'row',
@@ -177,7 +195,6 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   footerText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 10,
+    ...typography.monoXs,
   },
 });

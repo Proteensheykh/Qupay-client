@@ -1,8 +1,23 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Text, StyleSheet, Pressable, AccessibilityInfo } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
 import { Ionicons } from './Icon';
-import { useTheme, typography, spacing, borderRadius } from '../theme';
-// shadows intentionally not imported — local design has no toast shadow
+import {
+  useTheme,
+  typography,
+  spacing,
+  radii,
+  borders,
+  springs,
+  durations,
+} from '../theme';
+import { palette } from '../theme/colors';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -22,34 +37,67 @@ export const Toast: React.FC<ToastProps> = ({
   duration = 3000,
 }) => {
   const { theme } = useTheme();
-  const translateY = useRef(new Animated.Value(-100)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useSharedValue(-100);
+  const opacity = useSharedValue(0);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const subscription = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      setReduceMotion
+    );
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     if (visible) {
-      Animated.parallel([
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, tension: 80, friction: 10 }),
-        Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-      ]).start();
+      if (reduceMotion) {
+        translateY.value = 0;
+        opacity.value = 1;
+      } else {
+        translateY.value = withSpring(0, springs.snappy);
+        opacity.value = withTiming(1, { duration: durations.fast });
+      }
 
       const timer = setTimeout(() => {
         dismiss();
       }, duration);
       return () => clearTimeout(timer);
     }
-  }, [visible]);
+  }, [visible, reduceMotion]);
 
   const dismiss = () => {
-    Animated.parallel([
-      Animated.timing(translateY, { toValue: -100, duration: 250, useNativeDriver: true }),
-      Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: true }),
-    ]).start(() => onDismiss());
+    if (reduceMotion) {
+      translateY.value = -100;
+      opacity.value = 0;
+      onDismiss();
+    } else {
+      translateY.value = withTiming(-100, { duration: durations.base });
+      opacity.value = withTiming(0, { duration: durations.fast }, () => {
+        runOnJS(onDismiss)();
+      });
+    }
   };
 
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: opacity.value,
+  }));
+
   const config = {
-    success: { icon: 'checkmark-circle' as const, color: theme.success.main, bg: theme.background.paper },
-    error: { icon: 'close-circle' as const, color: theme.error.main, bg: theme.background.paper },
-    info: { icon: 'information-circle' as const, color: theme.secondary.main, bg: theme.background.paper },
+    success: {
+      icon: 'checkmark-circle' as const,
+      color: theme.success.main,
+    },
+    error: {
+      icon: 'close-circle' as const,
+      color: theme.error.main,
+    },
+    info: {
+      icon: 'information-circle' as const,
+      color: palette.royal[400],
+    },
   };
 
   const c = config[type];
@@ -60,15 +108,25 @@ export const Toast: React.FC<ToastProps> = ({
     <Animated.View
       style={[
         styles.container,
-        { backgroundColor: c.bg, transform: [{ translateY }], opacity },
+        animatedStyle,
+        { backgroundColor: palette.grey[900] },
+        borders.hairline.dark,
       ]}
     >
-      <TouchableOpacity style={styles.content} onPress={dismiss} activeOpacity={0.8}>
+      <Pressable
+        style={styles.content}
+        onPress={dismiss}
+        accessibilityRole="alert"
+        accessibilityLabel={message}
+      >
         <Ionicons name={c.icon} size={22} color={c.color} />
-        <Text style={[typography.main14, { color: theme.text.primary, flex: 1 }]} numberOfLines={2}>
+        <Text
+          style={[typography.main14, { color: theme.text.primary, flex: 1 }]}
+          numberOfLines={2}
+        >
           {message}
         </Text>
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 };
@@ -79,7 +137,7 @@ const styles = StyleSheet.create({
     top: spacing(14),
     left: spacing(4),
     right: spacing(4),
-    borderRadius: borderRadius.md, // R.md — local toast radius
+    borderRadius: radii.lg,
     zIndex: 9999,
   },
   content: {

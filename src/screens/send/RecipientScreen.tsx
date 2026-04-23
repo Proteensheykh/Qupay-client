@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   FlatList,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,7 +19,9 @@ import type { BankResponse } from '../../api/banks';
 import { isApiError } from '../../api/client';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
-import { useTheme } from '../../theme';
+import { spacing, typography } from '../../theme';
+import { palette } from '../../theme/colors';
+import { radii } from '../../theme/radii';
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'Recipient'>;
 
@@ -48,7 +49,6 @@ const truncateAddress = (addr: string): string => {
 };
 
 export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { theme } = useTheme();
   const { amount, sendCurrency, receiveCurrency, receiveAmount } = route.params;
   const recvSymbol = currencySymbols[receiveCurrency] || '';
   const sendSymbol = currencySymbols[sendCurrency] || '';
@@ -59,7 +59,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
       {
         name: 'Emeka Johnson',
         initials: 'EJ',
-        colors: [theme.secondary.dark, theme.secondary.main],
+        colors: [palette.royal[600], palette.royal[500]],
         method: 'OPay',
         phone: '0812 456 7890',
         flag: '\u{1F1F3}\u{1F1EC}',
@@ -68,7 +68,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
       {
         name: 'Kofi Mensah',
         initials: 'KM',
-        colors: [theme.warning.main, theme.secondary.main],
+        colors: [palette.status.partial, palette.royal[500]],
         method: 'MTN Momo',
         phone: '0541 234 567',
         flag: '\u{1F1EC}\u{1F1ED}',
@@ -77,14 +77,14 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
       {
         name: 'Adaeze Obi',
         initials: 'AO',
-        colors: [theme.info.light, theme.secondary.dark],
+        colors: [palette.royal[400], palette.royal[600]],
         method: 'GTBank',
         phone: '\u00B7\u00B7\u00B7\u00B7 4521',
         flag: '\u{1F1F3}\u{1F1EC}',
         country: 'Nigeria',
       },
     ],
-    [theme]
+    []
   );
 
   // Shared state
@@ -275,7 +275,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
       receiveAmount,
       recipientName: truncateAddress(walletAddress),
       recipientInitials: initials,
-      recipientColors: [theme.secondary.main, theme.secondary.dark],
+      recipientColors: [palette.royal[500], palette.royal[600]],
       recipientMethod: selectedNetwork.name,
       recipientFlag: '\u{1FA99}',
       recipientWalletAddress: walletAddress,
@@ -290,41 +290,33 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
     walletAddress,
     walletAddressValid,
     selectedNetwork,
-    theme.secondary.main,
-    theme.secondary.dark,
+    palette.royal[500],
+    palette.royal[600],
   ]);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
       <ScreenHeader title="Who are you sending to?" onBack={() => navigation.goBack()} />
       <ScrollView
         style={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Swap summary card */}
-        <View
-          style={[
-            styles.swapSummary,
-            {
-              backgroundColor: theme.info.bg,
-              borderColor: `${theme.secondary.main}26`,
-            },
-          ]}
-        >
-          <View style={styles.swapRow}>
-            <Text style={[styles.swapLabel, { color: theme.text.secondary }]}>Sending</Text>
-            <Text style={[styles.swapValue, { color: theme.text.primary }]}>
+        {/* Swap summary — hairline rows on flat backdrop (no row cards) */}
+        <View style={styles.swapSummary}>
+          <View style={[styles.swapRow, styles.swapRowFirst]}>
+            <Text style={[styles.swapLabel, { color: palette.grey[500] }]}>Sending</Text>
+            <Text style={[styles.swapValue, { color: palette.grey[300] }]}>
               {sendSymbol}
               {amount.toLocaleString()} {sendCurrency}
             </Text>
           </View>
           <View style={styles.swapArrow}>
-            <Ionicons name="arrow-down" size={14} color={theme.secondary.main} />
+            <Ionicons name="arrow-down" size={14} color={palette.grey[500]} />
           </View>
           <View style={styles.swapRow}>
-            <Text style={[styles.swapLabel, { color: theme.text.secondary }]}>They receive</Text>
-            <Text style={[styles.swapValue, { color: theme.secondary.main }]}>
+            <Text style={[styles.swapLabel, { color: palette.grey[500] }]}>They receive</Text>
+            <Text style={[styles.swapValue, { color: palette.grey[300] }]}>
               {isCryptoOut
                 ? `${receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`
                 : `${recvSymbol}${receiveAmount.toLocaleString()} ${receiveCurrency}`}
@@ -338,61 +330,61 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             <TouchableOpacity
               style={[
                 styles.networkSelector,
-                { backgroundColor: theme.background.surface, borderColor: theme.inputBorder },
+                { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
               ]}
               onPress={() => setShowNetworkPicker(true)}
               activeOpacity={0.7}
             >
               <View style={styles.networkSelectorLeft}>
-                <Text style={[styles.networkSelectorLabel, { color: theme.text.secondary }]}>Network</Text>
+                <Text style={[styles.networkSelectorLabel, { color: palette.grey[500] }]}>Network</Text>
                 <View
                   style={[
                     styles.networkPill,
                     {
-                      backgroundColor: theme.info.bg,
-                      borderColor: `${theme.secondary.main}40`,
+                      backgroundColor: palette.grey[800],
+                      borderColor: palette.material.lightThin,
                     },
                   ]}
                 >
-                  <Ionicons name={selectedNetwork.icon as any} size={16} color={theme.secondary.main} />
-                  <Text style={[styles.networkPillText, { color: theme.text.primary }]}>{selectedNetwork.name}</Text>
-                  <Ionicons name="chevron-down" size={14} color={theme.text.secondary} />
+                  <Ionicons name={selectedNetwork.icon as any} size={16} color={palette.grey[300]} />
+                  <Text style={[styles.networkPillText, { color: palette.grey[300] }]}>{selectedNetwork.name}</Text>
+                  <Ionicons name="chevron-down" size={14} color={palette.grey[500]} />
                 </View>
               </View>
-              <Text style={[styles.networkGas, { color: theme.text.muted }]}>{selectedNetwork.gasEstimate} gas</Text>
+              <Text style={[styles.networkGas, { color: palette.grey[500] }]}>{selectedNetwork.gasEstimate} gas</Text>
             </TouchableOpacity>
 
             {/* Wallet Address Input */}
             <View
               style={[
                 styles.walletInputCard,
-                { backgroundColor: theme.background.surface, borderColor: theme.inputBorder },
-                walletAddressError && { borderColor: theme.error.main },
-                walletAddressValid && { borderColor: theme.secondary.main },
+                { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
+                walletAddressError && { borderColor: palette.status.negative },
+                walletAddressValid && { borderColor: palette.royal[500] },
               ]}
             >
               <View style={styles.walletInputHeader}>
-                <Text style={[styles.walletInputLabel, { color: theme.text.secondary }]}>Recipient Wallet Address</Text>
+                <Text style={[styles.walletInputLabel, { color: palette.grey[500] }]}>Recipient Wallet Address</Text>
                 <TouchableOpacity
                   onPress={handlePasteAddress}
-                  style={[styles.pasteBtn, { backgroundColor: theme.info.bg }]}
+                  style={[styles.pasteBtn, { backgroundColor: palette.grey[900], borderWidth: 1, borderColor: palette.material.lightThin }]}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="clipboard-outline" size={14} color={theme.secondary.main} />
-                  <Text style={[styles.pasteBtnText, { color: theme.secondary.main }]}>Paste</Text>
+                  <Ionicons name="clipboard-outline" size={14} color={palette.grey[300]} />
+                  <Text style={[styles.pasteBtnText, { color: palette.grey[300] }]}>Paste</Text>
                 </TouchableOpacity>
               </View>
               <TextInput
                 style={[
                   styles.walletInput,
                   {
-                    color: theme.text.primary,
-                    backgroundColor: theme.background.paper,
-                    borderColor: theme.inputBorder,
+                    color: palette.grey[300],
+                    backgroundColor: palette.grey[900],
+                    borderColor: palette.material.lightThin,
                   },
                 ]}
                 placeholder="0x..."
-                placeholderTextColor={theme.text.muted}
+                placeholderTextColor={palette.grey[500]}
                 value={walletAddress}
                 onChangeText={handleWalletAddressChange}
                 autoCapitalize="none"
@@ -400,14 +392,14 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
               />
               {walletAddressError && (
                 <View style={styles.walletErrorRow}>
-                  <Ionicons name="alert-circle" size={14} color={theme.error.main} />
-                  <Text style={[styles.walletErrorText, { color: theme.error.main }]}>Invalid wallet address format</Text>
+                  <Ionicons name="alert-circle" size={14} color={palette.status.negative} />
+                  <Text style={[styles.walletErrorText, { color: palette.status.negative }]}>Invalid wallet address format</Text>
                 </View>
               )}
               {walletAddressValid && (
                 <View style={styles.walletValidRow}>
-                  <Ionicons name="checkmark-circle" size={14} color={theme.secondary.main} />
-                  <Text style={[styles.walletValidText, { color: theme.secondary.main }]}>
+                  <Ionicons name="checkmark-circle" size={14} color={palette.royal[500]} />
+                  <Text style={[styles.walletValidText, { color: palette.royal[500] }]}>
                     Valid {selectedNetwork.name} address
                   </Text>
                 </View>
@@ -424,27 +416,30 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             </View>
 
             {/* Saved Wallets */}
-            <Text style={[styles.sectionLabel, { color: theme.text.secondary }]}>Saved Wallets</Text>
+            <Text style={[styles.sectionLabel, { color: palette.grey[500] }]}>Saved Wallets</Text>
             <View style={styles.contactList}>
-              {walletContacts.map((w) => (
+              {walletContacts.map((w, index) => (
                 <TouchableOpacity
                   key={w.id}
-                  style={[styles.contactItem, { borderBottomColor: theme.inputBorder }]}
+                  style={[
+                    styles.contactItem,
+                    index === walletContacts.length - 1 && styles.contactItemLast,
+                  ]}
                   onPress={() => selectWalletContact(w)}
                   activeOpacity={0.7}
                 >
                   <Avatar seed={w.name} size={44} />
                   <View style={styles.ciInfo}>
-                    <Text style={[styles.ciName, { color: theme.text.primary }]}>{w.name}</Text>
+                    <Text style={[styles.ciName, { color: palette.grey[300] }]}>{w.name}</Text>
                     <View style={styles.walletSubRow}>
-                      <Text style={[styles.walletAddrText, { color: theme.text.secondary }]}>{truncateAddress(w.walletAddress)}</Text>
-                      <View style={[styles.networkBadge, { backgroundColor: theme.info.bg }]}>
-                        <Ionicons name={w.networkIcon as any} size={10} color={theme.secondary.main} />
-                        <Text style={[styles.networkBadgeText, { color: theme.secondary.main }]}>{w.network}</Text>
+                      <Text style={[styles.walletAddrText, { color: palette.grey[500] }]}>{truncateAddress(w.walletAddress)}</Text>
+                      <View style={[styles.networkBadge, { backgroundColor: palette.grey[900], borderWidth: 1, borderColor: palette.material.lightThin }]}>
+                        <Ionicons name={w.networkIcon as any} size={10} color={palette.grey[300]} />
+                        <Text style={[styles.networkBadgeText, { color: palette.grey[300] }]}>{w.network}</Text>
                       </View>
                     </View>
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color={theme.text.muted} />
+                  <Ionicons name="chevron-forward" size={16} color={palette.grey[500]} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -454,26 +449,26 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             {/* Smart input card - Fiat out */}
             <View
               style={[
-                styles.sendInputCard,
-                { backgroundColor: theme.background.surface, borderColor: theme.inputBorder },
-                resolveState !== 'idle' && { borderColor: theme.secondary.main },
+                styles.sendInputPill,
+                { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
+                resolveState !== 'idle' && { borderColor: palette.royal[500] },
               ]}
             >
               <View style={styles.sicField}>
-                <Text style={[styles.sicLabel, { color: theme.text.secondary }]}>To</Text>
+                <Ionicons name="search" size={18} color={palette.grey[500]} style={styles.sicSearchIcon} />
                 <TextInput
-                  style={[styles.sicInput, { color: theme.text.primary }]}
+                  style={[styles.sicInput, { color: palette.grey[300] }]}
                   placeholder="Name, phone number, or account\u2026"
-                  placeholderTextColor={theme.text.muted}
+                  placeholderTextColor={palette.grey[500]}
                   value={inputVal}
                   onChangeText={handleInput}
                 />
               </View>
 
               {resolveState === 'resolving' && (
-                <View style={[styles.resolvingRow, { borderTopColor: theme.inputBorder }]}>
-                  <View style={[styles.miniSpin, { borderColor: theme.info.bg, borderTopColor: theme.secondary.main }]} />
-                  <Text style={[styles.resolvingText, { color: theme.text.secondary }]}>Looking up account\u2026</Text>
+                <View style={[styles.resolvingRow, { borderTopColor: palette.material.lightThin }]}>
+                  <View style={[styles.miniSpin, { borderColor: palette.material.lightThin, borderTopColor: palette.royal[500] }]} />
+                  <Text style={[styles.resolvingText, { color: palette.grey[500] }]}>Looking up account\u2026</Text>
                 </View>
               )}
 
@@ -481,13 +476,13 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                 <View
                   style={[
                     styles.errorRow,
-                    { borderTopColor: `${theme.error.main}26`, backgroundColor: theme.error.bg },
+                    { borderTopColor: `${palette.status.negative}26`, backgroundColor: 'rgba(255,77,91,0.15)' },
                   ]}
                 >
-                  <Ionicons name="alert-circle" size={16} color={theme.error.main} />
+                  <Ionicons name="alert-circle" size={16} color={palette.status.negative} />
                   <View style={styles.errorInfo}>
-                    <Text style={[styles.errorTitle, { color: theme.error.main }]}>Account not found</Text>
-                    <Text style={[styles.errorSub, { color: theme.text.secondary }]}>
+                    <Text style={[styles.errorTitle, { color: palette.status.negative }]}>Account not found</Text>
+                    <Text style={[styles.errorSub, { color: palette.grey[500] }]}>
                       Check the number and try again, or add bank details below
                     </Text>
                   </View>
@@ -496,24 +491,24 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
 
               {resolveState === 'resolved' && resolvedContact && (
                 <TouchableOpacity
-                  style={[styles.resolvedRow, { borderTopColor: theme.inputBorder }]}
+                  style={[styles.resolvedRow, { borderTopColor: palette.material.lightThin }]}
                   onPress={() => selectContact(resolvedContact)}
                   activeOpacity={0.7}
                 >
                   <View style={styles.resolvedCard}>
                     <Avatar seed={resolvedContact.name} size={36} />
                     <View style={styles.rcInfo}>
-                      <Text style={[styles.rcName, { color: theme.text.primary }]}>{resolvedContact.name}</Text>
-                      <Text style={[styles.rcSub, { color: theme.text.secondary }]}>
+                      <Text style={[styles.rcName, { color: palette.grey[300] }]}>{resolvedContact.name}</Text>
+                      <Text style={[styles.rcSub, { color: palette.grey[500] }]}>
                         {resolvedContact.method} {'\u00B7'} {resolvedContact.phone} {'\u00B7'}{' '}
                         {resolvedContact.country}
                       </Text>
-                      <Text style={[styles.noAcctNote, { color: theme.secondary.main }]}>
+                      <Text style={[styles.noAcctNote, { color: palette.grey[500] }]}>
                         No Qupay account needed — they'll receive a standard {resolvedContact.method} credit {'\u2713'}
                       </Text>
                     </View>
                   </View>
-                  <Text style={[styles.rcCheck, { color: theme.secondary.main }]}>{'\u2713'}</Text>
+                  <Text style={[styles.rcCheck, { color: palette.status.positive }]}>{'\u2713'}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -523,30 +518,33 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
               style={[
                 styles.addBankBtn,
                 {
-                  backgroundColor: theme.info.bg,
-                  borderColor: `${theme.secondary.main}26`,
+                  backgroundColor: palette.grey[800],
+                  borderColor: palette.material.lightThin,
                 },
               ]}
               onPress={() => setShowBankSheet(true)}
               activeOpacity={0.7}
             >
-              <View style={[styles.addBankIcon, { backgroundColor: theme.info.bg }]}>
-                <Ionicons name="business-outline" size={18} color={theme.secondary.main} />
+              <View style={[styles.addBankIcon, { backgroundColor: palette.grey[900], borderWidth: 1, borderColor: palette.material.lightThin }]}>
+                <Ionicons name="business-outline" size={18} color={palette.grey[300]} />
               </View>
               <View style={styles.addBankInfo}>
-                <Text style={[styles.addBankTitle, { color: theme.secondary.main }]}>Bank Transfer</Text>
-                <Text style={[styles.addBankSub, { color: theme.text.secondary }]}>Send directly to a bank account</Text>
+                <Text style={[styles.addBankTitle, { color: palette.grey[300] }]}>Bank Transfer</Text>
+                <Text style={[styles.addBankSub, { color: palette.grey[500] }]}>Send directly to a bank account</Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={theme.text.muted} />
+              <Ionicons name="chevron-forward" size={16} color={palette.grey[500]} />
             </TouchableOpacity>
 
             {/* Recent contacts */}
-            <Text style={[styles.sectionLabel, { color: theme.text.secondary }]}>Recent</Text>
+            <Text style={[styles.sectionLabel, { color: palette.grey[500] }]}>Recent</Text>
             <View style={styles.contactList}>
-              {contacts.map((c) => (
+              {contacts.map((c, index) => (
                 <TouchableOpacity
                   key={c.initials}
-                  style={[styles.contactItem, { borderBottomColor: theme.inputBorder }]}
+                  style={[
+                    styles.contactItem,
+                    index === contacts.length - 1 && styles.contactItemLast,
+                  ]}
                   onPress={() => selectContact(c)}
                   activeOpacity={0.7}
                 >
@@ -556,8 +554,8 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                       style={[
                         styles.ciFlag,
                         {
-                          backgroundColor: theme.background.default,
-                          borderColor: theme.background.default,
+                          backgroundColor: palette.grey[900],
+                          borderColor: palette.grey[900],
                         },
                       ]}
                     >
@@ -565,12 +563,12 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                     </View>
                   </View>
                   <View style={styles.ciInfo}>
-                    <Text style={[styles.ciName, { color: theme.text.primary }]}>{c.name}</Text>
-                    <Text style={[styles.ciSub, { color: theme.text.secondary }]}>
+                    <Text style={[styles.ciName, { color: palette.grey[300] }]}>{c.name}</Text>
+                    <Text style={[styles.ciSub, { color: palette.grey[500] }]}>
                       {c.method} {'\u00B7'} {c.phone} {'\u00B7'} {c.country}
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color={theme.text.muted} />
+                  <Ionicons name="chevron-forward" size={16} color={palette.grey[500]} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -589,8 +587,8 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             key={n.id}
             style={[
               styles.networkItem,
-              { borderBottomColor: theme.divider },
-              selectedNetwork.id === n.id && { backgroundColor: theme.info.bg },
+              { borderBottomColor: palette.material.lightThin },
+              selectedNetwork.id === n.id && { backgroundColor: 'rgba(251,251,253,0.06)' },
             ]}
             onPress={() => {
               setSelectedNetwork(n);
@@ -598,25 +596,25 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             }}
             activeOpacity={0.7}
           >
-            <View style={[styles.networkItemIcon, { backgroundColor: theme.divider }]}>
+            <View style={[styles.networkItemIcon, { backgroundColor: palette.material.lightThin }]}>
               <Ionicons
                 name={n.icon as any}
                 size={20}
-                color={selectedNetwork.id === n.id ? theme.secondary.main : theme.text.primary}
+                color={selectedNetwork.id === n.id ? palette.royal[500] : palette.grey[300]}
               />
             </View>
             <View style={styles.networkItemInfo}>
               <Text
                 style={[
                   styles.networkItemName,
-                  { color: selectedNetwork.id === n.id ? theme.secondary.main : theme.text.primary },
+                  { color: selectedNetwork.id === n.id ? palette.royal[500] : palette.grey[300] },
                 ]}
               >
                 {n.name}
               </Text>
-              <Text style={[styles.networkItemGas, { color: theme.text.secondary }]}>Gas {n.gasEstimate}</Text>
+              <Text style={[styles.networkItemGas, { color: palette.grey[500] }]}>Gas {n.gasEstimate}</Text>
             </View>
-            {selectedNetwork.id === n.id && <Ionicons name="checkmark" size={18} color={theme.secondary.main} />}
+            {selectedNetwork.id === n.id && <Ionicons name="checkmark" size={18} color={palette.royal[500]} />}
           </TouchableOpacity>
         ))}
         <View style={{ height: 40 }} />
@@ -629,12 +627,12 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
         title="Enter Bank Details"
       >
         <View style={styles.bankForm}>
-          <Text style={[styles.bankLabel, { color: theme.text.secondary }]}>Select Bank</Text>
+          <Text style={[styles.bankLabel, { color: palette.grey[500] }]}>Select Bank</Text>
           <TouchableOpacity
             style={[
               styles.bankDropdown,
-              { backgroundColor: theme.background.surface, borderColor: theme.inputBorder },
-              selectedBank && { borderColor: theme.secondary.main },
+              { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
+              selectedBank && { borderColor: palette.royal[500] },
             ]}
             onPress={() => setShowBankListSheet(true)}
             activeOpacity={0.7}
@@ -642,38 +640,38 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             <Ionicons
               name="business-outline"
               size={18}
-              color={selectedBank ? theme.secondary.main : theme.text.muted}
+              color={selectedBank ? palette.royal[500] : palette.grey[500]}
             />
             <Text
               style={[
                 styles.bankDropdownText,
-                { color: selectedBank ? theme.text.primary : theme.text.muted },
+                { color: selectedBank ? palette.grey[300] : palette.grey[500] },
               ]}
             >
               {bankName || 'Choose a bank...'}
             </Text>
-            <Ionicons name="chevron-down" size={16} color={theme.text.muted} />
+            <Ionicons name="chevron-down" size={16} color={palette.grey[500]} />
           </TouchableOpacity>
 
 
-          <Text style={[styles.bankLabel, { color: theme.text.secondary }]}>Account Number</Text>
+          <Text style={[styles.bankLabel, { color: palette.grey[500] }]}>Account Number</Text>
           <View style={styles.accountNumberRow}>
             <TextInput
               style={[
                 styles.bankInput,
                 styles.accountNumberInput,
                 {
-                  backgroundColor: theme.background.surface,
+                  backgroundColor: palette.grey[800],
                   borderColor: bankValidationState === 'valid' 
-                    ? theme.secondary.main 
+                    ? palette.royal[500] 
                     : bankValidationState === 'invalid' 
-                      ? theme.error.main 
-                      : theme.inputBorder,
-                  color: theme.text.primary,
+                      ? palette.status.negative 
+                      : palette.material.lightThin,
+                  color: palette.grey[300],
                 },
               ]}
               placeholder="Enter 10-digit account number"
-              placeholderTextColor={theme.text.muted}
+              placeholderTextColor={palette.grey[500]}
               keyboardType="number-pad"
               value={bankAccountNumber}
               onChangeText={handleAccountNumberChange}
@@ -683,47 +681,47 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             />
             {bankValidationState === 'validating' && (
               <View style={styles.validationIndicator}>
-                <ActivityIndicator size="small" color={theme.secondary.main} />
+                <ActivityIndicator size="small" color={palette.royal[500]} />
               </View>
             )}
             {bankValidationState === 'valid' && (
               <View style={styles.validationIndicator}>
-                <Ionicons name="checkmark-circle" size={20} color={theme.secondary.main} />
+                <Ionicons name="checkmark-circle" size={20} color={palette.royal[500]} />
               </View>
             )}
             {bankValidationState === 'invalid' && (
               <View style={styles.validationIndicator}>
-                <Ionicons name="alert-circle" size={20} color={theme.error.main} />
+                <Ionicons name="alert-circle" size={20} color={palette.status.negative} />
               </View>
             )}
           </View>
           {bankValidationState === 'invalid' && (
-            <Text style={[styles.validationErrorText, { color: theme.error.main }]}>
+            <Text style={[styles.validationErrorText, { color: palette.status.negative }]}>
               {bankValidationError || 'Invalid account details'}
             </Text>
           )}
 
-          <Text style={[styles.bankLabel, { color: theme.text.secondary }]}>Account Holder Name</Text>
+          <Text style={[styles.bankLabel, { color: palette.grey[500] }]}>Account Holder Name</Text>
           <View
             style={[
               styles.bankInput,
               styles.accountNameDisplay,
               {
-                backgroundColor: theme.background.surface,
-                borderColor: bankValidationState === 'valid' ? theme.secondary.main : theme.inputBorder,
+                backgroundColor: palette.grey[800],
+                borderColor: bankValidationState === 'valid' ? palette.royal[500] : palette.material.lightThin,
               },
             ]}
           >
             {bankValidationState === 'validating' ? (
-              <Text style={[styles.accountNamePlaceholder, { color: theme.text.muted }]}>
+              <Text style={[styles.accountNamePlaceholder, { color: palette.grey[500] }]}>
                 Verifying account...
               </Text>
             ) : bankAccountName ? (
-              <Text style={[styles.accountNameText, { color: theme.text.primary }]}>
+              <Text style={[styles.accountNameText, { color: palette.grey[300] }]}>
                 {bankAccountName}
               </Text>
             ) : (
-              <Text style={[styles.accountNamePlaceholder, { color: theme.text.muted }]}>
+              <Text style={[styles.accountNamePlaceholder, { color: palette.grey[500] }]}>
                 {bankValidationState === 'invalid' ? '—' : 'Will be auto-filled after verification'}
               </Text>
             )}
@@ -748,7 +746,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                 receiveAmount,
                 recipientName: bankAccountName.trim(),
                 recipientInitials: initials,
-                recipientColors: [theme.secondary.dark, theme.secondary.main],
+                recipientColors: [palette.royal[600], palette.royal[500]],
                 recipientMethod: bankName,
                 recipientPhone: bankAccountNumber,
                 recipientFlag: '\u{1F1F3}\u{1F1EC}',
@@ -773,14 +771,14 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
           <View
             style={[
               styles.bankSearchWrap,
-              { backgroundColor: theme.background.surface, borderColor: theme.inputBorder },
+              { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
             ]}
           >
-            <Ionicons name="search" size={18} color={theme.text.muted} />
+            <Ionicons name="search" size={18} color={palette.grey[500]} />
             <TextInput
-              style={[styles.bankSearchInput, { color: theme.text.primary }]}
+              style={[styles.bankSearchInput, { color: palette.grey[300] }]}
               placeholder="Search banks..."
-              placeholderTextColor={theme.text.muted}
+              placeholderTextColor={palette.grey[500]}
               value={bankSearch}
               onChangeText={setBankSearch}
               autoCapitalize="none"
@@ -788,13 +786,13 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             />
             {bankSearch.length > 0 && (
               <TouchableOpacity onPress={() => setBankSearch('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="close-circle" size={18} color={theme.text.muted} />
+                <Ionicons name="close-circle" size={18} color={palette.grey[500]} />
               </TouchableOpacity>
             )}
           </View>
           {banksLoading ? (
             <View style={styles.emptyList}>
-              <ActivityIndicator size="large" color={theme.secondary.main} />
+              <ActivityIndicator size="large" color={palette.royal[500]} />
             </View>
           ) : (
             <FlatList
@@ -807,34 +805,34 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                 <TouchableOpacity
                   style={[
                     styles.bankListItem,
-                    { borderBottomColor: theme.divider },
-                    selectedBank === item.bankCode && [styles.bankListItemSelected, { backgroundColor: theme.info.bg }],
+                    { borderBottomColor: palette.material.lightThin },
+                    selectedBank === item.bankCode && [styles.bankListItemSelected, { backgroundColor: 'rgba(251,251,253,0.06)' }],
                   ]}
                   onPress={() => selectBank(item)}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.bankListIcon, { backgroundColor: theme.divider }]}>
+                  <View style={[styles.bankListIcon, { backgroundColor: palette.material.lightThin }]}>
                     <Ionicons
                       name="business"
                       size={16}
-                      color={selectedBank === item.bankCode ? theme.secondary.main : theme.text.secondary}
+                      color={selectedBank === item.bankCode ? palette.royal[500] : palette.grey[500]}
                     />
                   </View>
                   <Text
                     style={[
                       styles.bankListName,
-                      { color: selectedBank === item.bankCode ? theme.secondary.main : theme.text.primary },
+                      { color: selectedBank === item.bankCode ? palette.royal[500] : palette.grey[300] },
                     ]}
                   >
                     {item.bankName}
                   </Text>
-                  {selectedBank === item.bankCode && <Ionicons name="checkmark" size={18} color={theme.secondary.main} />}
+                  {selectedBank === item.bankCode && <Ionicons name="checkmark" size={18} color={palette.royal[500]} />}
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
                 <View style={styles.emptyList}>
-                  <Ionicons name="search-outline" size={32} color={theme.text.muted} />
-                  <Text style={[styles.emptyListText, { color: theme.text.muted }]}>No banks found</Text>
+                  <Ionicons name="search-outline" size={32} color={palette.grey[500]} />
+                  <Text style={[styles.emptyListText, { color: palette.grey[500] }]}>No banks found</Text>
                 </View>
               }
             />
@@ -851,27 +849,32 @@ const styles = StyleSheet.create({
   swapSummary: {
     marginHorizontal: 24,
     marginBottom: 16,
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 0,
   },
   swapRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: palette.material.lightThin,
+  },
+  swapRowFirst: {
+    marginBottom: 4,
   },
   swapArrow: {
     alignItems: 'center',
     paddingVertical: 4,
   },
   swapLabel: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
+    ...typography.subheader2,
+    color: palette.grey[500],
   },
   swapValue: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 14,
+    ...typography.main14,
+    fontVariant: ['tabular-nums'],
   },
   networkSelector: {
     marginHorizontal: 24,
@@ -880,7 +883,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: radii.md,
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
@@ -890,31 +893,28 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   networkSelectorLabel: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 12,
+    ...typography.subheader2,
   },
   networkPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     borderWidth: 1,
-    borderRadius: 20,
+    borderRadius: radii.pill,
     paddingVertical: 6,
     paddingHorizontal: 12,
   },
   networkPillText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 13,
+    ...typography.bodySm,
   },
   networkGas: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
+    ...typography.helperText,
   },
   walletInputCard: {
     marginHorizontal: 24,
     marginBottom: 16,
-    borderWidth: 1.5,
-    borderRadius: 16,
+    borderWidth: 1,
+    borderRadius: radii.md,
     padding: 16,
   },
   walletInputHeader: {
@@ -924,28 +924,25 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   walletInputLabel: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 11,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
+    ...typography.label,
   },
   pasteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: radii.pill,
   },
   pasteBtnText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 11,
+    ...typography.labelSm,
+    textTransform: 'none',
+    letterSpacing: 0,
   },
   walletInput: {
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 14,
+    ...typography.monoSm,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: radii.sm,
     paddingVertical: 12,
     paddingHorizontal: 14,
   },
@@ -956,8 +953,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   walletErrorText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 11,
+    ...typography.helperText,
   },
   walletValidRow: {
     flexDirection: 'row',
@@ -966,8 +962,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   walletValidText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 11,
+    ...typography.helperText,
   },
   walletContinueWrap: {
     marginHorizontal: 24,
@@ -980,20 +975,18 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   walletAddrText: {
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 11,
+    ...typography.monoXs,
   },
   networkBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    borderRadius: 6,
+    borderRadius: radii.sm,
     paddingVertical: 2,
     paddingHorizontal: 6,
   },
   networkBadgeText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 9,
+    ...typography.labelXs,
   },
   networkItem: {
     flexDirection: 'row',
@@ -1002,11 +995,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
+    borderBottomColor: palette.material.lightThin,
   },
   networkItemIcon: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1014,47 +1008,42 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   networkItemName: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 14,
+    ...typography.main14,
   },
   networkItemGas: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
+    ...typography.helperText,
     marginTop: 2,
   },
-  sendInputCard: {
+  sendInputPill: {
     marginHorizontal: 24,
     marginBottom: 16,
-    borderWidth: 1.5,
-    borderRadius: 20,
+    borderWidth: 1,
+    borderRadius: radii.pill,
     overflow: 'hidden',
   },
   sicField: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
+    minHeight: 52,
   },
-  sicLabel: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 10,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    width: 30,
+  sicSearchIcon: {
+    marginTop: 1,
   },
   sicInput: {
     flex: 1,
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
+    ...typography.bodySm,
   },
   resolvingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     borderTopWidth: 1,
+    borderTopColor: palette.material.lightThin,
   },
   miniSpin: {
     width: 14,
@@ -1063,16 +1052,16 @@ const styles = StyleSheet.create({
     borderRadius: 7,
   },
   resolvingText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
+    ...typography.secondary12,
   },
   resolvedRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     borderTopWidth: 1,
+    borderTopColor: palette.material.lightThin,
   },
   resolvedCard: {
     flex: 1,
@@ -1082,16 +1071,13 @@ const styles = StyleSheet.create({
   },
   rcInfo: { flex: 1 },
   rcName: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 13,
+    ...typography.main14,
   },
   rcSub: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
+    ...typography.secondary12,
   },
   noAcctNote: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 10,
+    ...typography.helperText,
     marginTop: 2,
   },
   errorRow: {
@@ -1099,27 +1085,23 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 10,
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     borderTopWidth: 1,
+    borderTopColor: palette.material.lightThin,
   },
   errorInfo: { flex: 1 },
   errorTitle: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 13,
+    ...typography.main14,
   },
   errorSub: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
+    ...typography.secondary12,
     marginTop: 2,
   },
   rcCheck: {
-    fontSize: 18,
+    ...typography.h3,
   },
   sectionLabel: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 11,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    ...typography.label,
     marginHorizontal: 24,
     marginBottom: 10,
   },
@@ -1130,8 +1112,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 11,
+    paddingVertical: 14,
     borderBottomWidth: 1,
+    borderBottomColor: palette.material.lightThin,
+  },
+  contactItemLast: {
+    borderBottomWidth: 0,
   },
   ciAvWrap: { position: 'relative' },
   ciFlag: {
@@ -1141,19 +1127,18 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    borderWidth: 1.5,
+    borderWidth: 1,
+    borderColor: palette.material.lightThin,
     alignItems: 'center',
     justifyContent: 'center',
   },
   ciFlagText: { fontSize: 12 },
   ciInfo: { flex: 1 },
   ciName: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 14,
+    ...typography.main14,
   },
   ciSub: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
+    ...typography.secondary12,
   },
   addBankBtn: {
     marginHorizontal: 24,
@@ -1164,57 +1149,50 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: radii.md,
   },
   addBankIcon: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addBankInfo: { flex: 1 },
   addBankTitle: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 13,
+    ...typography.main14,
   },
   addBankSub: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
+    ...typography.secondary12,
     marginTop: 1,
   },
   bankForm: {
     paddingHorizontal: 24,
   },
   bankLabel: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 11,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
+    ...typography.label,
     marginBottom: 8,
   },
   bankDropdown: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderWidth: 1.5,
-    borderRadius: 12,
+    borderWidth: 1,
+    borderRadius: radii.md,
     paddingVertical: 14,
     paddingHorizontal: 16,
     marginBottom: 16,
   },
   bankDropdownText: {
     flex: 1,
-    fontFamily: 'Inter_500Medium',
-    fontSize: 15,
+    ...typography.bodySm,
   },
   bankInput: {
-    borderWidth: 1.5,
-    borderRadius: 12,
+    borderWidth: 1,
+    borderRadius: radii.md,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    fontFamily: 'Inter_500Medium',
-    fontSize: 15,
+    ...typography.bodySm,
     marginBottom: 16,
   },
   accountNumberRow: {
@@ -1229,8 +1207,7 @@ const styles = StyleSheet.create({
     top: 14,
   },
   validationErrorText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
+    ...typography.bodySm,
     marginTop: -12,
     marginBottom: 16,
   },
@@ -1240,12 +1217,10 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   accountNameText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 15,
+    ...typography.bodySm,
   },
   accountNamePlaceholder: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
+    ...typography.bodySm,
   },
   bankListContainer: {
     paddingHorizontal: 24,
@@ -1255,16 +1230,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    borderWidth: 1.5,
-    borderRadius: 12,
+    borderWidth: 1,
+    borderRadius: radii.pill,
     paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     marginBottom: 12,
   },
   bankSearchInput: {
     flex: 1,
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
+    ...typography.bodySm,
   },
   bankList: {
     maxHeight: 320,
@@ -1276,23 +1250,23 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 4,
     borderBottomWidth: 1,
+    borderBottomColor: palette.material.lightThin,
   },
   bankListItemSelected: {
     marginHorizontal: -4,
     paddingHorizontal: 8,
-    borderRadius: 8,
+    borderRadius: radii.sm,
   },
   bankListIcon: {
     width: 32,
     height: 32,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   bankListName: {
     flex: 1,
-    fontFamily: 'Inter_500Medium',
-    fontSize: 14,
+    ...typography.main14,
   },
   emptyList: {
     alignItems: 'center',
@@ -1301,7 +1275,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   emptyListText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
+    ...typography.bodySm,
   },
 });

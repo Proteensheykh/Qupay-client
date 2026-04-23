@@ -1,11 +1,19 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, AccessibilityInfo } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withDelay,
+} from 'react-native-reanimated';
 import { Ionicons } from './Icon';
-import { useTheme, typography, spacing, borderRadius } from '../theme';
+import { useTheme, typography, spacing, radii, springs, durations } from '../theme';
+import { palette } from '../theme/colors';
 import { useHaptics } from '../hooks/useHaptics';
 
 interface AnimatedSuccessProps {
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: string;
   title: string;
   subtitle: string;
   color?: string;
@@ -21,62 +29,80 @@ export const AnimatedSuccess: React.FC<AnimatedSuccessProps> = ({
 }) => {
   const { theme } = useTheme();
   const haptics = useHaptics();
-  const iconColor = color || theme.success.main;
+  const discBg = color ? `${color}18` : palette.royal[500];
+  const checkColor = color || palette.grey[100];
 
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
+  const scale = useSharedValue(0);
+  const textOpacity = useSharedValue(0);
+  const textTranslateY = useSharedValue(20);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+  }, []);
 
   useEffect(() => {
     haptics.success();
 
-    // Icon bounce in
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      tension: 50,
-      friction: 6,
-      useNativeDriver: true,
-    }).start();
+    if (reduceMotion) {
+      scale.value = 1;
+      textOpacity.value = 1;
+      textTranslateY.value = 0;
+    } else {
+      scale.value = withSpring(1, springs.bouncy);
+      textOpacity.value = withDelay(
+        300,
+        withTiming(1, { duration: durations.slow })
+      );
+      textTranslateY.value = withDelay(
+        300,
+        withTiming(0, { duration: durations.slow })
+      );
+    }
+  }, [reduceMotion]);
 
-    // Text fade in with slight slide up
-    Animated.sequence([
-      Animated.delay(300),
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
-  }, []);
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const textStyle = useAnimatedStyle(() => ({
+    opacity: textOpacity.value,
+    transform: [{ translateY: textTranslateY.value }],
+  }));
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background.default }]}>
       <Animated.View
-        style={[
-          styles.iconCircle,
-          { backgroundColor: iconColor + '18', transform: [{ scale: scaleAnim }] },
-        ]}
+        style={[styles.iconCircle, { backgroundColor: discBg }, iconStyle]}
       >
-        <Ionicons name={icon} size={40} color={iconColor} />
+        <Ionicons name={icon as any} size={40} color={checkColor} />
       </Animated.View>
 
-      <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], alignItems: 'center' }}>
-        <Text style={[typography.display2, { color: theme.text.primary, marginTop: spacing(6) }]}>
+      <Animated.View style={[{ alignItems: 'center' }, textStyle]}>
+        <Text
+          style={[
+            typography.display2,
+            { color: theme.text.primary, marginTop: spacing(6) },
+          ]}
+        >
           {title}
         </Text>
-        <Text style={[typography.body, { color: theme.text.secondary, textAlign: 'center', marginTop: spacing(2), paddingHorizontal: spacing(4) }]}>
+        <Text
+          style={[
+            typography.body,
+            {
+              color: theme.text.secondary,
+              textAlign: 'center',
+              marginTop: spacing(2),
+              paddingHorizontal: spacing(4),
+            },
+          ]}
+        >
           {subtitle}
         </Text>
       </Animated.View>
 
-      <Animated.View style={{ opacity: fadeAnim, width: '100%', marginTop: spacing(8) }}>
+      <Animated.View style={[{ width: '100%', marginTop: spacing(8) }, textStyle]}>
         {children}
       </Animated.View>
     </View>
@@ -93,7 +119,7 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 88,
     height: 88,
-    borderRadius: 44,
+    borderRadius: radii.circle,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -15,6 +15,9 @@ import { CommonActions, useNavigation } from '@react-navigation/native';
 import { CTAButton, FormField, BottomSheet, Toast } from '../../components';
 import { networks } from '../../data/mockData';
 import { useAuthStore } from '../../store/authStore';
+import { palette } from '../../theme/colors';
+import { radii } from '../../theme/radii';
+import { borders } from '../../theme/elevation';
 import { useTheme } from '../../theme';
 import { getBanks } from '../../api/banks';
 import type { BankResponse } from '../../api/banks';
@@ -32,6 +35,13 @@ const NETWORK_TO_API: Record<string, CryptoNetwork> = {
   'Tron': 'TRC20',
   'BNB Chain': 'BEP20',
 };
+
+function stepSegmentColor(allDone: boolean, stepIndex: number, i: number): string {
+  if (allDone) return palette.royal[500];
+  if (i < stepIndex) return palette.royal[500];
+  if (i === stepIndex) return palette.royal[400];
+  return palette.grey[700];
+}
 
 export const ProcessorOnboardingScreen: React.FC = () => {
   const { theme } = useTheme();
@@ -76,6 +86,8 @@ export const ProcessorOnboardingScreen: React.FC = () => {
   const walletValid = walletAddress.length >= 26 && !!selectedNetwork;
 
   const allFieldsValid = ninValid && addressValid && bankAccountValid && walletValid;
+
+  const stepIndex = !ninValid || !addressValid ? 0 : !bankAccountValid ? 1 : 2;
 
   const handleSubmit = async () => {
     if (!allFieldsValid || !selectedBank || !selectedNetwork) return;
@@ -125,7 +137,7 @@ export const ProcessorOnboardingScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
       <Toast
         visible={showSuccess}
         message="You're now a Processor! The PROCESS tab is now available."
@@ -169,10 +181,27 @@ export const ProcessorOnboardingScreen: React.FC = () => {
             </View>
           </View>
 
+          <View style={styles.stepper}>
+            {[0, 1, 2].map((i) => (
+              <View
+                key={i}
+                style={[
+                  styles.stepSegment,
+                  { backgroundColor: stepSegmentColor(allFieldsValid, stepIndex, i) },
+                ]}
+              />
+            ))}
+          </View>
+
           <View
             style={[
               styles.sectionCard,
-              { backgroundColor: theme.background.paper, borderColor: theme.inputBorder },
+              {
+                backgroundColor: palette.grey[800],
+                borderColor: palette.material.lightThin,
+              },
+              borders.hairline.dark,
+              { borderRadius: radii.lg },
             ]}
           >
             <View style={styles.sectionHeader}>
@@ -214,7 +243,12 @@ export const ProcessorOnboardingScreen: React.FC = () => {
           <View
             style={[
               styles.sectionCard,
-              { backgroundColor: theme.background.paper, borderColor: theme.inputBorder },
+              {
+                backgroundColor: palette.grey[800],
+                borderColor: palette.material.lightThin,
+              },
+              borders.hairline.dark,
+              { borderRadius: radii.lg },
             ]}
           >
             <View style={styles.sectionHeader}>
@@ -276,7 +310,12 @@ export const ProcessorOnboardingScreen: React.FC = () => {
           <View
             style={[
               styles.sectionCard,
-              { backgroundColor: theme.background.paper, borderColor: theme.inputBorder },
+              {
+                backgroundColor: palette.grey[800],
+                borderColor: palette.material.lightThin,
+              },
+              borders.hairline.dark,
+              { borderRadius: radii.lg },
             ]}
           >
             <View style={styles.sectionHeader}>
@@ -344,7 +383,7 @@ export const ProcessorOnboardingScreen: React.FC = () => {
           <View style={{ height: 24 }} />
         </ScrollView>
 
-        <View style={[styles.bottomArea, { borderTopColor: theme.divider }]}>
+        <View style={[styles.bottomArea, { borderTopColor: palette.material.lightThin }]}>
           <CTAButton
             title="Apply to become a Processor"
             onPress={handleSubmit}
@@ -443,6 +482,16 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 24,
+  },
+  stepper: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 24,
+  },
+  stepSegment: {
+    flex: 1,
+    height: 8,
+    borderRadius: radii.pill,
   },
   backBtn: {
     width: 40,

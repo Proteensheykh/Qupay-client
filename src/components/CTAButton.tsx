@@ -1,14 +1,21 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  TouchableOpacity,
   Text,
   StyleSheet,
   ActivityIndicator,
   ViewStyle,
   TextStyle,
+  Pressable,
+  AccessibilityInfo,
 } from 'react-native';
-import { useTheme } from '../theme';
-// shadows intentionally not imported — local CTAs don't use a glow.
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import { radii } from '../theme/radii';
+import { useTheme, typography } from '../theme';
+import { useHaptics } from '../hooks/useHaptics';
 
 interface CTAButtonProps {
   title: string;
@@ -19,7 +26,10 @@ interface CTAButtonProps {
   danger?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  withGlow?: boolean;
 }
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export const CTAButton: React.FC<CTAButtonProps> = ({
   title,
@@ -30,42 +40,98 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
   danger = false,
   style,
   textStyle,
+  withGlow: _withGlow = false,
 }) => {
-  const { theme } = useTheme();
+  const { theme, motion, palette } = useTheme();
+  const haptics = useHaptics();
+  const scale = useSharedValue(1);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const subscription = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      setReduceMotion
+    );
+    return () => subscription.remove();
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    if (!reduceMotion) {
+      scale.value = withSpring(
+        motion.pressAnimation.scale,
+        motion.springs.snappy
+      );
+    }
+  };
+
+  const handlePressOut = () => {
+    if (!reduceMotion) {
+      scale.value = withSpring(1, motion.springs.snappy);
+    }
+  };
+
+  const handlePress = () => {
+    haptics.light();
+    onPress();
+  };
+
   const disabledBg = theme.background.surface;
   const disabledText = theme.text.disabled;
 
   if (danger) {
     return (
-      <TouchableOpacity
+      <AnimatedPressable
         style={[
+          animatedStyle,
           styles.danger,
           {
+            borderRadius: radii.xl,
             backgroundColor: theme.error.bg,
             borderColor: `${theme.error.main}40`,
           },
           disabled && styles.disabled,
           style,
         ]}
-        onPress={onPress}
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         disabled={disabled || loading}
-        activeOpacity={0.85}
         accessibilityLabel={title}
         accessibilityRole="button"
         accessibilityState={{ disabled: disabled || loading }}
       >
-        <Text style={[styles.dangerText, { color: theme.error.main }, textStyle]}>{title}</Text>
-      </TouchableOpacity>
+        <Text
+          style={[
+            typography.buttonM,
+            { color: theme.error.main },
+            textStyle,
+          ]}
+        >
+          {title}
+        </Text>
+      </AnimatedPressable>
     );
   }
 
   if (ghost) {
     return (
-      <TouchableOpacity
-        style={[styles.ghost, { backgroundColor: theme.background.surface }, disabled && styles.disabled, style]}
-        onPress={onPress}
+      <AnimatedPressable
+        style={[
+          animatedStyle,
+          styles.ghost,
+          { borderRadius: radii.xl, backgroundColor: theme.background.surface },
+          disabled && styles.disabled,
+          style,
+        ]}
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         disabled={disabled || loading}
-        activeOpacity={0.85}
         accessibilityLabel={title}
         accessibilityRole="button"
         accessibilityState={{ disabled: disabled || loading }}
@@ -73,63 +139,77 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
         {loading ? (
           <ActivityIndicator size="small" color={theme.text.secondary} />
         ) : (
-          <Text style={[styles.ghostText, { color: theme.text.secondary }, textStyle]}>{title}</Text>
+          <Text
+            style={[
+              typography.buttonM,
+              { color: theme.text.secondary },
+              textStyle,
+            ]}
+          >
+            {title}
+          </Text>
         )}
-      </TouchableOpacity>
+      </AnimatedPressable>
     );
   }
 
   return (
-    <TouchableOpacity
+    <AnimatedPressable
       style={[
+        animatedStyle,
         styles.cta,
-        { backgroundColor: disabled ? disabledBg : theme.secondary.main },
+        {
+          borderRadius: radii.xl,
+          backgroundColor: disabled ? disabledBg : palette.royal[500],
+        },
         style,
       ]}
-      onPress={onPress}
+      onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={disabled || loading}
-      activeOpacity={0.85}
       accessibilityLabel={title}
       accessibilityRole="button"
       accessibilityState={{ disabled: disabled || loading }}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={theme.background.default} />
+        <ActivityIndicator size="small" color={palette.grey[100]} />
       ) : (
-        <Text style={[styles.ctaText, { color: disabled ? disabledText : theme.background.default }, textStyle]}>{title}</Text>
+        <Text
+          style={[
+            typography.buttonM,
+            {
+              color: disabled ? disabledText : palette.grey[100],
+              letterSpacing: -0.3,
+            },
+            textStyle,
+          ]}
+        >
+          {title}
+        </Text>
       )}
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 };
 
 const styles = StyleSheet.create({
   cta: {
-    borderRadius: 999, // local CTAs are pill-shaped (R.pill)
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: 8,
-  },
-  ctaText: {
-    fontFamily: 'Inter_600SemiBold', // T.ctaPurple — semibold, not extraBold
-    fontSize: 16,
+    minHeight: 56,
   },
   ghost: {
-    borderRadius: 999,
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    // No border on dark surfaces in local design
-  },
-  ghostText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 15,
+    minHeight: 56,
   },
   danger: {
-    borderRadius: 999,
     paddingVertical: 15,
     paddingHorizontal: 24,
     alignItems: 'center',
@@ -137,10 +217,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     gap: 8,
-  },
-  dangerText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 15,
+    minHeight: 56,
   },
   disabled: {
     opacity: 0.4,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useTheme, typography, spacing, borderRadius } from '../theme';
+import { useTheme, typography, spacing, radii, innerBorders } from '../theme';
 
 interface StatBoxProps {
   label: string;
@@ -9,17 +9,40 @@ interface StatBoxProps {
   valueColor?: string;
 }
 
-export const StatBox: React.FC<StatBoxProps> = ({ label, value, subValue, valueColor }) => {
-  const { theme } = useTheme();
+export const StatBox: React.FC<StatBoxProps> = ({
+  label,
+  value,
+  subValue,
+  valueColor,
+}) => {
+  const { theme, mode } = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background.surface }]}>
-      <Text style={[typography.caption, { color: theme.text.secondary }]}>{label}</Text>
-      <Text style={[typography.valueSm, { color: valueColor || theme.text.primary, marginTop: spacing(1) }]}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: theme.background.surface },
+        mode === 'dark' && innerBorders.subtle,
+      ]}
+    >
+      <Text style={[typography.caption, { color: theme.text.secondary }]}>
+        {label}
+      </Text>
+      <Text
+        style={[
+          typography.valueSm,
+          { color: valueColor || theme.text.primary, marginTop: spacing(1) },
+        ]}
+      >
         {value}
       </Text>
       {subValue && (
-        <Text style={[typography.caption, { color: theme.text.muted, marginTop: spacing(0.5) }]}>
+        <Text
+          style={[
+            typography.caption,
+            { color: theme.text.muted, marginTop: spacing(0.5) },
+          ]}
+        >
           {subValue}
         </Text>
       )}
@@ -29,7 +52,7 @@ export const StatBox: React.FC<StatBoxProps> = ({ label, value, subValue, valueC
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: borderRadius.md,
+    borderRadius: radii.lg,
     padding: spacing(4),
     flex: 1,
   },

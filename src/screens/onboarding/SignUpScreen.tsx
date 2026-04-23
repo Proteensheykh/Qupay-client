@@ -9,14 +9,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
-import { QupayLogo, CTAButton, FormField, BottomSheet, Toast } from '../../components';
+import { QupayLogo, CTAButton, FormField, BottomSheet, Toast, MuralBackdrop } from '../../components';
 import { countries } from '../../data/mockData';
 import { initiateRegistration } from '../../api/auth';
 import { isApiError } from '../../api/client';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
 import type { InitiateRegistrationRequest } from '../../types/auth';
-import { useTheme } from '../../theme';
+import { useTheme, typography, radii } from '../../theme';
+import { palette } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'SignUp'>;
 
@@ -135,7 +136,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             key={i}
             style={[
               styles.dot,
-              { backgroundColor: i <= currentIndex ? theme.secondary.main : `${theme.secondary.main}30` },
+              {
+                backgroundColor:
+                  i <= currentIndex ? palette.royal[500] : palette.grey[700],
+              },
             ]}
           />
         ))}
@@ -152,7 +156,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.form}>
-          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { backgroundColor: theme.background.surface }]} activeOpacity={0.7}>
+          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { backgroundColor: palette.grey[800] }]} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
           </TouchableOpacity>
 
@@ -162,7 +166,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
 
           <Text style={[styles.headline, { color: theme.text.primary }]}>
             Create your{'\n'}
-            <Text style={{ color: theme.secondary.main }}>account</Text>
+            <Text style={{ color: palette.royal[500] }}>account</Text>
           </Text>
           <Text style={[styles.desc, { color: theme.text.secondary }]}>
             Takes 30 seconds. Start sending crypto to cash instantly.
@@ -227,7 +231,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.navigate('SignIn')} activeOpacity={0.7}>
           <Text style={[styles.switchText, { color: theme.text.secondary }]}>
             Already have an account?{' '}
-            <Text style={[styles.switchLink, { color: theme.secondary.main }]}>Sign In</Text>
+            <Text style={[styles.switchLink, { color: palette.royal[500] }]}>Sign In</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -243,7 +247,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.form}>
-          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { backgroundColor: theme.background.surface }]} activeOpacity={0.7}>
+          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { backgroundColor: palette.grey[800] }]} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
           </TouchableOpacity>
 
@@ -253,7 +257,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
 
           <Text style={[styles.headline, { color: theme.text.primary }]}>
             Secure your{'\n'}
-            <Text style={{ color: theme.secondary.main }}>account</Text>
+            <Text style={{ color: palette.royal[500] }}>account</Text>
           </Text>
           <Text style={[styles.desc, { color: theme.text.secondary }]}>
             We'll use your phone number for verification and recovery.
@@ -264,10 +268,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             style={[
               styles.phoneCard,
               {
-                backgroundColor: theme.background.paper,
-                borderColor: phoneFocused ? `${theme.secondary.main}66` : 'transparent',
+                backgroundColor: palette.grey[900],
+                borderColor: phoneFocused ? palette.royal[500] : 'transparent',
               },
-              phoneValid && !getFieldError('phone') && { borderColor: `${theme.secondary.main}80` },
+              phoneValid && !getFieldError('phone') && { borderColor: `${palette.royal[500]}80` },
               getFieldError('phone') ? { borderColor: `${theme.error.main}99` } : {},
             ]}
           >
@@ -352,10 +356,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           loading={loading}
           style={styles.cta}
         />
-        <Text style={[styles.termsText, { color: theme.text.secondary }]}>
+          <Text style={[styles.termsText, { color: theme.text.secondary }]}>
           By continuing you agree to our{' '}
-          <Text style={[styles.termsLink, { color: theme.secondary.main }]}>Terms</Text> and{' '}
-          <Text style={[styles.termsLink, { color: theme.secondary.main }]}>Privacy Policy</Text>
+          <Text style={[styles.termsLink, { color: palette.royal[500] }]}>Terms</Text> and{' '}
+          <Text style={[styles.termsLink, { color: palette.royal[500] }]}>Privacy Policy</Text>
         </Text>
       </View>
 
@@ -370,7 +374,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             style={[
               styles.countryItem,
               { borderBottomColor: theme.inputBorder },
-              selectedCountry.code === c.code && { backgroundColor: theme.info.bg },
+              selectedCountry.code === c.code && { backgroundColor: `${palette.royal[500]}1F` },
             ]}
             onPress={() => {
               setSelectedCountry(c);
@@ -384,7 +388,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={[styles.countrySub, { color: theme.text.secondary }]}>{c.reg} {'\u00B7'} {c.code}</Text>
             </View>
             {selectedCountry.code === c.code && (
-              <Ionicons name="checkmark" size={18} color={theme.secondary.main} />
+              <Ionicons name="checkmark" size={18} color={palette.royal[500]} />
             )}
           </TouchableOpacity>
         ))}
@@ -394,21 +398,25 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]}>
-      <Toast
-        visible={showError}
-        message={errorMessage}
-        type="error"
-        onDismiss={() => setShowError(false)}
-      />
-      {step === 'personal' && renderPersonalStep()}
-      {step === 'security' && renderSecurityStep()}
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.marketing.ground }]}>
+      <MuralBackdrop />
+      <View style={styles.layer}>
+        <Toast
+          visible={showError}
+          message={errorMessage}
+          type="error"
+          onDismiss={() => setShowError(false)}
+        />
+        {step === 'personal' && renderPersonalStep()}
+        {step === 'security' && renderSecurityStep()}
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
+  layer: { flex: 1, zIndex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
   form: { paddingHorizontal: 24, paddingTop: 16 },
@@ -433,23 +441,16 @@ const styles = StyleSheet.create({
   },
 
   headline: {
-    fontFamily: 'Inter_800ExtraBold',
-    fontSize: 28,
-    letterSpacing: -0.3,
+    ...typography.h3,
     marginBottom: 8,
-    lineHeight: 34,
   },
   desc: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
+    ...typography.bodySm,
     lineHeight: 22,
     marginBottom: 28,
   },
   sectionLabel: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    ...typography.label,
     marginBottom: 10,
   },
   nameRow: {
@@ -461,7 +462,7 @@ const styles = StyleSheet.create({
   },
 
   phoneCard: {
-    borderRadius: 16,
+    borderRadius: radii.pill,
     borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 12,
@@ -476,12 +477,10 @@ const styles = StyleSheet.create({
   prefixFlag: { fontSize: 20 },
   countryNameInCard: {
     flex: 1,
-    fontFamily: 'Inter_500Medium',
-    fontSize: 14,
+    ...typography.bodySm,
   },
   countryCodeInCard: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 13,
+    ...typography.caption,
   },
   phoneDivider: {
     height: 1,
@@ -495,18 +494,15 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   phonePrefix: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 15,
+    ...typography.body,
   },
   phoneInput: {
     flex: 1,
-    fontFamily: 'Inter_500Medium',
-    fontSize: 18,
+    ...typography.valueXs,
     padding: 0,
   },
   phoneError: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
+    ...typography.bodySm,
     marginBottom: 12,
     marginTop: -8,
   },
@@ -517,23 +513,21 @@ const styles = StyleSheet.create({
   },
   cta: { marginBottom: 12 },
   termsText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
+    ...typography.caption,
     textAlign: 'center',
     paddingBottom: 8,
     lineHeight: 18,
   },
   termsLink: {
-    fontFamily: 'Inter_600SemiBold',
+    ...typography.caption,
   },
   switchText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
+    ...typography.bodySm,
     textAlign: 'center',
     marginTop: 8,
   },
   switchLink: {
-    fontFamily: 'Inter_600SemiBold',
+    ...typography.bodySm,
   },
   countryItem: {
     flexDirection: 'row',
@@ -546,12 +540,10 @@ const styles = StyleSheet.create({
   countryFlag: { fontSize: 24 },
   countryInfo: { flex: 1 },
   countryName: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 14,
+    ...typography.bodySm,
   },
   countrySub: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
+    ...typography.monoXs,
     marginTop: 1,
   },
 });

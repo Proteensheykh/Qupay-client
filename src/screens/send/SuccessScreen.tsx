@@ -1,14 +1,23 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  TouchableOpacity,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
-import { CTAButton } from '../../components';
+import { MuralBackdrop } from '../../components';
 import { userProfile } from '../../data/mockData';
 import { CommonActions } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
-import { useTheme } from '../../theme';
+import { typography } from '../../theme';
+import { palette } from '../../theme/colors';
+import { radii } from '../../theme/radii';
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'Success'>;
 
@@ -22,14 +31,13 @@ const truncateAddress = (addr: string): string => {
 };
 
 export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { theme } = useTheme();
   const {
     recipientName = 'Emeka Johnson',
     recipientMethod = 'OPay',
     amount = 200,
     receiveAmount = 329000,
     recvCurrency = 'NGN',
-    sendCurrency,
+    sendCurrency: _sendCurrency,
     recipientWalletAddress,
     recipientNetwork,
   } = route.params || {};
@@ -77,103 +85,172 @@ export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
+  const sendAgain = () => {
+    navigation.reset({ index: 0, routes: [{ name: 'Amount' }] });
+  };
+
+  const textPrimary = palette.grey[100];
+  const textSecondary = palette.grey[500];
+  const textMuted = palette.grey[600];
+
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]}>
-      <View style={styles.container}>
-        <View style={styles.content}>
-          {/* Success icon */}
-          <Animated.View
-            style={[
-              styles.sucIcon,
-              {
-                backgroundColor: theme.info.bg,
-                borderColor: theme.secondary.main,
-                transform: [{ scale: iconScale }],
-              },
-            ]}
-          >
-            <Ionicons name="checkmark" size={32} color={theme.secondary.main} />
-          </Animated.View>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <View style={styles.root}>
+        <MuralBackdrop />
+        <View style={styles.foreground}>
+          <View style={styles.container}>
+            <View style={styles.content}>
+              <Animated.View
+                style={[
+                  styles.sucIcon,
+                  {
+                    backgroundColor: palette.royal[500],
+                    transform: [{ scale: iconScale }],
+                  },
+                ]}
+              >
+                <Ionicons name="checkmark" size={32} color={palette.grey[100]} />
+              </Animated.View>
 
-          <Animated.View style={{ opacity: contentOpacity, alignItems: 'center', alignSelf: 'stretch' }}>
-          <Text style={[styles.sucTitle, { color: theme.text.primary }]}>Delivered {'\u{1F389}'}</Text>
-          <Text style={[styles.sucSub, { color: theme.text.secondary }]}>
-            {isCryptoOut
-              ? `${receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT sent to ${truncateAddress(recipientWalletAddress || '')}`
-              : `${firstName} received ${symbol}${receiveAmount.toLocaleString()}`}
-          </Text>
-
-          {isCryptoOut ? (
-            /* On-chain confirmation card for crypto-out */
-            <View
-              style={[
-                styles.cryptoCard,
-                { backgroundColor: theme.background.surface, borderColor: theme.info.bg },
-              ]}
-            >
-              <View style={[styles.cryptoIcon, { backgroundColor: theme.info.bg }]}>
-                <Ionicons name="checkmark-circle" size={20} color={theme.secondary.main} />
-              </View>
-              <View style={styles.cryptoBody}>
-                <Text style={[styles.cryptoTitle, { color: theme.text.primary }]}>Transaction confirmed</Text>
-                <Text style={[styles.cryptoMsg, { color: theme.text.secondary }]}>
-                  {receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT has been sent to the wallet on {recipientNetwork}
+              <Animated.View
+                style={{ opacity: contentOpacity, alignItems: 'center', alignSelf: 'stretch' }}
+              >
+                <Text style={[styles.sucTitle, { color: textPrimary }]}>
+                  Delivered {'\u{1F389}'}
                 </Text>
-                <View style={styles.cryptoAddrRow}>
-                  <Text style={[styles.cryptoAddrLabel, { color: theme.text.muted }]}>To:</Text>
-                  <Text style={[styles.cryptoAddr, { color: theme.secondary.main }]}>{truncateAddress(recipientWalletAddress || '')}</Text>
-                </View>
-                <View style={styles.cryptoTag}>
-                  <Ionicons name="checkmark" size={10} color={theme.secondary.main} />
-                  <Text style={[styles.cryptoTagText, { color: theme.secondary.main }]}>On-chain confirmed</Text>
-                </View>
-              </View>
-            </View>
-          ) : (
-            /* Notification card for fiat-out */
-            <View
-              style={[
-                styles.notifCard,
-                { backgroundColor: theme.background.surface, borderColor: theme.inputBorder },
-              ]}
-            >
-              <View style={[styles.notifIcon, { backgroundColor: theme.success.main }]}>
-                <Text style={styles.notifIconText}>{'\u{1F4AC}'}</Text>
-              </View>
-              <View style={styles.notifBody}>
-                <Text style={[styles.notifTitle, { color: theme.text.primary }]}>{firstName} was notified</Text>
-                <Text style={[styles.notifMsg, { color: theme.text.secondary }]}>
-                  "{userProfile.name} sent you {symbol}
-                  {receiveAmount.toLocaleString()} via Qupay. Check your {recipientMethod} now."
+                <Text style={[styles.sucSub, { color: textSecondary }]}>
+                  {isCryptoOut
+                    ? `${receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT sent to ${truncateAddress(recipientWalletAddress || '')}`
+                    : `${firstName} received ${symbol}${receiveAmount.toLocaleString()}`}
                 </Text>
-                <View style={styles.notifTag}>
-                  <Ionicons name="checkmark" size={10} color={theme.success.main} />
-                  <Text style={[styles.notifTagText, { color: theme.success.main }]}>SMS delivered</Text>
-                </View>
-              </View>
-            </View>
-          )}
 
-          {/* Buttons */}
-          <CTAButton
-            title="View receipt"
-            onPress={goToReceipt}
-            style={styles.receiptBtn}
-          />
-          <CTAButton
-            title="Share receipt"
-            ghost
-            onPress={() => {}}
-            style={styles.shareBtn}
-          />
-          <TouchableOpacity
-            onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Amount' }] })}
-            style={styles.sendAgainLink}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.sendAgainText, { color: theme.secondary.main }]}>Send Again</Text>
-          </TouchableOpacity>
-          </Animated.View>
+                {isCryptoOut ? (
+                  <View
+                    style={[
+                      styles.cryptoCard,
+                      {
+                        backgroundColor: palette.grey[800],
+                        borderColor: palette.material.lightThin,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.cryptoIcon,
+                        { backgroundColor: `${palette.royal[500]}33` },
+                      ]}
+                    >
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color={palette.royal[400]}
+                      />
+                    </View>
+                    <View style={styles.cryptoBody}>
+                      <Text style={[styles.cryptoTitle, { color: textPrimary }]}>
+                        Transaction confirmed
+                      </Text>
+                      <Text style={[styles.cryptoMsg, { color: textSecondary }]}>
+                        {receiveAmount.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}{' '}
+                        USDT has been sent to the wallet on {recipientNetwork}
+                      </Text>
+                      <View style={styles.cryptoAddrRow}>
+                        <Text style={[styles.cryptoAddrLabel, { color: textMuted }]}>
+                          To:
+                        </Text>
+                        <Text
+                          style={[styles.cryptoAddr, { color: palette.royal[300] }]}
+                        >
+                          {truncateAddress(recipientWalletAddress || '')}
+                        </Text>
+                      </View>
+                      <View style={styles.cryptoTag}>
+                        <Ionicons
+                          name="checkmark"
+                          size={10}
+                          color={palette.status.positive}
+                        />
+                        <Text
+                          style={[styles.cryptoTagText, { color: palette.status.positive }]}
+                        >
+                          On-chain confirmed
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                ) : (
+                  <View
+                    style={[
+                      styles.notifCard,
+                      {
+                        backgroundColor: palette.grey[800],
+                        borderColor: palette.material.lightThin,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.notifIcon,
+                        { backgroundColor: `${palette.status.positive}33` },
+                      ]}
+                    >
+                      <Text style={styles.notifIconText}>{'\u{1F4AC}'}</Text>
+                    </View>
+                    <View style={styles.notifBody}>
+                      <Text style={[styles.notifTitle, { color: textPrimary }]}>
+                        {firstName} was notified
+                      </Text>
+                      <Text style={[styles.notifMsg, { color: textSecondary }]}>
+                        "{userProfile.name} sent you {symbol}
+                        {receiveAmount.toLocaleString()} via Qupay. Check your {recipientMethod}{' '}
+                        now."
+                      </Text>
+                      <View style={styles.notifTag}>
+                        <Ionicons
+                          name="checkmark"
+                          size={10}
+                          color={palette.status.positive}
+                        />
+                        <Text
+                          style={[styles.notifTagText, { color: palette.status.positive }]}
+                        >
+                          SMS delivered
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
+
+                <View style={styles.dualCta}>
+                  <TouchableOpacity
+                    onPress={sendAgain}
+                    style={[styles.ctaPill, styles.ctaSecondary]}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="Send again"
+                  >
+                    <Text style={[typography.buttonM, { color: palette.grey[900] }]}>
+                      Send again
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={goToReceipt}
+                    style={[styles.ctaPill, styles.ctaPrimary]}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="Done"
+                  >
+                    <Text style={[typography.buttonM, { color: palette.grey[100] }]}>
+                      Done
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </Animated.View>
+            </View>
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -181,7 +258,12 @@ export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { flex: 1, backgroundColor: 'transparent' },
+  root: { flex: 1 },
+  foreground: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+  },
   container: { flex: 1, justifyContent: 'center' },
   content: {
     paddingHorizontal: 24,
@@ -190,8 +272,7 @@ const styles = StyleSheet.create({
   sucIcon: {
     width: 80,
     height: 80,
-    borderRadius: 40,
-    borderWidth: 2,
+    borderRadius: radii.circle,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -208,10 +289,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
   },
-  // Crypto confirmation card
   cryptoCard: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: radii.sm,
     padding: 16,
     flexDirection: 'row',
     gap: 12,
@@ -261,10 +341,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 10,
   },
-  // Fiat notification card
   notifCard: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: radii.sm,
     padding: 16,
     flexDirection: 'row',
     gap: 12,
@@ -301,20 +380,25 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 10,
   },
-  receiptBtn: {
+  dualCta: {
+    flexDirection: 'row',
+    gap: 12,
     alignSelf: 'stretch',
-    marginBottom: 10,
+    marginTop: 8,
   },
-  shareBtn: {
-    alignSelf: 'stretch',
+  ctaPill: {
+    flex: 1,
+    minHeight: 52,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
-  sendAgainLink: {
-    marginTop: 20,
-    paddingVertical: 12,
+  ctaSecondary: {
+    backgroundColor: palette.grey[100],
   },
-  sendAgainText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 14,
-    textAlign: 'center',
+  ctaPrimary: {
+    backgroundColor: palette.royal[500],
   },
 });

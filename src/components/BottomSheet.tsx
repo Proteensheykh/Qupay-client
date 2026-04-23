@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
   View,
@@ -6,12 +6,22 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Animated,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
+  AccessibilityInfo,
 } from 'react-native';
-import { useTheme } from '../theme';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
+import { palette } from '../theme/colors';
+import { borders } from '../theme/elevation';
+import { radii } from '../theme/radii';
+import { useTheme, springs, durations } from '../theme';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
@@ -28,41 +38,49 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   title,
   children,
 }) => {
-  const { theme } = useTheme();
-  const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const { theme, mode } = useTheme();
+  const translateY = useSharedValue(SCREEN_HEIGHT);
+  const backdropOpacity = useSharedValue(0);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const subscription = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      setReduceMotion
+    );
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     if (visible) {
-      Animated.parallel([
-        Animated.spring(translateY, {
-          toValue: 0,
-          damping: 28,
-          stiffness: 300,
-          mass: 0.8,
-          useNativeDriver: true,
-        }),
-        Animated.timing(backdropOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      if (reduceMotion) {
+        translateY.value = 0;
+        backdropOpacity.value = 1;
+      } else {
+        translateY.value = withSpring(0, springs.gentle);
+        backdropOpacity.value = withTiming(1, { duration: durations.base });
+      }
     } else {
-      Animated.parallel([
-        Animated.timing(translateY, {
-          toValue: SCREEN_HEIGHT,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-        Animated.timing(backdropOpacity, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      if (reduceMotion) {
+        translateY.value = SCREEN_HEIGHT;
+        backdropOpacity.value = 0;
+      } else {
+        translateY.value = withTiming(SCREEN_HEIGHT, {
+          duration: durations.base,
+        });
+        backdropOpacity.value = withTiming(0, { duration: durations.fast });
+      }
     }
-  }, [visible, translateY, backdropOpacity]);
+  }, [visible, reduceMotion]);
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
 
   return (
     <Modal
@@ -76,7 +94,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
         style={styles.wrapper}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
+        <Animated.View style={[styles.backdrop, backdropStyle]}>
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={onClose}
@@ -87,13 +105,24 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
         <Animated.View
           style={[
             styles.sheet,
+            sheetStyle,
             {
-              backgroundColor: theme.background.paper,
-              transform: [{ translateY }],
+              backgroundColor:
+                mode === 'dark' ? palette.grey[900] : theme.background.paper,
+              borderTopWidth: borders.hairline.dark.borderWidth,
+              borderTopColor:
+                mode === 'dark'
+                  ? borders.hairline.dark.borderColor
+                  : borders.hairline.light.borderColor,
+              borderLeftWidth: 0,
+              borderRightWidth: 0,
+              borderBottomWidth: 0,
             },
           ]}
         >
-          <View style={[styles.handle, { backgroundColor: theme.text.disabled }]} />
+          <View
+            style={[styles.handle, { backgroundColor: theme.text.disabled }]}
+          />
           {title ? (
             <Text
               style={[styles.title, { color: theme.text.primary }]}
@@ -123,12 +152,11 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
   },
   sheet: {
-    borderTopLeftRadius: 24, // R.xxl in local
-    borderTopRightRadius: 24,
-    // No border on dark surfaces
+    borderTopLeftRadius: radii.lg,
+    borderTopRightRadius: radii.lg,
     maxHeight: '88%',
   },
   handle: {
@@ -140,7 +168,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: 'Inter_700Bold',
-    fontSize: 22, // T.screenTitle / sectionTitle
+    fontSize: 22,
+    letterSpacing: -0.44,
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 12,

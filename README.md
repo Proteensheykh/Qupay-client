@@ -67,4 +67,4 @@ The Send tab contains the full send flow: Recipient > Amount > Tracking > Succes
 
 ## Design
 
-Dark theme with signal green (#00E5A0) accent. Design files available in Figma.
+Squid Router-inspired design system with royal purple (#9E79D2) primary and amber (#F3C23D) highlight accent. Geist typeface at weight 400. Dark-first with mirrored light mode. Full design system documented in `docs/brand-study-squid.md`.

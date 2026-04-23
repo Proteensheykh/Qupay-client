@@ -1,31 +1,57 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from './Icon';
-import { useTheme } from '../theme';
+import { spacing, useTheme, typography } from '../theme';
+import { palette } from '../theme/colors';
+import { borders } from '../theme/elevation';
+import { radii } from '../theme/radii';
+import { useHaptics } from '../hooks/useHaptics';
 
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
+const KEYS_STANDARD = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
+const KEYS_DECIMAL  = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'del'];
+
+const KEY_SIZE_DEFAULT = 72;
+const KEY_SIZE_COMPACT = 64;
 
 interface NumpadProps {
   onKey: (key: string) => void;
   size?: 'default' | 'compact';
+  showDecimal?: boolean;
 }
 
-export const Numpad: React.FC<NumpadProps> = ({ onKey, size = 'default' }) => {
-  const { theme } = useTheme();
+export const Numpad: React.FC<NumpadProps> = ({ onKey, size = 'default', showDecimal = false }) => {
+  const { theme, mode } = useTheme();
+  const haptics = useHaptics();
   const isCompact = size === 'compact';
+  const keySize = isCompact ? KEY_SIZE_COMPACT : KEY_SIZE_DEFAULT;
+  const hairline = mode === 'dark' ? borders.hairline.dark : borders.hairline.light;
+  const keys = showDecimal ? KEYS_DECIMAL : KEYS_STANDARD;
+
+  const handlePress = (key: string) => {
+    if (key !== '') {
+      haptics.light();
+      onKey(key);
+    }
+  };
 
   return (
     <View style={[styles.numpad, isCompact && styles.numpadCompact]}>
-      {KEYS.map((key, idx) => (
-        <TouchableOpacity
+      {keys.map((key, idx) => (
+        <Pressable
           key={idx}
-          style={[
+          style={({ pressed }) => [
             styles.numKey,
-            isCompact && styles.numKeyCompact,
+            {
+              width: keySize,
+              height: keySize,
+              borderRadius: radii.pill,
+              backgroundColor: palette.grey[800],
+            },
+            hairline,
             key === '' && styles.numKeyEmpty,
+            pressed && key !== '' && { opacity: 0.5 },
           ]}
-          onPress={() => key !== '' && onKey(key)}
-          activeOpacity={key === '' ? 1 : 0.5}
+          onPress={() => handlePress(key)}
           disabled={key === ''}
           accessibilityLabel={key === 'del' ? 'Delete' : key || undefined}
           accessibilityRole="button"
@@ -33,13 +59,13 @@ export const Numpad: React.FC<NumpadProps> = ({ onKey, size = 'default' }) => {
           {key === 'del' ? (
             <Ionicons
               name="backspace-outline"
-              size={isCompact ? 20 : 24}
+              size={isCompact ? 22 : 26}
               color={theme.text.primary}
             />
           ) : (
             <Text
               style={[
-                styles.numKeyText,
+                typography.numKeyText,
                 isCompact && styles.numKeyTextCompact,
                 { color: theme.text.primary },
               ]}
@@ -47,7 +73,7 @@ export const Numpad: React.FC<NumpadProps> = ({ onKey, size = 'default' }) => {
               {key}
             </Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
       ))}
     </View>
   );
@@ -57,32 +83,27 @@ const styles = StyleSheet.create({
   numpad: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 40,
-    paddingBottom: 32,
+    justifyContent: 'center',
+    columnGap: spacing(3),
+    rowGap: spacing(3),
+    paddingHorizontal: spacing(10),
+    paddingBottom: spacing(8),
   },
   numpadCompact: {
     paddingHorizontal: 0,
-    paddingBottom: 12,
+    paddingBottom: spacing(3),
     width: 260,
     alignSelf: 'center',
   },
   numKey: {
-    width: '33.33%',
-    height: 64,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  numKeyCompact: {
-    height: 56,
   },
   numKeyEmpty: {
     opacity: 0,
   },
-  numKeyText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 28,
-  },
   numKeyTextCompact: {
     fontSize: 24,
+    lineHeight: 30,
   },
 });

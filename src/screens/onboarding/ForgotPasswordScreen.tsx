@@ -12,7 +12,8 @@ import { initiatePasswordReset } from '../../api/auth';
 import { isApiError } from '../../api/client';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
-import { useTheme } from '../../theme';
+import { useTheme, typography } from '../../theme';
+import { palette } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'ForgotPassword'>;
 
@@ -55,7 +56,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
           <View style={{ height: 28 }} />
           <Text style={[styles.headline, { color: theme.text.primary }]}>
             Reset your{'\n'}
-            <Text style={{ color: theme.secondary.main }}>password</Text>
+            <Text style={{ color: palette.royal[500] }}>password</Text>
           </Text>
           <Text style={[styles.desc, { color: theme.text.secondary }]}>
             Enter your email address and we'll send you a code to reset your password.
@@ -102,15 +103,11 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 20 },
   form: { paddingHorizontal: 28, paddingTop: 36 },
   headline: {
-    fontFamily: 'Inter_800ExtraBold',
-    fontSize: 26,
-    letterSpacing: -0.3,
+    ...typography.h3,
     marginBottom: 8,
-    lineHeight: 31,
   },
   desc: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
+    ...typography.bodySm,
     lineHeight: 21,
     marginBottom: 24,
   },

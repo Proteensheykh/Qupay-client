@@ -3,10 +3,14 @@ import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
 import * as Haptics from 'expo-haptics';
+import { SolverPulse } from '../../components';
 import { useTransactionStore } from '../../store/transactionStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
-import { useTheme } from '../../theme';
+import { spacing, typography } from '../../theme';
+import { palette } from '../../theme/colors';
+import { radii } from '../../theme/radii';
+import { borders } from '../../theme/elevation';
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'DepositWaiting'>;
 
@@ -43,7 +47,6 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
     recipientNetwork,
   } = route.params || {};
 
-  const { theme } = useTheme();
   const updateStatus = useTransactionStore((state) => state.updateStatus);
 
   const isCryptoOut = recvCurrency === 'USDT';
@@ -160,61 +163,69 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]}>
       <View style={styles.container}>
         {/* Top section */}
         <View style={styles.top}>
-          {/* Transaction slug badge */}
+          {/* Transaction slug — amber status chip */}
           {transactionSlug && (
             <View
               style={[
                 styles.slugBadge,
-                { backgroundColor: theme.info.bg, borderColor: theme.secondary.light },
+                { backgroundColor: palette.status.partial },
               ]}
             >
-              <Text style={[styles.slugText, { color: theme.secondary.main }]}>{transactionSlug}</Text>
+              <Text style={[styles.slugText, { color: palette.grey[900] }]}>{transactionSlug}</Text>
             </View>
           )}
 
-          {/* Scanning indicator */}
-          <View style={styles.scanWrap}>
-            {!detected && (
-              <Animated.View
+          <View style={styles.statusBlock}>
+            {/* Scanning indicator */}
+            <View style={styles.scanWrap}>
+              {!detected && (
+                <Animated.View
+                  style={[
+                    styles.pulseRing,
+                    { transform: [{ scale: pulseScale }], opacity: pulseOpacity, borderColor: palette.royal[500] },
+                  ]}
+                />
+              )}
+              <View
                 style={[
-                  styles.pulseRing,
-                  { transform: [{ scale: pulseScale }], opacity: pulseOpacity, borderColor: theme.secondary.main },
+                  styles.scanIcon,
+                  detected
+                    ? { backgroundColor: 'rgba(122,232,112,0.12)', borderColor: palette.status.positive }
+                    : { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
                 ]}
-              />
-            )}
+              >
+                {detected ? (
+                  <Ionicons name="checkmark" size={32} color={palette.status.positive} />
+                ) : (
+                  <Ionicons name={isCryptoOut ? 'card-outline' : 'radio-outline'} size={32} color={palette.royal[500]} />
+                )}
+              </View>
+            </View>
+
+            <View style={styles.statusTextBlock}>
+              <View style={styles.pulseBehindStatus} pointerEvents="none">
+                <SolverPulse size={200} color={palette.royal[500]} />
+              </View>
+              <Text style={[styles.title, { color: palette.grey[300] }]}>{getTitle()}</Text>
+              <Text style={[styles.subtitle, { color: palette.grey[500] }]}>{getSubtitle()}</Text>
+            </View>
+
+            {/* Amount badge */}
             <View
               style={[
-                styles.scanIcon,
-                detected
-                  ? { backgroundColor: theme.info.bg, borderColor: theme.secondary.main }
-                  : { backgroundColor: theme.info.bg, borderColor: theme.secondary.light },
+                styles.amountBadge,
+                { backgroundColor: palette.grey[800] },
+                borders.hairline.dark,
               ]}
             >
-              {detected ? (
-                <Ionicons name="checkmark" size={32} color={theme.secondary.main} />
-              ) : (
-                <Ionicons name={isCryptoOut ? 'card-outline' : 'radio-outline'} size={32} color={theme.secondary.main} />
-              )}
+              <Text style={[styles.amountBadgeText, { color: palette.grey[300] }]}>
+                {sendSymbol}{amount.toLocaleString()} {sendCurrency} {'\u2192'} {isCryptoOut ? `${formatUSDT(receiveAmount)} USDT` : `${recvSymbol}${receiveAmount.toLocaleString()} ${recvCurrency}`}
+              </Text>
             </View>
-          </View>
-
-          <Text style={[styles.title, { color: theme.text.primary }]}>{getTitle()}</Text>
-          <Text style={[styles.subtitle, { color: theme.text.secondary }]}>{getSubtitle()}</Text>
-
-          {/* Amount badge */}
-          <View
-            style={[
-              styles.amountBadge,
-              { backgroundColor: theme.info.bg, borderColor: theme.info.bg },
-            ]}
-          >
-            <Text style={[styles.amountBadgeText, { color: theme.secondary.main }]}>
-              {sendSymbol}{amount.toLocaleString()} {sendCurrency} {'\u2192'} {isCryptoOut ? `${formatUSDT(receiveAmount)} USDT` : `${recvSymbol}${receiveAmount.toLocaleString()} ${recvCurrency}`}
-            </Text>
           </View>
         </View>
 
@@ -226,8 +237,8 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
                 <View
                   style={[
                     styles.connector,
-                    { backgroundColor: theme.inputBorder },
-                    step.state !== 'waiting' && { backgroundColor: theme.secondary.main },
+                    { backgroundColor: palette.material.lightThin },
+                    step.state !== 'waiting' && { backgroundColor: palette.royal[500] },
                   ]}
                 />
               )}
@@ -236,38 +247,38 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
                   style={[
                     styles.stepDot,
                     step.state === 'active' && {
-                      borderColor: theme.secondary.main,
-                      backgroundColor: theme.info.bg,
+                      borderColor: palette.royal[500],
+                      backgroundColor: palette.grey[800],
                     },
                     step.state === 'done' && {
-                      borderColor: theme.secondary.main,
-                      backgroundColor: theme.secondary.main,
+                      borderColor: palette.status.positive,
+                      backgroundColor: palette.status.positive,
                     },
                     step.state === 'waiting' && {
-                      borderColor: theme.action.selected,
+                      borderColor: palette.material.lightThin,
                       backgroundColor: 'transparent',
                     },
                   ]}
                 >
                   {step.state === 'done' && (
-                    <Ionicons name="checkmark" size={12} color={theme.background.default} />
+                    <Ionicons name="checkmark" size={12} color={palette.grey[100]} />
                   )}
                   {step.state === 'active' && (
-                    <View style={[styles.stepDotPulse, { backgroundColor: theme.secondary.main }]} />
+                    <View style={[styles.stepDotPulse, { backgroundColor: palette.royal[500] }]} />
                   )}
                 </View>
                 <View style={styles.stepText}>
                   <Text
                     style={[
                       styles.stepLabel,
-                      { color: theme.text.disabled },
-                      step.state === 'active' && { color: theme.text.primary, fontFamily: 'Inter_600SemiBold' },
-                      step.state === 'done' && { color: theme.secondary.main, fontFamily: 'Inter_600SemiBold' },
+                      { color: palette.grey[600] },
+                      step.state === 'active' && { color: palette.grey[300] },
+                      step.state === 'done' && { color: palette.status.positive },
                     ]}
                   >
                     {step.label}
                   </Text>
-                  <Text style={[styles.stepDesc, { color: theme.text.muted }]}>{step.desc}</Text>
+                  <Text style={[styles.stepDesc, { color: palette.grey[500] }]}>{step.desc}</Text>
                 </View>
               </View>
             </View>
@@ -276,7 +287,7 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
 
         {/* Bottom */}
         <View style={styles.bottom}>
-          <Text style={[styles.bottomNote, { color: theme.text.disabled }]}>
+          <Text style={[styles.bottomNote, { color: palette.grey[600] }]}>
             {detected
               ? 'Processing your transfer\u2026'
               : isCryptoOut
@@ -292,42 +303,71 @@ export const DepositWaitingScreen: React.FC<Props> = ({ navigation, route }) => 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   container: { flex: 1, justifyContent: 'space-between' },
-  top: { alignItems: 'center', paddingTop: 32, paddingHorizontal: 24 },
+  top: { alignItems: 'center', paddingTop: spacing(8), paddingHorizontal: spacing(6) },
+  statusBlock: {
+    alignItems: 'center',
+    width: '100%',
+    position: 'relative',
+    paddingBottom: spacing(2),
+  },
+  statusTextBlock: {
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: spacing(4),
+    paddingVertical: spacing(3),
+    marginBottom: spacing(1),
+    position: 'relative',
+    minHeight: 88,
+    justifyContent: 'center',
+  },
+  pulseBehindStatus: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: '50%',
+    marginTop: -100,
+    alignItems: 'center',
+    zIndex: 0,
+  },
   slugBadge: {
-    borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: radii.pill,
     paddingVertical: 6,
     paddingHorizontal: 14,
     marginBottom: 20,
+    zIndex: 1,
   },
   slugText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 13,
-    letterSpacing: 0.5,
+    ...typography.buttonS,
   },
-  scanWrap: { width: 100, height: 100, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  scanWrap: { width: 100, height: 100, alignItems: 'center', justifyContent: 'center', marginBottom: spacing(3), zIndex: 1 },
   pulseRing: {
     position: 'absolute', width: 100, height: 100, borderRadius: 50,
     borderWidth: 2,
   },
   scanIcon: {
     width: 72, height: 72, borderRadius: 36,
-    borderWidth: 2,
+    borderWidth: 1,
     alignItems: 'center', justifyContent: 'center',
   },
   title: {
-    fontFamily: 'Inter_800ExtraBold', fontSize: 22, letterSpacing: -0.3,
+    ...typography.h3,
     marginBottom: 6,
+    textAlign: 'center',
+    zIndex: 1,
   },
   subtitle: {
-    fontFamily: 'Inter_400Regular', fontSize: 13,
+    ...typography.bodySm,
     textAlign: 'center', lineHeight: 20, marginBottom: 16,
+    zIndex: 1,
   },
   amountBadge: {
     borderWidth: 1,
-    borderRadius: 20, paddingVertical: 8, paddingHorizontal: 18,
+    borderRadius: radii.pill,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    zIndex: 1,
   },
-  amountBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  amountBadgeText: { ...typography.main14, fontVariant: ['tabular-nums'] },
   timeline: { paddingHorizontal: 32, paddingVertical: 8 },
   timelineStep: { position: 'relative' },
   connector: {
@@ -342,12 +382,12 @@ const styles = StyleSheet.create({
   stepDotPulse: { width: 8, height: 8, borderRadius: 4 },
   stepText: { flex: 1 },
   stepLabel: {
-    fontFamily: 'Inter_500Medium', fontSize: 14,
+    ...typography.main14,
   },
-  stepDesc: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2 },
+  stepDesc: { ...typography.secondary12, marginTop: 2 },
   bottom: { paddingHorizontal: 24, paddingBottom: 36 },
   bottomNote: {
-    fontFamily: 'Inter_400Regular', fontSize: 12,
+    ...typography.bodySm,
     textAlign: 'center', lineHeight: 18,
   },
 });

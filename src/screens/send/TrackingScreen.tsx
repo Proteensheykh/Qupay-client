@@ -1,12 +1,29 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  AccessibilityInfo,
+  useWindowDimensions,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withRepeat,
+  withSequence,
+  Easing,
+} from 'react-native-reanimated';
 import { Ionicons } from '../../components/Icon';
-import { CTAButton } from '../../components';
+import { CorridorWire, CTAButton, ProgressRail } from '../../components';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
-import { useTheme } from '../../theme';
+import { spacing, typography } from '../../theme';
+import { palette } from '../../theme/colors';
+import { radii } from '../../theme/radii';
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'Tracking'>;
 
@@ -17,8 +34,15 @@ interface Step {
   time: string;
 }
 
+const monoTime = StyleSheet.create({
+  tabular: {
+    ...typography.monoSm,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontVariant: ['tabular-nums'],
+  },
+});
+
 export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { theme, gradient } = useTheme();
   const {
     recipientName = 'Emeka Johnson',
     recipientInitials = 'EJ',
@@ -30,14 +54,66 @@ export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
   } = route.params || {};
 
   const symbol = dest?.symbol || '\u20A6';
+  const { width: windowWidth } = useWindowDimensions();
+  const wireWidth = Math.min(windowWidth - spacing(12), 360);
+
   const [progress, setProgress] = useState(0);
   const [etaSecs, setEtaSecs] = useState(118);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const pulseOpacity = useSharedValue(1);
+
   const [steps, setSteps] = useState<Step[]>([
-    { label: 'Approved', desc: `${amount} USDT locked on Polygon`, state: 'done', time: 'Just now' },
-    { label: 'Node fulfilling', desc: `Releasing to ${recipientMethod}`, state: 'active', time: 'In progress\u2026' },
-    { label: 'Credit sent', desc: 'Mobile money alert sent to recipient', state: 'waiting', time: 'Pending' },
-    { label: 'Complete', desc: 'Contract settled', state: 'waiting', time: 'Pending' },
+    {
+      label: 'Deposit received',
+      desc: `${amount} USDT locked on Polygon`,
+      state: 'done',
+      time: 'Just now',
+    },
+    {
+      label: 'Routing',
+      desc: `Releasing to ${recipientMethod}`,
+      state: 'active',
+      time: 'In progress\u2026',
+    },
+    {
+      label: 'Converting',
+      desc: 'Fiat settlement in progress',
+      state: 'waiting',
+      time: 'Pending',
+    },
+    {
+      label: 'Cash ready',
+      desc: 'Recipient balance updated',
+      state: 'waiting',
+      time: 'Pending',
+    },
   ]);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const subscription = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      setReduceMotion
+    );
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (!reduceMotion) {
+      pulseOpacity.value = withRepeat(
+        withSequence(
+          withTiming(0.4, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        false
+      );
+    }
+  }, [reduceMotion]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    opacity: pulseOpacity.value,
+  }));
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -48,12 +124,11 @@ export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
       setEtaSecs((e) => Math.max(e - 1, 0));
     }, 1000);
 
-    // Simulate step progression
     const t1 = setTimeout(() => {
       setSteps((prev) =>
         prev.map((s, i) => {
-          if (i === 1) return { ...s, state: 'done', time: '0:42' };
-          if (i === 2) return { ...s, state: 'active', time: 'In progress\u2026' };
+          if (i === 1) return { ...s, state: 'done' as const, time: '0:42' };
+          if (i === 2) return { ...s, state: 'active' as const, time: 'In progress\u2026' };
           return s;
         })
       );
@@ -62,8 +137,8 @@ export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
     const t2 = setTimeout(() => {
       setSteps((prev) =>
         prev.map((s, i) => {
-          if (i === 2) return { ...s, state: 'done', time: '1:18' };
-          if (i === 3) return { ...s, state: 'active', time: 'In progress\u2026' };
+          if (i === 2) return { ...s, state: 'done' as const, time: '1:18' };
+          if (i === 3) return { ...s, state: 'active' as const, time: 'In progress\u2026' };
           return s;
         })
       );
@@ -72,12 +147,11 @@ export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
     const t3 = setTimeout(() => {
       setSteps((prev) =>
         prev.map((s, i) => {
-          if (i === 3) return { ...s, state: 'done', time: '1:52' };
+          if (i === 3) return { ...s, state: 'done' as const, time: '1:52' };
           return s;
         })
       );
       setProgress(100);
-      // Navigate to success
       setTimeout(() => {
         navigation.replace('Success', {
           recipientName,
@@ -97,7 +171,16 @@ export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [navigation, recipientName, recipientInitials, recipientMethod, recipientFlag, amount, receiveAmount, dest]);
+  }, [
+    navigation,
+    recipientName,
+    recipientInitials,
+    recipientMethod,
+    recipientFlag,
+    amount,
+    receiveAmount,
+    dest,
+  ]);
 
   const formatEta = useCallback(() => {
     const m = Math.floor(etaSecs / 60);
@@ -105,119 +188,173 @@ export const TrackingScreen: React.FC<Props> = ({ navigation, route }) => {
     return ` ${m}:${s < 10 ? '0' : ''}${s}`;
   }, [etaSecs]);
 
+  const bg = palette.grey[900];
+  const textPrimary = palette.grey[100];
+  const textSecondary = palette.grey[500];
+  const textMuted = palette.grey[600];
+
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]} edges={['top']}>
+    <SafeAreaView
+      style={[styles.safe, { backgroundColor: bg }]}
+      edges={['top', 'bottom']}
+    >
       <View style={styles.header}>
-        <View style={{ width: 36 }} />
-        <Text style={[styles.headerTitle, { color: theme.text.primary }]}>Transfer in progress</Text>
-        <View style={{ width: 36 }} />
+        <View style={{ width: 44 }} />
+        <Text style={[styles.headerTitle, { color: textPrimary }]}>
+          Transfer in progress
+        </Text>
+        <View style={{ width: 44 }} />
       </View>
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Hero */}
-        <View style={styles.trackHero}>
-          <View style={styles.thFlags}>
-            <Text style={styles.flagLg}>{'\u{1F1F8}\u{1F1EC}'}</Text>
-            <Ionicons name="arrow-forward" size={18} color={theme.secondary.main} />
-            <Text style={styles.flagLg}>{recipientFlag}</Text>
-          </View>
-          <Text style={[styles.thAmount, { color: theme.text.primary }]}>
-            {symbol}
-            {receiveAmount.toLocaleString()}
-          </Text>
-          <Text style={[styles.thSub, { color: theme.text.secondary }]}>
-            {'\u2192'} {recipientName} {'\u00B7'} {recipientMethod} {'\u00B7'} Nigeria
-          </Text>
-          <View
-            style={[
-              styles.thEta,
-              progress >= 100
-                ? { backgroundColor: theme.secondary.main, borderColor: theme.secondary.main }
-                : { backgroundColor: theme.info.bg, borderColor: theme.secondary.light },
-            ]}
-          >
-            <View style={[styles.ldot, { backgroundColor: theme.secondary.main }]} />
-            <Text
-              style={[
-                styles.thEtaText,
-                progress >= 100 ? { color: theme.background.default } : { color: theme.secondary.main },
-              ]}
-            >
-              {progress >= 100 ? 'Delivered!' : `Est. delivery in${formatEta()}`}
-            </Text>
-          </View>
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.wireWrap}>
+          <CorridorWire width={wireWidth} height={40} progress={progress / 100} />
         </View>
 
-        {/* Progress bar */}
-        <View style={styles.progressWrap}>
-          <View style={[styles.progressTrack, { backgroundColor: theme.background.surface }]}>
-            <LinearGradient
-              colors={[...gradient.brand]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={[styles.progressFill, { width: `${Math.min(progress, 100)}%` as any }]}
-            />
-          </View>
-          <Text style={[styles.progressPct, { color: theme.text.secondary }]}>
-            {Math.round(Math.min(progress, 100))}% complete
-          </Text>
-        </View>
-
-        {/* Steps */}
+        {/* Four-step status list — partial → positive as each completes */}
         <View style={styles.stepsContainer}>
           {steps.map((step, i) => (
             <View key={step.label} style={styles.step}>
-              {/* Connector line */}
               {i < steps.length - 1 && (
                 <View
                   style={[
                     styles.stepLine,
-                    { backgroundColor: theme.inputBorder },
-                    step.state === 'done' && { backgroundColor: theme.secondary.main },
+                    { backgroundColor: palette.grey[700] },
+                    step.state === 'done' && {
+                      backgroundColor: palette.status.positive,
+                    },
                   ]}
                 />
               )}
-              {/* Dot */}
               <View
                 style={[
                   styles.stepDot,
-                  step.state === 'done' && { backgroundColor: theme.secondary.main },
-                  step.state === 'active' && {
-                    backgroundColor: theme.info.bg,
-                    borderWidth: 2,
-                    borderColor: theme.secondary.main,
+                  step.state === 'done' && {
+                    backgroundColor: palette.status.positive,
                   },
-                  step.state === 'waiting' && { backgroundColor: theme.background.surface },
+                  step.state === 'active' && {
+                    backgroundColor: palette.grey[800],
+                    borderWidth: 2,
+                    borderColor: palette.status.partial,
+                  },
+                  step.state === 'waiting' && {
+                    backgroundColor: palette.grey[800],
+                    borderWidth: 1,
+                    borderColor: palette.grey[600],
+                  },
                 ]}
               >
                 {step.state === 'done' ? (
-                  <Text style={[styles.stepDotCheckText, { color: theme.background.default }]}>{'\u2713'}</Text>
+                  <Ionicons name="checkmark" size={14} color={palette.grey[900]} />
                 ) : (
                   <Text
                     style={[
                       styles.stepDotNum,
-                      { color: theme.text.muted },
-                      step.state === 'active' && { color: theme.secondary.main },
+                      { color: textMuted },
+                      step.state === 'active' && { color: palette.status.partial },
+                      step.state === 'waiting' && { color: textMuted },
                     ]}
                   >
                     {i + 1}
                   </Text>
                 )}
               </View>
-              {/* Body */}
               <View style={styles.stepBody}>
-                <Text style={[styles.stepLabel, { color: theme.text.primary }]}>{step.label}</Text>
-                <Text style={[styles.stepDesc, { color: theme.text.secondary }]}>{step.desc}</Text>
-                <Text style={[styles.stepTime, { color: theme.text.muted }]}>{step.time}</Text>
+                <Text
+                  style={[
+                    styles.stepLabel,
+                    step.state === 'done' && { color: palette.status.positive },
+                    step.state === 'active' && { color: palette.status.partial },
+                    step.state === 'waiting' && { color: textMuted },
+                  ]}
+                >
+                  {step.label}
+                </Text>
+                <Text style={[styles.stepDesc, { color: textSecondary }]}>
+                  {step.desc}
+                </Text>
+                <Text
+                  style={[
+                    monoTime.tabular,
+                    step.state === 'done' && { color: palette.status.positive },
+                    step.state === 'active' && { color: palette.status.partial },
+                    step.state === 'waiting' && { color: textMuted },
+                  ]}
+                >
+                  {step.time}
+                </Text>
               </View>
             </View>
           ))}
+        </View>
+
+        {/* Hero */}
+        <View style={styles.trackHero}>
+          <Text style={[styles.thAmount, { color: textPrimary }]}>
+            {symbol}
+            {receiveAmount.toLocaleString()}
+          </Text>
+          <Text style={[styles.thSub, { color: textSecondary }]}>
+            {'\u2192'} {recipientName} {'\u00B7'} {recipientMethod}
+          </Text>
+
+          <View
+            style={[
+              styles.thEta,
+              progress >= 100
+                ? { backgroundColor: palette.status.positive }
+                : { backgroundColor: palette.grey[800] },
+            ]}
+          >
+            {progress < 100 && (
+              <Animated.View style={pulseStyle}>
+                <View
+                  style={[styles.ldot, { backgroundColor: palette.status.partial }]}
+                />
+              </Animated.View>
+            )}
+            {progress >= 100 ? (
+              <Text style={[styles.thEtaText, { color: palette.grey[900] }]}>
+                Delivered!
+              </Text>
+            ) : (
+              <View style={styles.thEtaRow}>
+                <Text style={[styles.thEtaText, { color: palette.status.partial }]}>
+                  Est. delivery in
+                </Text>
+                <Text
+                  style={[
+                    styles.thEtaText,
+                    monoTime.tabular,
+                    { color: palette.status.partial },
+                  ]}
+                >
+                  {formatEta()}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Progress bar */}
+        <View style={styles.progressWrap}>
+          <ProgressRail progress={progress / 100} height={8} />
+          <Text style={[styles.progressPct, { color: textSecondary }]}>
+            {Math.round(Math.min(progress, 100))}% complete
+          </Text>
         </View>
 
         <View style={styles.ctaWrap}>
           <CTAButton
             title="Back to Home"
             ghost
-            onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Amount' }] })}
+            onPress={() =>
+              navigation.reset({ index: 0, routes: [{ name: 'Amount' }] })
+            }
           />
         </View>
       </ScrollView>
@@ -230,86 +367,74 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 18,
-    paddingBottom: 6,
+    paddingHorizontal: spacing(6),
+    paddingTop: spacing(4.5),
+    paddingBottom: spacing(1.5),
   },
   headerTitle: {
     flex: 1,
-    fontFamily: 'Inter_700Bold',
-    fontSize: 16,
+    ...typography.h5,
     textAlign: 'center',
   },
   scroll: { flex: 1 },
+  scrollContent: { flexGrow: 1, paddingBottom: spacing(4) },
+  wireWrap: {
+    paddingTop: spacing(2),
+    paddingBottom: spacing(1),
+    paddingHorizontal: spacing(6),
+  },
   trackHero: {
     alignItems: 'center',
-    paddingVertical: 28,
-    paddingHorizontal: 24,
+    paddingVertical: spacing(4),
+    paddingHorizontal: spacing(6),
   },
-  thFlags: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
-  },
-  flagLg: { fontSize: 28 },
   thAmount: {
-    fontFamily: 'Inter_800ExtraBold',
-    fontSize: 36,
-    letterSpacing: -1,
-    marginBottom: 4,
+    ...typography.display2,
+    marginBottom: spacing(1),
   },
   thSub: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
-    marginBottom: 10,
+    ...typography.bodySm,
+    marginBottom: spacing(3),
   },
   thEta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
+    gap: spacing(1.5),
+    borderRadius: radii.pill,
+    paddingVertical: spacing(1.5),
+    paddingHorizontal: spacing(3.5),
+    minHeight: 32,
   },
   thEtaText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 12,
+    ...typography.captionMedium,
+  },
+  thEtaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
   },
   ldot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-  },
-  progressWrap: {
-    marginHorizontal: 24,
-    marginBottom: 20,
-  },
-  progressTrack: {
+    width: 8,
     height: 8,
     borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 6,
   },
-  progressFill: {
-    height: '100%',
-    borderRadius: 4,
+  progressWrap: {
+    marginHorizontal: spacing(6),
+    marginBottom: spacing(5),
   },
   progressPct: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 11,
+    ...typography.monoSm,
     textAlign: 'right',
-    fontVariant: ['tabular-nums'],
+    marginTop: spacing(1.5),
   },
   stepsContainer: {
-    marginHorizontal: 24,
-    marginBottom: 16,
+    marginHorizontal: spacing(6),
+    marginBottom: spacing(5),
   },
   step: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
+    gap: spacing(3),
     position: 'relative',
   },
   stepLine: {
@@ -327,37 +452,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 1,
   },
-  stepDotCheckText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 11,
-  },
   stepDotNum: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 11,
+    ...typography.captionMedium,
   },
   stepBody: {
     flex: 1,
-    paddingTop: 3,
-    paddingBottom: 20,
+    paddingTop: spacing(0.75),
+    paddingBottom: spacing(5),
   },
   stepLabel: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 13,
-    marginBottom: 2,
+    ...typography.main14,
+    marginBottom: spacing(0.5),
   },
   stepDesc: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
+    ...typography.caption,
     lineHeight: 17,
   },
-  stepTime: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 10,
-    marginTop: 3,
-    fontVariant: ['tabular-nums'],
-  },
   ctaWrap: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingHorizontal: spacing(6),
+    paddingBottom: spacing(6),
   },
 });

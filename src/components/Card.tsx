@@ -1,40 +1,59 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
-import { useTheme, borderRadius, shadows, spacing } from '../theme';
+import { View, ViewStyle } from 'react-native';
+import { palette } from '../theme/colors';
+import { borders, shadows } from '../theme/elevation';
+import { radii } from '../theme/radii';
+import { useTheme, spacing } from '../theme';
 
 interface CardProps {
   children: React.ReactNode;
   style?: ViewStyle;
-  // `inner` = nested card (P.cardInner @ R.lg). `default` = outer (P.card @ R.xl).
   variant?: 'default' | 'elevated' | 'surface' | 'warm' | 'inner';
+  noPadding?: boolean;
 }
 
-export const Card: React.FC<CardProps> = ({ children, style, variant = 'default' }) => {
+export const Card: React.FC<CardProps> = ({
+  children,
+  style,
+  variant = 'default',
+  noPadding = false,
+}) => {
   const { theme, mode } = useTheme();
 
+  const elevationStyle =
+    mode === 'dark'
+      ? { ...shadows.none, ...borders.hairline.dark }
+      : { ...shadows.container, ...borders.hairline.light };
+
   const bgMap = {
-    default: theme.background.paper,    // P.card #17171A — outer
-    elevated: theme.background.paper,
-    surface: theme.background.surface,  // P.cardInner #1F1F23
-    warm: theme.background.warm,
-    inner: theme.background.surface,    // P.cardInner #1F1F23
+    default:
+      mode === 'dark' ? palette.grey[900] : theme.background.paper,
+    elevated:
+      mode === 'dark' ? palette.grey[900] : theme.background.paper,
+    surface:
+      mode === 'dark' ? palette.grey[900] : theme.background.surface,
+    warm: mode === 'dark' ? palette.grey[900] : theme.background.warm,
+    inner:
+      mode === 'dark' ? palette.grey[900] : theme.background.surface,
   };
 
-  const radius = variant === 'inner' || variant === 'surface'
-    ? borderRadius.lg   // 14 — inner
-    : borderRadius.xl;  // 16 — outer (matches local R.xl)
-
-  // Local outer cards are paddingH:16 paddingV:12-14 → match with H4 V3
-  const horizontalPadding = spacing(4);
-  const verticalPadding = variant === 'inner' || variant === 'surface' ? spacing(3) : spacing(3.5);
+  const horizontalPadding = noPadding ? 0 : spacing(4);
+  const verticalPadding = noPadding
+    ? 0
+    : variant === 'inner' || variant === 'surface'
+      ? spacing(3)
+      : spacing(4);
 
   return (
     <View
       style={[
-        { borderRadius: radius, paddingHorizontal: horizontalPadding, paddingVertical: verticalPadding },
-        { backgroundColor: bgMap[variant] },
-        mode === 'light' && { borderWidth: 1, borderColor: theme.divider },
-        variant === 'elevated' && shadows.card,
+        {
+          borderRadius: radii.lg,
+          paddingHorizontal: horizontalPadding,
+          paddingVertical: verticalPadding,
+          backgroundColor: bgMap[variant],
+        },
+        elevationStyle,
         style,
       ]}
     >
@@ -42,5 +61,3 @@ export const Card: React.FC<CardProps> = ({ children, style, variant = 'default'
     </View>
   );
 };
-
-const styles = StyleSheet.create({});

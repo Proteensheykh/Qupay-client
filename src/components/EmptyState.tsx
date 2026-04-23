@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useTheme, typography, spacing, borderRadius } from '../theme';
+import { useTheme, typography, spacing, radii } from '../theme';
+import { palette } from '../theme/colors';
 import { GradientButton } from './GradientButton';
 
 interface EmptyStateProps {
@@ -22,18 +23,47 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={[styles.emojiCircle, { backgroundColor: theme.background.surface }]}>
+      <View
+        style={[
+          styles.emojiCircle,
+          {
+            backgroundColor: palette.grey[700],
+            borderWidth: 1,
+            borderColor: palette.royal[400],
+          },
+        ]}
+      >
         <Text style={styles.emoji}>{emoji}</Text>
       </View>
-      <Text style={[typography.h2, { color: theme.text.primary, textAlign: 'center', marginTop: spacing(4) }]}>
+      <Text
+        style={[
+          typography.h2,
+          { color: theme.text.primary, textAlign: 'center', marginTop: spacing(4) },
+        ]}
+      >
         {title}
       </Text>
-      <Text style={[typography.body, { color: theme.text.secondary, textAlign: 'center', marginTop: spacing(2), paddingHorizontal: spacing(4) }]}>
+      <Text
+        style={[
+          typography.body,
+          {
+            color: theme.text.secondary,
+            textAlign: 'center',
+            marginTop: spacing(2),
+            paddingHorizontal: spacing(4),
+          },
+        ]}
+      >
         {subtitle}
       </Text>
       {actionLabel && onAction && (
         <View style={{ marginTop: spacing(5) }}>
-          <GradientButton title={actionLabel} onPress={onAction} size="medium" />
+          <GradientButton
+            title={actionLabel}
+            onPress={onAction}
+            size="medium"
+            withGlow
+          />
         </View>
       )}
     </View>
@@ -49,7 +79,7 @@ const styles = StyleSheet.create({
   emojiCircle: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: radii.circle,
     alignItems: 'center',
     justifyContent: 'center',
   },

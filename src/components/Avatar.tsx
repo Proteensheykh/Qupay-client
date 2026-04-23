@@ -1,23 +1,18 @@
-// Avatar — abstract DiceBear avatar with optional bank-logo badge.
-// Uses a remote PNG (deterministic per seed) so the same name always gets
-// the same avatar. Falls back to initials on a tinted circle if the remote
-// image fails to load.
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { getAvatarUri, AvatarStyle, findBankLogo } from '../data/logos';
 import { useTheme } from '../theme';
+import { palette } from '../theme/colors';
+import { borders } from '../theme/elevation';
 
 interface AvatarProps {
-  // Seed determines which avatar is generated (use full name for stability)
   seed: string;
-  // Optional initials shown only if the remote image fails
   initials?: string;
   size?: number;
   style?: AvatarStyle;
-  // If provided, a small bank logo badge is overlaid bottom-right
   bankBadge?: string;
-  // Surface color used for the badge ring — match parent card (defaults to theme.background.paper)
   ringColor?: string;
+  withRing?: boolean;
 }
 
 export const Avatar: React.FC<AvatarProps> = ({
@@ -27,16 +22,27 @@ export const Avatar: React.FC<AvatarProps> = ({
   style = 'shapes',
   bankBadge,
   ringColor,
+  withRing = true,
 }) => {
-  const { theme } = useTheme();
+  const { theme, mode } = useTheme();
   const resolvedRingColor = ringColor ?? theme.background.paper;
   const [imageErr, setImageErr] = useState(false);
   const radius = size / 2;
-  const fallbackInitials = (initials || seed).trim().substring(0, 2).toUpperCase();
+  const fallbackInitials = (initials || seed)
+    .trim()
+    .substring(0, 2)
+    .toUpperCase();
   const badgeSize = Math.round(size * 0.42);
 
+  const ringStyle =
+    withRing && mode === 'dark' ? borders.hairline.dark : undefined;
+
   return (
-    <View style={{ width: size, height: size }} accessible accessibilityLabel={seed}>
+    <View
+      style={{ width: size, height: size }}
+      accessible
+      accessibilityLabel={seed}
+    >
       {imageErr ? (
         <View
           style={[
@@ -45,30 +51,33 @@ export const Avatar: React.FC<AvatarProps> = ({
               width: size,
               height: size,
               borderRadius: radius,
-              backgroundColor: theme.background.surface,
+              backgroundColor: palette.royal[700],
             },
+            ringStyle,
           ]}
         >
           <Text
             style={[
               styles.fallbackText,
-              { fontSize: size * 0.36, color: theme.text.primary },
+              { fontSize: size * 0.36, color: palette.royal[300] },
             ]}
           >
             {fallbackInitials}
           </Text>
         </View>
       ) : (
-        <Image
-          source={{ uri: getAvatarUri(seed, style) }}
-          style={{
-            width: size,
-            height: size,
-            borderRadius: radius,
-            backgroundColor: theme.background.surface,
-          }}
-          onError={() => setImageErr(true)}
-        />
+        <View style={[{ borderRadius: radius, overflow: 'hidden' }, ringStyle]}>
+          <Image
+            source={{ uri: getAvatarUri(seed, style) }}
+            style={{
+              width: size,
+              height: size,
+              borderRadius: radius,
+              backgroundColor: theme.background.surface,
+            }}
+            onError={() => setImageErr(true)}
+          />
+        </View>
       )}
 
       {bankBadge && findBankLogo(bankBadge) ? (
@@ -108,6 +117,7 @@ const styles = StyleSheet.create({
   },
   fallbackText: {
     fontFamily: 'Inter_700Bold',
+    letterSpacing: -0.5,
   },
   badge: {
     position: 'absolute',

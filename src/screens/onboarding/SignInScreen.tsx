@@ -9,13 +9,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
-import { QupayLogo, CTAButton, FormField } from '../../components';
+import { QupayLogo, CTAButton, FormField, MuralBackdrop } from '../../components';
 import { login, getProfile } from '../../api/auth';
 import { isApiError } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
-import { useTheme } from '../../theme';
+import { useTheme, typography } from '../../theme';
+import { palette } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'SignIn'>;
 
@@ -60,7 +61,8 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
   }, [allFieldsValid, email, password, setTokens, setUser]);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.marketing.ground }]}>
+      <MuralBackdrop />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -71,7 +73,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
           <View style={{ height: 28 }} />
           <Text style={[styles.headline, { color: theme.text.primary }]}>
             Welcome{'\n'}
-            <Text style={{ color: theme.secondary.main }}>back</Text>
+            <Text style={{ color: palette.royal[500] }}>back</Text>
           </Text>
           <Text style={[styles.desc, { color: theme.text.secondary }]}>
             Sign in to continue sending crypto to cash instantly.
@@ -113,7 +115,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
             activeOpacity={0.7}
             onPress={() => navigation.navigate('ForgotPassword')}
           >
-            <Text style={[styles.forgotText, { color: theme.secondary.main }]}>Forgot password?</Text>
+            <Text style={[styles.forgotText, { color: palette.royal[500] }]}>Forgot password?</Text>
           </TouchableOpacity>
 
           <View style={{ height: 8 }} />
@@ -131,7 +133,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.navigate('SignUp')} activeOpacity={0.7}>
           <Text style={[styles.switchText, { color: theme.text.secondary }]}>
             Don't have an account?{' '}
-            <Text style={[styles.switchLink, { color: theme.secondary.main }]}>Sign Up</Text>
+            <Text style={[styles.switchLink, { color: palette.royal[500] }]}>Sign Up</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -140,20 +142,16 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { flex: 1, zIndex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
   form: { paddingHorizontal: 28, paddingTop: 36 },
   headline: {
-    fontFamily: 'Inter_800ExtraBold',
-    fontSize: 26,
-    letterSpacing: -0.3,
+    ...typography.h3,
     marginBottom: 8,
-    lineHeight: 31,
   },
   desc: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
+    ...typography.bodySm,
     lineHeight: 21,
     marginBottom: 24,
   },
@@ -163,7 +161,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   forgotText: {
-    fontFamily: 'Inter_500Medium',
+    ...typography.bodySm,
     fontSize: 13,
   },
   bottomArea: {
@@ -172,13 +170,14 @@ const styles = StyleSheet.create({
   },
   cta: { marginBottom: 12 },
   switchText: {
-    fontFamily: 'Inter_400Regular',
+    ...typography.bodySm,
     fontSize: 13,
     textAlign: 'center',
     marginTop: 8,
     paddingBottom: 8,
   },
   switchLink: {
-    fontFamily: 'Inter_600SemiBold',
+    ...typography.bodySm,
+    fontSize: 13,
   },
 });

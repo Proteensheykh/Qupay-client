@@ -17,7 +17,8 @@ import { completePasswordReset, resendOtp } from '../../api/auth';
 import { isApiError } from '../../api/client';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
-import { useTheme } from '../../theme';
+import { useTheme, typography, radii } from '../../theme';
+import { palette } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'ResetPassword'>;
 
@@ -118,7 +119,7 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
           <View style={{ height: 28 }} />
           <Text style={[styles.headline, { color: theme.text.primary }]}>
             Create new{'\n'}
-            <Text style={{ color: theme.secondary.main }}>password</Text>
+            <Text style={{ color: palette.royal[500] }}>password</Text>
           </Text>
           <Text style={[styles.desc, { color: theme.text.secondary }]}>
             Enter the 6-digit code sent to {email} and your new password.
@@ -145,19 +146,20 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
                 key={i}
                 style={[
                   styles.otpCell,
-                  { backgroundColor: theme.background.surface, borderColor: theme.inputBorder },
-                  code[i] && !error && {
-                    borderColor: theme.secondary.main,
-                    backgroundColor: theme.info.bg,
+                  {
+                    backgroundColor: palette.grey[800],
+                    borderColor: error
+                      ? theme.error.main
+                      : i === code.length
+                        ? palette.royal[500]
+                        : 'transparent',
                   },
-                  !code[i] && i === code.length && !error && { borderColor: theme.secondary.main },
-                  error && { borderColor: theme.error.main },
                 ]}
               >
                 {code[i] ? (
                   <Text style={[styles.otpDigit, { color: theme.text.primary }]}>{code[i]}</Text>
                 ) : i === code.length ? (
-                  <Animated.View style={[styles.curLine, { opacity: blinkAnim, backgroundColor: theme.secondary.main }]} />
+                  <Animated.View style={[styles.curLine, { opacity: blinkAnim, backgroundColor: palette.royal[500] }]} />
                 ) : null}
               </View>
             ))}
@@ -169,7 +171,7 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
               <Text
                 style={[
                   styles.resendLink,
-                  { color: theme.secondary.main },
+                  { color: palette.royal[500] },
                   resendTimer > 0 && { color: theme.text.muted },
                 ]}
                 onPress={handleResend}
@@ -253,21 +255,16 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 20 },
   form: { paddingHorizontal: 28, paddingTop: 36 },
   headline: {
-    fontFamily: 'Inter_800ExtraBold',
-    fontSize: 26,
-    letterSpacing: -0.3,
+    ...typography.h3,
     marginBottom: 8,
-    lineHeight: 31,
   },
   desc: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
+    ...typography.bodySm,
     lineHeight: 21,
     marginBottom: 24,
   },
   label: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 13,
+    ...typography.bodySm,
     marginBottom: 8,
   },
   hiddenInput: {
@@ -282,23 +279,21 @@ const styles = StyleSheet.create({
   },
   otpCell: {
     flex: 1,
-    height: 58,
-    borderWidth: 1.5,
-    borderRadius: 12,
+    height: 56,
+    borderRadius: radii.pill,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   otpDigit: {
-    fontFamily: 'Inter_800ExtraBold',
-    fontSize: 24,
+    ...typography.valueSm,
   },
   curLine: {
     width: 2,
     height: 24,
   },
   errorText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 13,
+    ...typography.bodySm,
     textAlign: 'center',
     marginTop: 8,
   },
@@ -307,11 +302,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   resendText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
+    ...typography.caption,
   },
   resendLink: {
-    fontFamily: 'Inter_600SemiBold',
+    ...typography.caption,
   },
   bottomArea: {
     paddingHorizontal: 24,

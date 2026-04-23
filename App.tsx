@@ -1,14 +1,9 @@
 import React, { useCallback, useMemo } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
-import {
-  useFonts,
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  Inter_800ExtraBold,
-} from '@expo-google-fonts/inter';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Geist_400Regular } from '@expo-google-fonts/geist';
+import { useFonts } from '@expo-google-fonts/geist/useFonts';
 import * as SplashScreen from 'expo-splash-screen';
 import { View } from 'react-native';
 
@@ -49,11 +44,7 @@ function AppShell({ onLayout }: { onLayout: () => void }) {
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
+    Geist_400Regular,
   });
 
   const onLayoutRootView = useCallback(async () => {
@@ -67,10 +58,12 @@ export default function App() {
   }
 
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <AppShell onLayout={onLayoutRootView} />
-      </ThemeProvider>
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <ThemeProvider>
+          <AppShell onLayout={onLayoutRootView} />
+        </ThemeProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

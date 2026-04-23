@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <!-- Minimal flat SVG: clock + empty state -->
+  <circle cx="60" cy="50" r="30" stroke="#4C515D" stroke-width="2" fill="none"/>
+  <line x1="60" y1="50" x2="60" y2="35" stroke="#B893EC" stroke-width="2" stroke-linecap="round"/>
+  <line x1="60" y1="50" x2="72" y2="50" stroke="#B893EC" stroke-width="2" stroke-linecap="round"/>
+  <line x1="35" y1="95" x2="85" y2="95" stroke="#4C515D" stroke-width="2" stroke-linecap="round"/>
+  <line x1="42" y1="103" x2="78" y2="103" stroke="#4C515D" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+</svg>

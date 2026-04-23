@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <!-- Minimal flat SVG: inbox / empty stream -->
+  <path d="M30 50 L30 85 Q30 90 35 90 L85 90 Q90 90 90 85 L90 50" stroke="#4C515D" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M30 50 L45 65 L75 65 L90 50" stroke="#4C515D" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="60" cy="40" r="3" fill="#B893EC"/>
+  <line x1="60" y1="25" x2="60" y2="37" stroke="#B893EC" stroke-width="2" stroke-linecap="round"/>
+</svg>

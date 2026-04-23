@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '../../components/Icon';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProfileStackParamList } from '../../navigation/AppNavigator';
@@ -9,7 +8,9 @@ import { QupayLogo, Avatar, CTAButton } from '../../components';
 import { userProfile } from '../../data/mockData';
 import { useAuthStore } from '../../store/authStore';
 import { useTheme, ThemePreference } from '../../theme';
-
+import { palette } from '../../theme/colors';
+import { radii } from '../../theme/radii';
+import { borders } from '../../theme/elevation';
 type ProfileScreenNavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
 interface Props {
@@ -28,7 +29,10 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [notifOn, setNotifOn] = useState(true);
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
-  const { theme, mode, preference, setPreference, gradient } = useTheme();
+  const { mode, preference, setPreference } = useTheme();
+  const backdrop = palette.grey[900];
+  const cardBg = palette.grey[800];
+  const hairline = palette.material.lightThin;
 
   const handleLogout = useCallback(async () => {
     await logout();
@@ -46,7 +50,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const isProcessor = user?.role === 'BOTH' || user?.role === 'MP';
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: backdrop }]} edges={['top']}>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
@@ -54,119 +58,141 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         {/* Profile hero */}
-        <View style={[styles.heroWrap, { borderColor: theme.info.bg }]}>
-          <LinearGradient
-            colors={gradient.hero}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.hero}
-          >
+        <View
+          style={[
+            styles.heroWrap,
+            { backgroundColor: cardBg },
+            borders.hairline.dark,
+            { borderRadius: radii.lg },
+          ]}
+        >
+          <View style={styles.hero}>
             <View style={styles.phTop}>
               <Avatar seed={displayName} size={60} />
               <View style={styles.phInfo}>
                 <View style={styles.nameRow}>
-                  <Text style={[styles.phName, { color: theme.text.primary }]}>{displayName}</Text>
+                  <Text style={[styles.phName, { color: palette.grey[300] }]}>{displayName}</Text>
                   {isProcessor && (
-                    <View style={[styles.processorBadge, { backgroundColor: theme.info.bg, borderColor: theme.secondary.main }]}>
-                      <Ionicons name="swap-horizontal" size={10} color={theme.secondary.main} />
-                      <Text style={[styles.processorBadgeText, { color: theme.secondary.main }]}>Processor</Text>
+                    <View
+                      style={[
+                        styles.processorBadge,
+                        { backgroundColor: 'rgba(158,121,210,0.15)', borderColor: palette.royal[500] },
+                      ]}
+                    >
+                      <Ionicons name="swap-horizontal" size={10} color={palette.royal[400]} />
+                      <Text style={[styles.processorBadgeText, { color: palette.royal[400] }]}>Processor</Text>
                     </View>
                   )}
                 </View>
-                <Text style={[styles.phEmail, { color: theme.text.secondary }]}>{displayEmail}</Text>
-                <Text style={[styles.phPhone, { color: theme.text.muted }]}>{displayPhone}</Text>
+                <Text style={[styles.phEmail, { color: palette.grey[500] }]}>{displayEmail}</Text>
+                <Text style={[styles.phPhone, { color: palette.grey[600] }]}>{displayPhone}</Text>
               </View>
             </View>
-            <View style={[styles.phStats, { borderTopColor: theme.divider }]}>
+            <View style={[styles.phStats, { borderTopColor: hairline, borderTopWidth: StyleSheet.hairlineWidth }]}>
               <View style={styles.phStat}>
-                <Text style={[styles.phVal, { color: theme.text.primary }]}>{userProfile.totalTransfers}</Text>
-                <Text style={[styles.phLabel, { color: theme.text.secondary }]}>Transfers</Text>
+                <Text style={[styles.phVal, { color: palette.grey[300] }]}>{userProfile.totalTransfers}</Text>
+                <Text style={[styles.phLabel, { color: palette.grey[500] }]}>Transfers</Text>
               </View>
-              <View style={[styles.phStatDivider, { backgroundColor: theme.divider }]} />
+              <View style={[styles.phStatDivider, { backgroundColor: hairline }]} />
               <View style={styles.phStat}>
-                <Text style={[styles.phVal, { color: theme.secondary.main }]}>${userProfile.totalSent.toLocaleString()}</Text>
-                <Text style={[styles.phLabel, { color: theme.text.secondary }]}>Total Sent</Text>
+                <Text style={[styles.phVal, { color: palette.royal[400] }]}>${userProfile.totalSent.toLocaleString()}</Text>
+                <Text style={[styles.phLabel, { color: palette.grey[500] }]}>Total Sent</Text>
               </View>
-              <View style={[styles.phStatDivider, { backgroundColor: theme.divider }]} />
+              <View style={[styles.phStatDivider, { backgroundColor: hairline }]} />
               <View style={styles.phStat}>
-                <Text style={[styles.phVal, { color: theme.text.primary }]}>Nov '25</Text>
-                <Text style={[styles.phLabel, { color: theme.text.secondary }]}>Member</Text>
+                <Text style={[styles.phVal, { color: palette.grey[300] }]}>Nov '25</Text>
+                <Text style={[styles.phLabel, { color: palette.grey[500] }]}>Member</Text>
               </View>
             </View>
-
-          </LinearGradient>
+          </View>
         </View>
 
         {/* Settings */}
-        <Text style={[styles.sectionLabel, { color: theme.text.secondary }]}>Settings</Text>
-        <View style={[styles.card, { backgroundColor: theme.background.surface, borderColor: theme.inputBorder }]}>
-          <TouchableOpacity style={[styles.row, { borderBottomColor: theme.inputBorder }]} activeOpacity={0.7}>
-            <View style={[styles.rowIcon, { backgroundColor: theme.info.bg }]}>
-              <Ionicons name="lock-closed-outline" size={18} color={theme.secondary.main} />
+        <Text style={[styles.sectionLabel, { color: palette.grey[500] }]}>Settings</Text>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: cardBg, borderColor: hairline },
+            borders.hairline.dark,
+            { borderRadius: radii.lg },
+          ]}
+        >
+          <TouchableOpacity style={[styles.row, { borderBottomColor: hairline }]} activeOpacity={0.7}>
+            <View style={[styles.rowIcon, { backgroundColor: 'rgba(158,121,210,0.12)' }]}>
+              <Ionicons name="lock-closed-outline" size={18} color={palette.royal[400]} />
             </View>
             <View style={styles.rowBody}>
-              <Text style={[styles.rowTitle, { color: theme.text.primary }]}>Transaction PIN</Text>
-              <Text style={[styles.rowSub, { color: theme.text.secondary }]}>Change your 4-digit PIN</Text>
+              <Text style={[styles.rowTitle, { color: palette.grey[300] }]}>Transaction PIN</Text>
+              <Text style={[styles.rowSub, { color: palette.grey[500] }]}>Change your 4-digit PIN</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={theme.text.muted} />
+            <Ionicons name="chevron-forward" size={16} color={palette.grey[600]} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.row, { borderBottomColor: theme.inputBorder }]}
+            style={[styles.row, { borderBottomColor: hairline }]}
             activeOpacity={0.7}
             onPress={cycleTheme}
           >
-            <View style={[styles.rowIcon, { backgroundColor: mode === 'dark' ? theme.background.surface2 : theme.background.surface }]}>
+            <View style={[styles.rowIcon, { backgroundColor: palette.grey[900] }]}>
               <Ionicons
                 name={mode === 'dark' ? 'moon-outline' : 'sunny-outline'}
                 size={18}
-                color={theme.secondary.main}
+                color={palette.royal[400]}
               />
             </View>
             <View style={styles.rowBody}>
-              <Text style={[styles.rowTitle, { color: theme.text.primary }]}>Appearance</Text>
-              <Text style={[styles.rowSub, { color: theme.text.secondary }]}>{PREFERENCE_LABELS[preference]}</Text>
+              <Text style={[styles.rowTitle, { color: palette.grey[300] }]}>Appearance</Text>
+              <Text style={[styles.rowSub, { color: palette.grey[500] }]}>{PREFERENCE_LABELS[preference]}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={theme.text.muted} />
+            <Ionicons name="chevron-forward" size={16} color={palette.grey[600]} />
           </TouchableOpacity>
 
           <View style={[styles.row, styles.rowLast]}>
-            <View style={[styles.rowIcon, { backgroundColor: theme.warning.bg }]}>
-              <Ionicons name="notifications-outline" size={18} color={theme.warning.main} />
+            <View style={[styles.rowIcon, { backgroundColor: 'rgba(243,175,37,0.12)' }]}>
+              <Ionicons name="notifications-outline" size={18} color={palette.status.partial} />
             </View>
             <View style={styles.rowBody}>
-              <Text style={[styles.rowTitle, { color: theme.text.primary }]}>Notifications</Text>
-              <Text style={[styles.rowSub, { color: theme.text.secondary }]}>Push {'\u00B7'} SMS</Text>
+              <Text style={[styles.rowTitle, { color: palette.grey[300] }]}>Notifications</Text>
+              <Text style={[styles.rowSub, { color: palette.grey[500] }]}>Push {'\u00B7'} SMS</Text>
             </View>
             <TouchableOpacity
               onPress={() => setNotifOn(!notifOn)}
               style={[
                 styles.toggle,
-                { backgroundColor: notifOn ? theme.secondary.main : theme.background.surface2 }
+                { backgroundColor: notifOn ? palette.royal[500] : palette.grey[700] },
               ]}
               activeOpacity={0.8}
             >
-              <View style={[
-                styles.toggleThumb,
-                { backgroundColor: theme.background.default },
-                notifOn && styles.toggleThumbOn
-              ]} />
+              <View
+                style={[
+                  styles.toggleThumb,
+                  { backgroundColor: backdrop },
+                  notifOn && styles.toggleThumbOn,
+                ]}
+              />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Support */}
-        <Text style={[styles.sectionLabel, { color: theme.text.secondary }]}>Support</Text>
-        <View style={[styles.card, { backgroundColor: theme.background.surface, borderColor: theme.inputBorder }]}>
+        <Text style={[styles.sectionLabel, { color: palette.grey[500] }]}>Support</Text>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: cardBg, borderColor: hairline },
+            borders.hairline.dark,
+            { borderRadius: radii.lg },
+          ]}
+        >
           <TouchableOpacity style={[styles.row, styles.rowLast]} activeOpacity={0.7}>
-            <View style={[styles.rowIcon, { backgroundColor: theme.background.surface2 }]}>
-              <Ionicons name="chatbubble-ellipses-outline" size={18} color={theme.text.secondary} />
+            <View style={[styles.rowIcon, { backgroundColor: palette.grey[900] }]}>
+              <Ionicons name="chatbubble-ellipses-outline" size={18} color={palette.grey[500]} />
             </View>
             <View style={styles.rowBody}>
-              <Text style={[styles.rowTitle, { color: theme.text.primary }]}>Help & Support</Text>
-              <Text style={[styles.rowSub, { color: theme.text.secondary }]}>Avg. response &lt;3 mins</Text>
+              <Text style={[styles.rowTitle, { color: palette.grey[300] }]}>Help & Support</Text>
+              <Text style={[styles.rowSub, { color: palette.grey[500] }]}>Avg. response &lt;3 mins</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={theme.text.muted} />
+            <Ionicons name="chevron-forward" size={16} color={palette.grey[600]} />
           </TouchableOpacity>
         </View>
 
@@ -178,7 +204,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           style={styles.logoutBtn}
         />
 
-        <Text style={[styles.versionText, { color: theme.text.disabled }]}>Qupay v1.0.0</Text>
+        <Text style={[styles.versionText, { color: palette.grey[600] }]}>Qupay v1.0.0</Text>
         <View style={{ height: 20 }} />
       </ScrollView>
     </SafeAreaView>
@@ -200,9 +226,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     marginTop: 8,
     marginBottom: 20,
-    borderRadius: 20,
     overflow: 'hidden',
-    borderWidth: 1,
   },
   hero: { padding: 22 },
   phTop: {
@@ -250,7 +274,6 @@ const styles = StyleSheet.create({
   },
   phStats: {
     flexDirection: 'row',
-    borderTopWidth: 1,
     paddingTop: 14,
   },
   phStat: { flex: 1, alignItems: 'center' },
@@ -279,8 +302,6 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: 24,
     marginBottom: 16,
-    borderWidth: 1,
-    borderRadius: 20,
     overflow: 'hidden',
   },
   row: {
@@ -289,7 +310,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 13,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   rowLast: { borderBottomWidth: 0 },
   rowIcon: {

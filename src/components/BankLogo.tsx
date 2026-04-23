@@ -1,17 +1,15 @@
-// BankLogo — circular chip showing a real bank or currency logo via remote URI.
-// Falls back to a tinted initial circle if the logo can't be resolved/loaded.
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { findBankLogo, findCurrencyLogo, BrandLogo } from '../data/logos';
 import { useTheme } from '../theme';
+import { borders } from '../theme/elevation';
 
 interface BankLogoProps {
-  // Either pass a bank/provider name, or a currency code (USDT/USDC/etc.)
   name?: string;
   currency?: string;
   size?: number;
-  // Visual variant — default = solid bg chip, ghost = transparent
   variant?: 'default' | 'ghost';
+  withRing?: boolean;
 }
 
 export const BankLogo: React.FC<BankLogoProps> = ({
@@ -19,8 +17,9 @@ export const BankLogo: React.FC<BankLogoProps> = ({
   currency,
   size = 40,
   variant = 'default',
+  withRing = true,
 }) => {
-  const { theme } = useTheme();
+  const { theme, mode } = useTheme();
   const [errored, setErrored] = useState(false);
   const logo: BrandLogo | undefined = currency
     ? findCurrencyLogo(currency)
@@ -30,7 +29,9 @@ export const BankLogo: React.FC<BankLogoProps> = ({
   const initial = label.trim().charAt(0).toUpperCase();
   const radius = size / 2;
 
-  // Fallback chip — used when no logo, or remote image failed
+  const ringStyle =
+    withRing && mode === 'dark' ? borders.hairline.dark : undefined;
+
   if (!logo || errored) {
     return (
       <View
@@ -40,13 +41,20 @@ export const BankLogo: React.FC<BankLogoProps> = ({
             width: size,
             height: size,
             borderRadius: radius,
-            backgroundColor: variant === 'ghost' ? 'transparent' : theme.background.surface,
+            backgroundColor:
+              variant === 'ghost' ? 'transparent' : theme.background.surface,
           },
+          ringStyle,
         ]}
         accessible
         accessibilityLabel={label}
       >
-        <Text style={[styles.fallbackText, { fontSize: size * 0.42, color: theme.text.primary }]}>
+        <Text
+          style={[
+            styles.fallbackText,
+            { fontSize: size * 0.42, color: theme.text.primary },
+          ]}
+        >
           {initial}
         </Text>
       </View>
@@ -61,15 +69,21 @@ export const BankLogo: React.FC<BankLogoProps> = ({
           width: size,
           height: size,
           borderRadius: radius,
-          backgroundColor: variant === 'ghost' ? 'transparent' : theme.text.primary,
+          backgroundColor:
+            variant === 'ghost' ? 'transparent' : theme.text.primary,
         },
+        ringStyle,
       ]}
       accessible
       accessibilityLabel={label}
     >
       <Image
         source={{ uri: logo.uri }}
-        style={{ width: size * 0.7, height: size * 0.7, borderRadius: radius }}
+        style={{
+          width: size * 0.7,
+          height: size * 0.7,
+          borderRadius: radius,
+        }}
         resizeMode="contain"
         onError={() => setErrored(true)}
       />
@@ -89,5 +103,6 @@ const styles = StyleSheet.create({
   },
   fallbackText: {
     fontFamily: 'Inter_700Bold',
+    letterSpacing: -0.5,
   },
 });

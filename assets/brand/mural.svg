@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="900" viewBox="0 0 1800 900" preserveAspectRatio="xMidYMid slice">
+  <!--
+    Qupay currency-corridor wire lattice.
+    Single-color silhouette (#6E5A8F) on transparent ground.
+    Ground color (#2A2438) applied by the host container.
+    Inspired by Squid Router's tentacle-mural structural pattern
+    but depicts remittance corridors, not tentacles.
+  -->
+  <g fill="none" stroke="#6E5A8F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.85">
+    <!-- Corridor 1: North America ’ West Africa (long arc, upper-left to center-right) -->
+    <path d="M120 280 C320 120, 620 80, 850 200 S1100 380, 1280 320"/>
+    <!-- Corridor 2: Europe ’ East Africa (gentle S-curve, upper-center to lower-right) -->
+    <path d="M780 100 C900 180, 960 320, 1020 400 S1140 560, 1320 580"/>
+    <!-- Corridor 3: Middle East ’ South Asia (tight arc, center to far right) -->
+    <path d="M1100 220 C1200 300, 1340 340, 1480 280 S1640 200, 1720 260"/>
+    <!-- Corridor 4: South America ’ West Africa (rising arc, lower-left to center) -->
+    <path d="M200 680 C380 580, 560 480, 740 440 S920 400, 1020 440"/>
+    <!-- Corridor 5: East Asia ’ Southeast Asia (descending sweep, far right) -->
+    <path d="M1400 140 C1500 220, 1560 360, 1600 480 S1640 620, 1680 700"/>
+    <!-- Corridor 6: Europe ’ South America (long diagonal, upper-center to lower-left) -->
+    <path d="M820 60 C700 160, 560 340, 440 480 S280 640, 160 740"/>
+    <!-- Corridor 7: North America ’ South America (west coast arc) -->
+    <path d="M80 320 C60 440, 80 560, 140 660 S240 760, 340 800"/>
+    <!-- Corridor 8: Central hub connector (radiating from Africa hub) -->
+    <path d="M1020 440 C1060 480, 1080 540, 1060 600 S1020 680, 980 740"/>
+    <!-- Corridor 9: East Africa ’ South Africa (southbound) -->
+    <path d="M1320 580 C1300 640, 1260 720, 1200 780"/>
+    <!-- Corridor 10: Middle East ’ Europe (return path) -->
+    <path d="M1100 220 C1040 180, 960 140, 880 120"/>
+
+    <!-- Continental anchor nodes (small filled circles) -->
+    <circle cx="120" cy="280" r="6" fill="#6E5A8F" stroke="none"/>
+    <!-- North America -->
+    <circle cx="200" cy="680" r="6" fill="#6E5A8F" stroke="none"/>
+    <!-- South America entry -->
+    <circle cx="340" cy="800" r="5" fill="#6E5A8F" stroke="none"/>
+    <!-- South America south -->
+    <circle cx="780" cy="100" r="6" fill="#6E5A8F" stroke="none"/>
+    <!-- Europe -->
+    <circle cx="1020" cy="440" r="8" fill="#6E5A8F" stroke="none"/>
+    <!-- Africa hub (larger) -->
+    <circle cx="1280" cy="320" r="6" fill="#6E5A8F" stroke="none"/>
+    <!-- West Africa terminus -->
+    <circle cx="1320" cy="580" r="6" fill="#6E5A8F" stroke="none"/>
+    <!-- East Africa -->
+    <circle cx="1100" cy="220" r="6" fill="#6E5A8F" stroke="none"/>
+    <!-- Middle East -->
+    <circle cx="1480" cy="280" r="5" fill="#6E5A8F" stroke="none"/>
+    <!-- South Asia -->
+    <circle cx="1720" cy="260" r="5" fill="#6E5A8F" stroke="none"/>
+    <!-- South Asia far -->
+    <circle cx="1400" cy="140" r="5" fill="#6E5A8F" stroke="none"/>
+    <!-- East Asia -->
+    <circle cx="1680" cy="700" r="5" fill="#6E5A8F" stroke="none"/>
+    <!-- Southeast Asia -->
+    <circle cx="1200" cy="780" r="5" fill="#6E5A8F" stroke="none"/>
+    <!-- South Africa -->
+    <circle cx="160" cy="740" r="5" fill="#6E5A8F" stroke="none"/>
+    <!-- South America west -->
+    <circle cx="980" cy="740" r="5" fill="#6E5A8F" stroke="none"/>
+    <!-- Africa south hub -->
+
+    <!-- Secondary fine-detail arcs (thinner, subtler connectors) -->
+    <g stroke-width="1.2" opacity="0.5">
+      <path d="M850 200 C880 260, 940 340, 1020 440"/>
+      <path d="M1280 320 C1300 400, 1320 500, 1320 580"/>
+      <path d="M740 440 C780 400, 820 340, 850 200"/>
+      <path d="M440 480 C520 500, 640 480, 740 440"/>
+      <path d="M1480 280 C1520 340, 1560 420, 1600 480"/>
+      <path d="M140 660 C180 680, 200 680, 200 680"/>
+      <path d="M1060 600 C1100 620, 1160 640, 1200 780"/>
+      <path d="M880 120 C840 100, 800 90, 780 100"/>
+      <!-- Faint radial lines from Africa hub -->
+      <path d="M1020 440 C1060 420, 1100 380, 1100 220"/>
+      <path d="M1020 440 C960 420, 900 380, 850 200"/>
+    </g>
+  </g>
+</svg>

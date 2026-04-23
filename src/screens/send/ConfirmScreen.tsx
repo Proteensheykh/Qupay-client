@@ -5,22 +5,23 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Platform,
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { CommonActions } from '@react-navigation/native';
 import { Ionicons } from '../../components/Icon';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { ScreenHeader, Avatar, CTAButton, BottomSheet, Toast } from '../../components';
-import { networkLogos } from '../../data/cryptoIcons';
+import { findNetworkLogo } from '../../data/logos';
 import { createTransaction } from '../../api/transactions';
 import { useTransactionStore } from '../../store/transactionStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
-import { useTheme } from '../../theme';
+import { spacing, typography } from '../../theme';
+import { palette } from '../../theme/colors';
+import { radii } from '../../theme/radii';
+import { borders } from '../../theme/elevation';
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'Confirm'>;
 type Stage = 'confirm' | 'detecting';
@@ -72,8 +73,8 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
     corridorId,
   } = route.params;
 
-  const { theme } = useTheme();
   const updateStatus = useTransactionStore((state) => state.updateStatus);
+  const hairline = borders.hairline.dark;
 
   const isCryptoOut = receiveCurrency === 'USDT';
   const recvSymbol = currencySymbols[receiveCurrency] || '';
@@ -244,22 +245,11 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const currentStep = RADAR_STEPS[processingStep] || RADAR_STEPS[0];
   const isDone = processingStep >= 4;
-  const ringColor = isDone ? theme.success.main : theme.secondary.main;
-  const gradientTop = processingStep <= 1
-    ? theme.info.bg
-    : processingStep <= 3
-      ? theme.action.selected
-      : theme.success.bg;
+  const ringColor = isDone ? palette.status.positive : palette.royal[500];
 
   if (stage === 'detecting') {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]} edges={['top', 'bottom']}>
-        <LinearGradient
-          colors={[gradientTop, 'transparent']}
-          locations={[0, 0.6]}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
+      <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top', 'bottom']}>
         <View style={styles.detectingContainer}>
           <View style={styles.radarWrap}>
             <View
@@ -295,7 +285,9 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
               style={[
                 styles.radarCenter,
                 {
-                  backgroundColor: isDone ? theme.success.bg : theme.info.bg,
+                  backgroundColor: isDone ? 'rgba(122,232,112,0.12)' : palette.grey[800],
+                  borderWidth: isDone ? 0 : 1,
+                  borderColor: isDone ? 'transparent' : palette.material.lightThin,
                   transform: isDone ? [] : [{ rotate: `${spinDeg}deg` }],
                 },
               ]}
@@ -308,8 +300,8 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
             </View>
           </View>
 
-          <Text style={[styles.detectingTitle, { color: theme.text.primary }]}>{currentStep.label}</Text>
-          <Text style={[styles.detectingSub, { color: theme.text.secondary }]}>{currentStep.sub}</Text>
+          <Text style={[styles.detectingTitle, { color: palette.grey[300] }]}>{currentStep.label}</Text>
+          <Text style={[styles.detectingSub, { color: palette.grey[500] }]}>{currentStep.sub}</Text>
 
           <View style={styles.radarDots}>
             {RADAR_STEPS.map((_, i) => (
@@ -317,22 +309,22 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
                 key={i}
                 style={[
                   styles.radarDot,
-                  { backgroundColor: theme.action.selected },
-                  i <= processingStep && !isDone && { backgroundColor: theme.secondary.main },
-                  i <= processingStep && isDone && { backgroundColor: theme.success.main },
+                  { backgroundColor: palette.material.lightThin },
+                  i <= processingStep && !isDone && { backgroundColor: palette.royal[500] },
+                  i <= processingStep && isDone && { backgroundColor: palette.status.positive },
                 ]}
               />
             ))}
           </View>
 
-          <View style={[styles.radarSummary, { backgroundColor: theme.background.paper }]}>
-            <Text style={[styles.radarSummaryText, { color: theme.text.primary }]}>
+          <View style={[styles.radarSummary, { backgroundColor: palette.grey[800] }, hairline]}>
+            <Text style={[styles.radarSummaryText, { color: palette.grey[300] }]}>
               {sendSymbol}{amount.toLocaleString()} {sendCurrency} {'\u2192'}{' '}
               {isCryptoOut
                 ? `${formatUSDT(receiveAmount)} USDT`
                 : `${recvSymbol}${receiveAmount.toLocaleString()} ${receiveCurrency}`}
             </Text>
-            <Text style={[styles.radarSummaryRecipient, { color: theme.text.secondary }]}>
+            <Text style={[styles.radarSummaryRecipient, { color: palette.grey[500] }]}>
               to {recipientName} {'\u00B7'} {isCryptoOut ? recipientNetwork : recipientMethod}
             </Text>
           </View>
@@ -342,7 +334,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
       <Toast
         visible={showError}
         message={errorMessage}
@@ -352,42 +344,46 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
       <ScreenHeader title="Confirm" onBack={() => navigation.goBack()} />
       <ScrollView
         style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        <View style={[styles.reviewCard, { backgroundColor: palette.grey[800] }, hairline]}>
         {/* Recipient strip */}
-        <View style={[styles.recipStrip, { backgroundColor: theme.background.surface, borderColor: theme.inputBorder }]}>
+        <View style={styles.recipStrip}>
           <Avatar seed={recipientName} size={34} />
           <View style={styles.rsInfo}>
-            <Text style={[styles.rsName, { color: theme.text.primary }]}>{recipientName}</Text>
+            <Text style={[styles.rsName, { color: palette.grey[300] }]}>{recipientName}</Text>
             {isCryptoOut ? (
               <View style={styles.rsWalletRow}>
-                <Text style={[styles.rsWalletAddr, { color: theme.text.muted }]}>{truncateAddress(recipientWalletAddress || '')}</Text>
-                <View style={[styles.rsNetworkBadge, { backgroundColor: theme.info.bg }]}>
-                  <Ionicons name={(networkIconMap[recipientNetwork || ''] || 'layers-outline') as any} size={10} color={theme.secondary.main} />
-                  <Text style={[styles.rsNetworkText, { color: theme.secondary.main }]}>{recipientNetwork}</Text>
+                <Text style={[styles.rsWalletAddr, { color: palette.grey[500] }]}>{truncateAddress(recipientWalletAddress || '')}</Text>
+                <View style={[styles.rsNetworkBadge, { backgroundColor: palette.grey[900] }, hairline]}>
+                  <Ionicons name={(networkIconMap[recipientNetwork || ''] || 'layers-outline') as any} size={10} color={palette.grey[300]} />
+                  <Text style={[styles.rsNetworkText, { color: palette.grey[300] }]}>{recipientNetwork}</Text>
                 </View>
               </View>
             ) : (
-              <Text style={[styles.rsSub, { color: theme.text.secondary }]}>{recipientMethod} {'\u00B7'} No Qupay account needed</Text>
+              <Text style={[styles.rsSub, { color: palette.grey[500] }]}>{recipientMethod} {'\u00B7'} No Qupay account needed</Text>
             )}
           </View>
-          <View style={[styles.vtag, { backgroundColor: theme.info.bg }]}>
-            <Ionicons name="checkmark" size={10} color={theme.secondary.main} />
-            <Text style={[styles.vtagText, { color: theme.secondary.main }]}>Verified</Text>
+          <View style={[styles.vtag, { backgroundColor: palette.grey[900] }, hairline]}>
+            <Ionicons name="checkmark" size={10} color={palette.status.positive} />
+            <Text style={[styles.vtagText, { color: palette.grey[300] }]}>Verified</Text>
           </View>
         </View>
 
-        {/* Swap summary */}
-        <View style={[styles.swapCard, { backgroundColor: theme.background.surface, borderColor: theme.inputBorder }]}>
+        <View style={styles.reviewDivider} />
+
+        {/* Swap summary — tabular rows */}
+        <View style={styles.reviewPad}>
           <View style={styles.swapRow}>
-            <Text style={[styles.swapLabel, { color: theme.text.secondary }]}>You send</Text>
-            <Text style={[styles.swapValue, { color: theme.text.primary }]}>{sendSymbol}{amount.toLocaleString()} {sendCurrency}</Text>
+            <Text style={[styles.swapLabel, { color: palette.grey[500] }]}>You send</Text>
+            <Text style={[styles.swapValue, { color: palette.grey[300] }]}>{sendSymbol}{amount.toLocaleString()} {sendCurrency}</Text>
           </View>
-          <View style={[styles.swapDivider, { backgroundColor: theme.inputBorder }]} />
+          <View style={styles.reviewDivider} />
           <View style={styles.swapRow}>
-            <Text style={[styles.swapLabel, { color: theme.text.secondary }]}>They receive</Text>
-            <Text style={[styles.swapValueGreen, { color: theme.secondary.main }]}>
+            <Text style={[styles.swapLabel, { color: palette.grey[500] }]}>They receive</Text>
+            <Text style={[styles.swapValue, { color: palette.grey[300] }]}>
               {isCryptoOut
                 ? `${receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`
                 : `${recvSymbol}${receiveAmount.toLocaleString()} ${receiveCurrency}`}
@@ -395,35 +391,42 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
         </View>
 
+        <View style={styles.reviewDivider} />
+
         {/* Fee + delivery */}
-        <View style={styles.metaRows}>
+        <View style={[styles.metaRows, styles.reviewPad]}>
           <View style={styles.feeRow}>
-            <Text style={[styles.feeLabel, { color: theme.text.secondary }]}>Fee included</Text>
-            <Text style={[styles.feeValue, { color: theme.text.primary }]}>
-              {isCryptoOut ? `${sendSymbol}${fee.toLocaleString()}` : `${recvSymbol}${fee.toLocaleString()}`} <Text style={[styles.feePct, { color: theme.secondary.main }]}>{feePct}%</Text>
+            <Text style={[styles.feeLabel, { color: palette.grey[500] }]}>Fee included</Text>
+            <Text style={[styles.feeValue, { color: palette.grey[300] }]}>
+              {isCryptoOut ? `${sendSymbol}${fee.toLocaleString()}` : `${recvSymbol}${fee.toLocaleString()}`}{' '}
+              <Text style={[styles.feePct, { color: palette.grey[500] }]}>{feePct}%</Text>
             </Text>
           </View>
           <View style={styles.feeRow}>
-            <Text style={[styles.feeLabel, { color: theme.text.secondary }]}>Delivery</Text>
+            <Text style={[styles.feeLabel, { color: palette.grey[500] }]}>Delivery</Text>
             <View style={styles.deliveryPill}>
-              <Ionicons name="flash" size={11} color={theme.secondary.main} />
-              <Text style={[styles.deliveryText, { color: theme.secondary.main }]}>~2 min via {isCryptoOut ? recipientNetwork : recipientMethod}</Text>
+              <Ionicons name="flash" size={11} color={palette.grey[500]} />
+              <Text style={[styles.deliveryText, { color: palette.grey[300] }]}>
+                ~2 min via {isCryptoOut ? recipientNetwork : recipientMethod}
+              </Text>
             </View>
           </View>
         </View>
 
+        <View style={styles.reviewDivider} />
+
         {isCryptoOut ? (
           <>
-            {/* Recipient Wallet Card - for crypto out */}
-            <View style={[styles.walletCard, { backgroundColor: theme.background.surface, borderColor: theme.info.bg }]}>
+            {/* Recipient Wallet - for crypto out */}
+            <View style={styles.walletCard}>
               <View style={styles.wcHeader}>
                 <View style={styles.wcHeaderLeft}>
-                  <View style={[styles.wcIcon, { backgroundColor: theme.info.bg }]}>
-                    <Ionicons name="wallet-outline" size={18} color={theme.secondary.main} />
+                  <View style={[styles.wcIcon, { backgroundColor: palette.grey[900] }, hairline]}>
+                    <Ionicons name="wallet-outline" size={18} color={palette.grey[300]} />
                   </View>
                   <View>
-                    <Text style={[styles.wcTitle, { color: theme.text.primary }]}>Recipient Wallet</Text>
-                    <Text style={[styles.wcSubtitle, { color: theme.text.muted }]}>
+                    <Text style={[styles.wcTitle, { color: palette.grey[300] }]}>Recipient Wallet</Text>
+                    <Text style={[styles.wcSubtitle, { color: palette.grey[500] }]}>
                       {receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT will be sent to this address
                     </Text>
                   </View>
@@ -432,91 +435,93 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
 
               {/* Network display */}
               <View style={styles.wcNetworkRow}>
-                <Text style={[styles.wcNetworkLabel, { color: theme.text.muted }]}>Network</Text>
-                <View style={[styles.wcNetworkPill, { backgroundColor: theme.info.bg, borderColor: theme.secondary.main }]}>
-                  <Ionicons name={(networkIconMap[recipientNetwork || ''] || 'layers-outline') as any} size={14} color={theme.secondary.main} />
-                  <Text style={[styles.wcNetworkName, { color: theme.text.primary }]}>{recipientNetwork}</Text>
+                <Text style={[styles.wcNetworkLabel, { color: palette.grey[500] }]}>Network</Text>
+                <View style={[styles.wcNetworkPill, { backgroundColor: palette.grey[900] }, hairline]}>
+                  <Ionicons name={(networkIconMap[recipientNetwork || ''] || 'layers-outline') as any} size={14} color={palette.grey[300]} />
+                  <Text style={[styles.wcNetworkName, { color: palette.grey[300] }]}>{recipientNetwork}</Text>
                 </View>
               </View>
 
               {/* Address display */}
-              <View style={[styles.wcAddressBox, { backgroundColor: theme.background.default, borderColor: theme.inputBorder }]}>
-                <Text style={[styles.wcAddrMono, { color: theme.text.primary }]} selectable>{recipientWalletAddress}</Text>
+              <View style={[styles.wcAddressBox, { backgroundColor: palette.grey[900], borderColor: palette.material.lightThin }]}>
+                <Text style={[styles.wcAddrMono, { color: palette.grey[300] }]} selectable>{recipientWalletAddress}</Text>
               </View>
 
               {/* Copy button */}
-              <TouchableOpacity style={[styles.copyBtn, { backgroundColor: theme.background.surface, borderColor: theme.inputBorder }]} onPress={handleCopy} activeOpacity={0.7}>
+              <TouchableOpacity style={[styles.copyBtn, { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin }]} onPress={handleCopy} activeOpacity={0.7}>
                 <Ionicons
                   name={copied ? 'checkmark-circle' : 'copy-outline'}
                   size={16}
-                  color={copied ? theme.secondary.main : theme.text.primary}
+                  color={copied ? palette.royal[500] : palette.grey[300]}
                 />
-                <Text style={[styles.copyText, { color: copied ? theme.secondary.main : theme.text.primary }]}>
+                <Text style={[styles.copyText, { color: copied ? palette.royal[500] : palette.grey[300] }]}>
                   {copied ? 'Copied!' : 'Copy address'}
                 </Text>
               </TouchableOpacity>
 
               {/* Info */}
               <View style={styles.infoRow}>
-                <Ionicons name="information-circle-outline" size={14} color={theme.secondary.main} />
-                <Text style={[styles.infoText, { color: theme.info.text }]}>
+                <Ionicons name="information-circle-outline" size={14} color={palette.grey[500]} />
+                <Text style={[styles.infoText, { color: palette.grey[500] }]}>
                   Funds will be sent as USDT on {recipientNetwork} to the recipient's wallet
                 </Text>
               </View>
             </View>
 
+            <View style={styles.reviewDivider} />
+
             {/* Pay with section */}
-            <View style={[styles.payWithCard, { backgroundColor: theme.background.surface, borderColor: theme.inputBorder }]}>
+            <View style={styles.payWithCard}>
               <View style={styles.pwHeader}>
-                <View style={[styles.pwIcon, { backgroundColor: theme.info.bg }]}>
-                  <Ionicons name="card-outline" size={18} color={theme.secondary.main} />
+                <View style={[styles.pwIcon, { backgroundColor: palette.grey[900] }, hairline]}>
+                  <Ionicons name="card-outline" size={18} color={palette.grey[300]} />
                 </View>
                 <View>
-                  <Text style={[styles.pwTitle, { color: theme.text.primary }]}>Pay with</Text>
-                  <Text style={[styles.pwSubtitle, { color: theme.text.muted }]}>Select a payment method</Text>
+                  <Text style={[styles.pwTitle, { color: palette.grey[300] }]}>Pay with</Text>
+                  <Text style={[styles.pwSubtitle, { color: palette.grey[500] }]}>Select a payment method</Text>
                 </View>
               </View>
 
               {/* Mock payment method */}
-              <View style={[styles.paymentMethod, { backgroundColor: theme.info.bg, borderColor: theme.secondary.light }]}>
+              <View style={[styles.paymentMethod, { backgroundColor: palette.grey[900] }, hairline]}>
                 <View style={styles.pmLeft}>
-                  <View style={[styles.pmIconWrap, { backgroundColor: theme.success.main }]}>
-                    <Ionicons name="business" size={16} color={theme.text.primary} />
+                  <View style={[styles.pmIconWrap, { backgroundColor: palette.status.positive }]}>
+                    <Ionicons name="business" size={16} color={palette.grey[900]} />
                   </View>
                   <View>
-                    <Text style={[styles.pmTitle, { color: theme.text.primary }]}>GTBank</Text>
-                    <Text style={[styles.pmSub, { color: theme.text.muted }]}>Account ending ****4521</Text>
+                    <Text style={[styles.pmTitle, { color: palette.grey[300] }]}>GTBank</Text>
+                    <Text style={[styles.pmSub, { color: palette.grey[500] }]}>Account ending ****4521</Text>
                   </View>
                 </View>
-                <Ionicons name="checkmark-circle" size={20} color={theme.secondary.main} />
+                <Ionicons name="checkmark-circle" size={20} color={palette.status.positive} />
               </View>
 
-              <View style={[styles.paymentMethodAlt, { backgroundColor: theme.divider, borderColor: theme.inputBorder }]}>
+              <View style={[styles.paymentMethodAlt, { backgroundColor: palette.grey[900], borderColor: palette.material.lightThin }]}>
                 <View style={styles.pmLeft}>
-                  <View style={[styles.pmIconWrap, { backgroundColor: theme.inputBorder }]}>
-                    <Ionicons name="card" size={16} color={theme.text.muted} />
+                  <View style={[styles.pmIconWrap, { backgroundColor: palette.grey[800] }]}>
+                    <Ionicons name="card" size={16} color={palette.grey[500]} />
                   </View>
                   <View>
-                    <Text style={[styles.pmTitleAlt, { color: theme.text.secondary }]}>Debit Card</Text>
-                    <Text style={[styles.pmSubAlt, { color: theme.text.disabled }]}>Visa ending ****8912</Text>
+                    <Text style={[styles.pmTitleAlt, { color: palette.grey[500] }]}>Debit Card</Text>
+                    <Text style={[styles.pmSubAlt, { color: palette.grey[600] }]}>Visa ending ****8912</Text>
                   </View>
                 </View>
-                <View style={[styles.pmRadio, { borderColor: theme.text.disabled }]} />
+                <View style={[styles.pmRadio, { borderColor: palette.grey[600] }]} />
               </View>
             </View>
           </>
         ) : (
           <>
-            {/* Deposit Address Card - for crypto in */}
-            <View style={[styles.depositCard, { backgroundColor: theme.background.surface, borderColor: theme.info.bg }]}>
+            {/* Deposit Address - for crypto in */}
+            <View style={styles.depositCard}>
               <View style={styles.dcHeader}>
                 <View style={styles.dcHeaderLeft}>
-                  <View style={[styles.dcIcon, { backgroundColor: theme.info.bg }]}>
-                    <Ionicons name="wallet-outline" size={18} color={theme.secondary.main} />
+                  <View style={[styles.dcIcon, { backgroundColor: palette.grey[900] }, hairline]}>
+                    <Ionicons name="wallet-outline" size={18} color={palette.grey[300]} />
                   </View>
                   <View>
-                    <Text style={[styles.dcTitle, { color: theme.text.primary }]}>Deposit Address</Text>
-                    <Text style={[styles.dcSubtitle, { color: theme.text.muted }]}>
+                    <Text style={[styles.dcTitle, { color: palette.grey[300] }]}>Deposit Address</Text>
+                    <Text style={[styles.dcSubtitle, { color: palette.grey[500] }]}>
                       Send exactly {amount} {sendCurrency} to this address
                     </Text>
                   </View>
@@ -529,52 +534,53 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
                 onPress={() => setShowNetworkPicker(true)}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.networkLabel, { color: theme.text.muted }]}>Network</Text>
-                <View style={[styles.networkPill, { backgroundColor: theme.background.surface, borderColor: theme.inputBorder }]}>
+                <Text style={[styles.networkLabel, { color: palette.grey[500] }]}>Network</Text>
+                <View style={[styles.networkPill, { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin }]}>
                   <Text style={styles.networkIcon}>{selectedNetwork.icon}</Text>
-                  <Text style={[styles.networkName, { color: theme.text.primary }]}>{selectedNetwork.name}</Text>
-                  <Text style={[styles.networkGas, { color: theme.text.muted }]}>{selectedNetwork.gas} gas</Text>
-                  <Ionicons name="chevron-down" size={12} color={theme.text.muted} />
+                  <Text style={[styles.networkName, { color: palette.grey[300] }]}>{selectedNetwork.name}</Text>
+                  <Text style={[styles.networkGas, { color: palette.grey[500] }]}>{selectedNetwork.gas} gas</Text>
+                  <Ionicons name="chevron-down" size={12} color={palette.grey[500]} />
                 </View>
               </TouchableOpacity>
 
               {/* Address display */}
               <TouchableOpacity
-                style={[styles.addressBox, { backgroundColor: theme.background.default, borderColor: theme.inputBorder }]}
+                style={[styles.addressBox, { backgroundColor: palette.grey[900], borderColor: palette.material.lightThin }]}
                 onPress={() => setShowQR(true)}
                 activeOpacity={0.7}
               >
                 <View style={styles.addrLeft}>
-                  <Text style={[styles.addrMono, { color: theme.text.primary }]}>{shortAddr}</Text>
-                  <Text style={[styles.addrHint, { color: theme.text.disabled }]}>Tap to show QR code</Text>
+                  <Text style={[styles.addrMono, { color: palette.grey[300] }]}>{shortAddr}</Text>
+                  <Text style={[styles.addrHint, { color: palette.grey[600] }]}>Tap to show QR code</Text>
                 </View>
-                <View style={[styles.qrMini, { backgroundColor: theme.info.bg, borderColor: theme.info.bg }]}>
-                  <Ionicons name="qr-code-outline" size={28} color={theme.secondary.main} />
+                <View style={[styles.qrMini, { backgroundColor: palette.grey[900] }, hairline]}>
+                  <Ionicons name="qr-code-outline" size={28} color={palette.grey[300]} />
                 </View>
               </TouchableOpacity>
 
               {/* Copy button */}
-              <TouchableOpacity style={[styles.copyBtn, { backgroundColor: theme.background.surface, borderColor: theme.inputBorder }]} onPress={handleCopy} activeOpacity={0.7}>
+              <TouchableOpacity style={[styles.copyBtn, { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin }]} onPress={handleCopy} activeOpacity={0.7}>
                 <Ionicons
                   name={copied ? 'checkmark-circle' : 'copy-outline'}
                   size={16}
-                  color={copied ? theme.secondary.main : theme.text.primary}
+                  color={copied ? palette.royal[500] : palette.grey[300]}
                 />
-                <Text style={[styles.copyText, { color: copied ? theme.secondary.main : theme.text.primary }]}>
+                <Text style={[styles.copyText, { color: copied ? palette.royal[500] : palette.grey[300] }]}>
                   {copied ? 'Copied!' : 'Copy address'}
                 </Text>
               </TouchableOpacity>
 
               {/* Warning */}
               <View style={styles.warnRow}>
-                <Ionicons name="alert-circle-outline" size={14} color={theme.warning.main} />
-                <Text style={[styles.warnText, { color: theme.warning.text }]}>
+                <Ionicons name="alert-circle-outline" size={14} color={palette.status.partial} />
+                <Text style={[styles.warnText, { color: palette.grey[300] }]}>
                   Only send {sendCurrency} on {selectedNetwork.name}. Sending other tokens or using a different network may result in loss of funds.
                 </Text>
               </View>
             </View>
           </>
         )}
+        </View>
 
         {/* CTA */}
         <View style={styles.ctaWrap}>
@@ -583,7 +589,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
             onPress={handleProceed}
             loading={loading}
           />
-          <Text style={[styles.ctaNote, { color: theme.text.muted }]}>
+          <Text style={[styles.ctaNote, { color: palette.grey[500] }]}>
             {isCryptoOut
               ? `You will be charged ${sendSymbol}${amount.toLocaleString()} ${sendCurrency}`
               : 'Make sure to copy the deposit address before proceeding'}
@@ -596,16 +602,16 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
         {networks.map((n) => (
           <TouchableOpacity
             key={n.id}
-            style={[styles.cpItem, { borderBottomColor: theme.inputBorder }, selectedNetwork.id === n.id && { backgroundColor: theme.info.bg }]}
+            style={[styles.cpItem, { borderBottomColor: palette.material.lightThin }, selectedNetwork.id === n.id && { backgroundColor: 'rgba(251,251,253,0.06)' }]}
             onPress={() => { setSelectedNetwork(n); setShowNetworkPicker(false); setCopied(false); }}
             activeOpacity={0.7}
           >
-            <Image source={{ uri: networkLogos[n.id] }} style={styles.cpLogo} />
+            <Image source={{ uri: findNetworkLogo(n.id)?.uri }} style={styles.cpLogo} />
             <View style={styles.cpInfo}>
-              <Text style={[styles.cpName, { color: theme.text.primary }]}>{n.name}</Text>
-              <Text style={[styles.cpSub, { color: theme.text.secondary }]}>Gas {n.gas}</Text>
+              <Text style={[styles.cpName, { color: palette.grey[300] }]}>{n.name}</Text>
+              <Text style={[styles.cpSub, { color: palette.grey[500] }]}>Gas {n.gas}</Text>
             </View>
-            {selectedNetwork.id === n.id && <Ionicons name="checkmark" size={18} color={theme.secondary.main} />}
+            {selectedNetwork.id === n.id && <Ionicons name="checkmark" size={18} color={palette.royal[500]} />}
           </TouchableOpacity>
         ))}
         <View style={{ height: 40 }} />
@@ -614,7 +620,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
       {/* QR Code Sheet - only for crypto in */}
       <BottomSheet visible={showQR} onClose={() => setShowQR(false)} title="Scan to Deposit">
         <View style={styles.qrSheet}>
-          <View style={[styles.qrBox, { backgroundColor: theme.background.paper }]}>
+          <View style={[styles.qrBox, { backgroundColor: palette.grey[800] }]}>
             <View style={styles.qrGrid}>
               {Array.from({ length: 169 }).map((_, i) => {
                 const qrFilled =
@@ -625,21 +631,21 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
                 return (
                   <View
                     key={i}
-                    style={[styles.qrCell, qrFilled && { backgroundColor: theme.background.default }]}
+                    style={[styles.qrCell, qrFilled && { backgroundColor: palette.grey[900] }]}
                   />
                 );
               })}
             </View>
           </View>
           <View style={styles.qrInfo}>
-            <Text style={[styles.qrNetwork, { color: theme.text.primary }]}>{selectedNetwork.icon} {selectedNetwork.name}</Text>
-            <Text style={[styles.qrAddr, { color: theme.text.secondary }]} selectable>{selectedNetwork.address}</Text>
+            <Text style={[styles.qrNetwork, { color: palette.grey[300] }]}>{selectedNetwork.icon} {selectedNetwork.name}</Text>
+            <Text style={[styles.qrAddr, { color: palette.grey[500] }]} selectable>{selectedNetwork.address}</Text>
           </View>
-          <TouchableOpacity style={[styles.qrCopyBtn, { backgroundColor: theme.secondary.main }]} onPress={handleCopy} activeOpacity={0.7}>
-            <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={16} color={theme.background.default} />
-            <Text style={[styles.qrCopyText, { color: theme.background.default }]}>{copied ? 'Copied!' : 'Copy address'}</Text>
+          <TouchableOpacity style={[styles.qrCopyBtn, { backgroundColor: palette.royal[500] }]} onPress={handleCopy} activeOpacity={0.7}>
+            <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={16} color={palette.grey[100]} />
+            <Text style={[styles.qrCopyText, { color: palette.grey[100] }]}>{copied ? 'Copied!' : 'Copy address'}</Text>
           </TouchableOpacity>
-          <Text style={[styles.qrWarn, { color: theme.text.muted }]}>
+          <Text style={[styles.qrWarn, { color: palette.grey[500] }]}>
             Send exactly {amount} {sendCurrency} on {selectedNetwork.name}
           </Text>
         </View>
@@ -652,6 +658,24 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { flex: 1 },
+  scrollContent: {
+    paddingBottom: spacing(6),
+  },
+  reviewCard: {
+    marginHorizontal: spacing(6),
+    marginBottom: spacing(4),
+    borderRadius: radii.lg,
+    overflow: 'hidden',
+  },
+  reviewDivider: {
+    height: 1,
+    backgroundColor: palette.material.lightThin,
+    width: '100%',
+  },
+  reviewPad: {
+    paddingHorizontal: spacing(4),
+    paddingVertical: spacing(3),
+  },
   detectingContainer: {
     flex: 1,
     alignItems: 'center',
@@ -694,14 +718,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   detectingTitle: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 22,
+    ...typography.h3,
     marginBottom: 8,
     textAlign: 'center',
   },
   detectingSub: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
+    ...typography.bodySm,
     textAlign: 'center',
     paddingHorizontal: 40,
   },
@@ -718,218 +740,230 @@ const styles = StyleSheet.create({
   radarSummary: {
     alignItems: 'center',
     marginTop: 32,
-    borderRadius: 16,
+    borderRadius: radii.md,
     paddingVertical: 16,
     paddingHorizontal: 24,
   },
   radarSummaryText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 15,
+    ...typography.main14,
     fontVariant: ['tabular-nums'],
   },
   radarSummaryRecipient: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
+    ...typography.secondary12,
     marginTop: 4,
   },
   recipStrip: {
-    marginHorizontal: 24, marginBottom: 16, flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingVertical: 10, paddingHorizontal: 14,
-    borderWidth: 1, borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: spacing(3),
+    paddingHorizontal: spacing(4),
   },
   rsInfo: { flex: 1 },
-  rsName: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
-  rsSub: { fontFamily: 'Inter_400Regular', fontSize: 11 },
+  rsName: { ...typography.main14 },
+  rsSub: { ...typography.secondary12 },
   rsWalletRow: {
     flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2,
   },
   rsWalletAddr: {
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 10,
+    ...typography.monoXs,
   },
   rsNetworkBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    borderRadius: 6,
+    borderRadius: radii.sm,
     paddingVertical: 2, paddingHorizontal: 6,
   },
   rsNetworkText: {
-    fontFamily: 'Inter_600SemiBold', fontSize: 9,
+    ...typography.labelXs,
+    textTransform: 'none',
+    letterSpacing: 0,
   },
   vtag: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    borderRadius: 20, paddingVertical: 3, paddingHorizontal: 8,
+    borderRadius: radii.pill, paddingVertical: 3, paddingHorizontal: 8,
   },
-  vtagText: { fontFamily: 'Inter_600SemiBold', fontSize: 10 },
-  swapCard: {
-    marginHorizontal: 24, marginBottom: 16,
-    borderWidth: 1, borderRadius: 14, padding: 16,
-  },
+  vtagText: { ...typography.labelSm, textTransform: 'none', letterSpacing: 0 },
   swapRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-  },
-  swapDivider: {
-    height: 1, marginVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    gap: spacing(2),
   },
   swapLabel: {
-    fontFamily: 'Inter_400Regular', fontSize: 12,
+    ...typography.subheader2,
+    flexShrink: 0,
+    paddingRight: spacing(2),
   },
   swapValue: {
-    fontFamily: 'Inter_600SemiBold', fontSize: 15,
-  },
-  swapValueGreen: {
-    fontFamily: 'Inter_600SemiBold', fontSize: 15,
+    ...typography.main14,
+    fontVariant: ['tabular-nums'],
+    textAlign: 'right',
+    flex: 1,
   },
   metaRows: {
-    marginHorizontal: 24, marginBottom: 16, gap: 8,
+    gap: spacing(2),
   },
   feeRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: spacing(2),
   },
   deliveryPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+    justifyContent: 'flex-end',
+    minWidth: 0,
   },
   deliveryText: {
-    fontFamily: 'Inter_600SemiBold', fontSize: 12,
+    ...typography.main12,
+    fontVariant: ['tabular-nums'],
+    textAlign: 'right',
+    flexShrink: 1,
   },
-  feeLabel: { fontFamily: 'Inter_400Regular', fontSize: 12 },
-  feeValue: { fontFamily: 'Inter_500Medium', fontSize: 12, fontVariant: ['tabular-nums'] },
-  feePct: { fontFamily: 'Inter_400Regular', fontSize: 11 },
+  feeLabel: { ...typography.subheader2, flexShrink: 0 },
+  feeValue: {
+    ...typography.monoSm,
+    fontVariant: ['tabular-nums'],
+    textAlign: 'right',
+    flex: 1,
+  },
+  feePct: { ...typography.monoXs, fontVariant: ['tabular-nums'] },
   walletCard: {
-    marginHorizontal: 24, marginBottom: 16,
-    borderWidth: 1.5, borderRadius: 20, overflow: 'hidden',
+    paddingBottom: spacing(1),
   },
   wcHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: 16, paddingBottom: 12,
+    paddingHorizontal: spacing(4), paddingTop: spacing(4), paddingBottom: spacing(3),
   },
   wcHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   wcIcon: {
-    width: 36, height: 36, borderRadius: 12,
+    width: 36, height: 36, borderRadius: radii.sm,
     alignItems: 'center', justifyContent: 'center',
   },
-  wcTitle: { fontFamily: 'Inter_700Bold', fontSize: 14 },
-  wcSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 1 },
+  wcTitle: { ...typography.h4 },
+  wcSubtitle: { ...typography.secondary12, marginTop: 1 },
   wcNetworkRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingBottom: 14,
+    paddingHorizontal: spacing(4), paddingBottom: spacing(3),
   },
-  wcNetworkLabel: { fontFamily: 'Inter_500Medium', fontSize: 12 },
+  wcNetworkLabel: { ...typography.subheader2 },
   wcNetworkPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     borderWidth: 1,
-    borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12,
+    borderRadius: radii.pill, paddingVertical: 6, paddingHorizontal: 12,
   },
-  wcNetworkName: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
+  wcNetworkName: { ...typography.main12 },
   wcAddressBox: {
-    marginHorizontal: 16, marginBottom: 12,
-    borderWidth: 1, borderRadius: 14, padding: 14,
+    marginHorizontal: spacing(4), marginBottom: spacing(3),
+    borderWidth: 1, borderRadius: radii.md, padding: spacing(3),
   },
   wcAddrMono: {
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 12, letterSpacing: 0.3, lineHeight: 20,
+    ...typography.monoSm,
+    lineHeight: 20,
   },
   infoRow: {
     flexDirection: 'row', gap: 8, alignItems: 'flex-start',
-    marginHorizontal: 16, marginBottom: 16,
+    marginHorizontal: spacing(4), marginBottom: spacing(4),
   },
   infoText: {
-    flex: 1, fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16,
+    flex: 1, ...typography.helperText, lineHeight: 16,
   },
   payWithCard: {
-    marginHorizontal: 24, marginBottom: 16,
-    borderWidth: 1, borderRadius: 16, padding: 16,
+    paddingHorizontal: spacing(4),
+    paddingBottom: spacing(4),
   },
   pwHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: spacing(4),
   },
   pwIcon: {
-    width: 36, height: 36, borderRadius: 12,
+    width: 36, height: 36, borderRadius: radii.sm,
     alignItems: 'center', justifyContent: 'center',
   },
-  pwTitle: { fontFamily: 'Inter_700Bold', fontSize: 14 },
-  pwSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 1 },
+  pwTitle: { ...typography.h4 },
+  pwSubtitle: { ...typography.secondary12, marginTop: 1 },
   paymentMethod: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    borderWidth: 1.5,
-    borderRadius: 12, padding: 14, marginBottom: 10,
+    borderWidth: 1,
+    borderRadius: radii.md, padding: spacing(3), marginBottom: 10,
   },
   paymentMethodAlt: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderWidth: 1,
-    borderRadius: 12, padding: 14,
+    borderRadius: radii.md, padding: spacing(3),
   },
   pmLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   pmIconWrap: {
-    width: 36, height: 36, borderRadius: 10,
+    width: 36, height: 36, borderRadius: radii.sm,
     alignItems: 'center', justifyContent: 'center',
   },
-  pmTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
-  pmSub: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 1 },
-  pmTitleAlt: { fontFamily: 'Inter_500Medium', fontSize: 13 },
-  pmSubAlt: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 1 },
+  pmTitle: { ...typography.main14 },
+  pmSub: { ...typography.secondary12, marginTop: 1 },
+  pmTitleAlt: { ...typography.main14 },
+  pmSubAlt: { ...typography.secondary12, marginTop: 1 },
   pmRadio: {
     width: 20, height: 20, borderRadius: 10, borderWidth: 2,
   },
   depositCard: {
-    marginHorizontal: 24, marginBottom: 16,
-    borderWidth: 1.5, borderRadius: 20, overflow: 'hidden',
+    paddingBottom: spacing(1),
   },
   dcHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: 16, paddingBottom: 12,
+    paddingHorizontal: spacing(4), paddingTop: spacing(4), paddingBottom: spacing(3),
   },
   dcHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   dcIcon: {
-    width: 36, height: 36, borderRadius: 12,
+    width: 36, height: 36, borderRadius: radii.sm,
     alignItems: 'center', justifyContent: 'center',
   },
-  dcTitle: { fontFamily: 'Inter_700Bold', fontSize: 14 },
-  dcSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 1 },
+  dcTitle: { ...typography.h4 },
+  dcSubtitle: { ...typography.secondary12, marginTop: 1 },
   networkRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingBottom: 14,
+    paddingHorizontal: spacing(4), paddingBottom: spacing(3),
   },
-  networkLabel: { fontFamily: 'Inter_500Medium', fontSize: 12 },
+  networkLabel: { ...typography.subheader2 },
   networkPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     borderWidth: 1,
-    borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12,
+    borderRadius: radii.pill, paddingVertical: 6, paddingHorizontal: 12,
   },
   networkIcon: { fontSize: 12 },
-  networkName: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
-  networkGas: { fontFamily: 'Inter_400Regular', fontSize: 10 },
+  networkName: { ...typography.main12 },
+  networkGas: { ...typography.helperText },
   addressBox: {
-    marginHorizontal: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center',
+    marginHorizontal: spacing(4), marginBottom: spacing(3), flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between',
-    borderWidth: 1, borderRadius: 14, padding: 14,
+    borderWidth: 1, borderRadius: radii.md, padding: spacing(3),
   },
   addrLeft: { flex: 1 },
   addrMono: {
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 15, letterSpacing: 0.5,
+    ...typography.valueSm,
   },
-  addrHint: { fontFamily: 'Inter_400Regular', fontSize: 10, marginTop: 3 },
+  addrHint: { ...typography.helperText, marginTop: 3 },
   qrMini: {
-    width: 44, height: 44, borderRadius: 12,
+    width: 44, height: 44, borderRadius: radii.sm,
     borderWidth: 1, alignItems: 'center', justifyContent: 'center',
   },
   copyBtn: {
-    marginHorizontal: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center',
+    marginHorizontal: spacing(4), marginBottom: spacing(3), flexDirection: 'row', alignItems: 'center',
     justifyContent: 'center', gap: 8,
-    borderWidth: 1, borderRadius: 12,
+    borderWidth: 1, borderRadius: radii.md,
     paddingVertical: 12,
   },
-  copyText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  copyText: { ...typography.buttonS },
   warnRow: {
     flexDirection: 'row', gap: 8, alignItems: 'flex-start',
-    marginHorizontal: 16, marginBottom: 16,
+    marginHorizontal: spacing(4), marginBottom: spacing(4),
   },
   warnText: {
-    flex: 1, fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16,
+    flex: 1, ...typography.helperText, lineHeight: 16,
   },
-  ctaWrap: { paddingHorizontal: 24, paddingBottom: 24 },
+  ctaWrap: { paddingHorizontal: spacing(6), paddingBottom: spacing(6) },
   ctaNote: {
-    fontFamily: 'Inter_400Regular', fontSize: 11,
+    ...typography.helperText,
     textAlign: 'center', marginTop: 10,
   },
   cpItem: {
@@ -938,28 +972,28 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   cpInfo: { flex: 1 },
-  cpName: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
-  cpSub: { fontFamily: 'Inter_400Regular', fontSize: 11 },
+  cpName: { ...typography.main14 },
+  cpSub: { ...typography.secondary12 },
   cpLogo: { width: 36, height: 36, borderRadius: 18 },
   qrSheet: { alignItems: 'center', paddingHorizontal: 24 },
   qrBox: {
-    width: 220, height: 220, borderRadius: 16,
+    width: 220, height: 220, borderRadius: radii.md,
     padding: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 20,
   },
   qrGrid: { flexDirection: 'row', flexWrap: 'wrap', width: 195, height: 195 },
   qrCell: { width: 15, height: 15 },
   qrInfo: { alignItems: 'center', marginBottom: 16 },
-  qrNetwork: { fontFamily: 'Inter_600SemiBold', fontSize: 13, marginBottom: 6 },
+  qrNetwork: { ...typography.main14, marginBottom: 6 },
   qrAddr: {
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 11, textAlign: 'center', lineHeight: 18,
+    ...typography.monoXs,
+    textAlign: 'center', lineHeight: 18,
   },
   qrCopyBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    borderRadius: 12, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 12,
+    borderRadius: radii.xl, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 12,
   },
-  qrCopyText: { fontFamily: 'Inter_700Bold', fontSize: 14 },
+  qrCopyText: { ...typography.buttonM },
   qrWarn: {
-    fontFamily: 'Inter_400Regular', fontSize: 11, textAlign: 'center',
+    ...typography.helperText, textAlign: 'center',
   },
 });

@@ -7,7 +7,8 @@ import { isApiError } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/AppNavigator';
-import { useTheme } from '../../theme';
+import { useTheme, typography } from '../../theme';
+import { palette } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PinSetup'>;
 
@@ -83,7 +84,7 @@ export const PinSetupScreen: React.FC<Props> = ({ navigation }) => {
           <View style={{ height: 28 }} />
           <Text style={[styles.headline, { color: theme.text.primary }]}>
             {step === 'create' ? 'Create your' : 'Confirm your'}{'\n'}
-            <Text style={{ color: theme.secondary.main }}>PIN</Text>
+            <Text style={{ color: palette.royal[500] }}>PIN</Text>
           </Text>
           <Text style={[styles.desc, { color: theme.text.secondary }]}>
             {step === 'create'
@@ -99,12 +100,14 @@ export const PinSetupScreen: React.FC<Props> = ({ navigation }) => {
                 key={i}
                 style={[
                   styles.dot,
-                  { borderColor: theme.text.muted },
-                  currentPin.length > i && {
-                    backgroundColor: theme.secondary.main,
-                    borderColor: theme.secondary.main,
+                  {
+                    borderColor: error
+                      ? theme.error.main
+                      : currentPin.length > i
+                        ? palette.royal[500]
+                        : palette.grey[700],
+                    backgroundColor: currentPin.length > i ? palette.royal[500] : 'transparent',
                   },
-                  error && { borderColor: theme.error.main },
                 ]}
               />
             ))}
@@ -142,15 +145,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'space-between' },
   header: { paddingHorizontal: 28, paddingTop: 36 },
   headline: {
-    fontFamily: 'Inter_800ExtraBold',
-    fontSize: 26,
-    letterSpacing: -0.3,
+    ...typography.h3,
     marginBottom: 8,
-    lineHeight: 31,
   },
   desc: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
+    ...typography.bodySm,
     lineHeight: 21,
   },
   pinArea: {
@@ -169,8 +168,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   errorText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 13,
+    ...typography.bodySm,
     marginTop: 16,
   },
   bottom: {

@@ -33,6 +33,7 @@ import { RecipientScreen } from '../screens/send/RecipientScreen';
 import { AmountScreen } from '../screens/send/AmountScreen';
 import { ConfirmScreen } from '../screens/send/ConfirmScreen';
 import { DepositWaitingScreen } from '../screens/send/DepositWaitingScreen';
+import { TrackingScreen } from '../screens/send/TrackingScreen';
 import { SuccessScreen } from '../screens/send/SuccessScreen';
 
 // Processor Screens
@@ -107,6 +108,21 @@ export type SendFlowParamList = {
     recipientWalletAddress?: string;
     recipientNetwork?: string;
   };
+  Tracking: {
+    transactionSlug?: string;
+    transactionId?: string;
+    recipientName?: string;
+    recipientInitials?: string;
+    recipientMethod?: string;
+    recipientFlag?: string;
+    amount?: number;
+    receiveAmount?: number;
+    sendCurrency?: string;
+    recvCurrency?: string;
+    recipientWalletAddress?: string;
+    recipientNetwork?: string;
+    dest?: { symbol?: string; name?: string; code?: string };
+  };
   Success: {
     transactionSlug?: string;
     recipientName?: string;
@@ -119,6 +135,7 @@ export type SendFlowParamList = {
     sendCurrency?: string;
     recipientWalletAddress?: string;
     recipientNetwork?: string;
+    dest?: { symbol?: string; name?: string; code?: string };
   };
 };
 
@@ -198,6 +215,7 @@ function SendTabNavigator() {
       <SendFlowStack.Screen name="Recipient" component={RecipientScreen} />
       <SendFlowStack.Screen name="Confirm" component={ConfirmScreen} />
       <SendFlowStack.Screen name="DepositWaiting" component={DepositWaitingScreen} options={{ animation: 'fade_from_bottom', gestureEnabled: false }} />
+      <SendFlowStack.Screen name="Tracking" component={TrackingScreen} options={{ animation: 'fade_from_bottom', gestureEnabled: false }} />
       <SendFlowStack.Screen name="Success" component={SuccessScreen} options={{ animation: 'fade_from_bottom', gestureEnabled: false }} />
     </SendFlowStack.Navigator>
   );

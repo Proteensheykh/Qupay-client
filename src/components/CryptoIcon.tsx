@@ -1,19 +1,15 @@
-// CryptoIcon — token logo with optional network badge overlay.
-// Used for stablecoins where the chain matters (USDT on Polygon vs USDT on Tron
-// look identical in price but transact very differently — fees, speed, address
-// formats). The network badge sits at the bottom-right, ringed by the surface
-// color so it visually attaches to the token mark.
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { findCurrencyLogo, findNetworkLogo, BrandLogo } from '../data/logos';
 import { useTheme } from '../theme';
+import { borders } from '../theme/elevation';
 
 interface CryptoIconProps {
-  token: string;          // e.g., "USDT", "USDC", "ETH"
-  network?: string;       // e.g., "Polygon", "Ethereum", "Tron"
+  token: string;
+  network?: string;
   size?: number;
-  // Surface color used for the badge ring — set to match the parent card.
   ringColor?: string;
+  withRing?: boolean;
 }
 
 export const CryptoIcon: React.FC<CryptoIconProps> = ({
@@ -21,8 +17,9 @@ export const CryptoIcon: React.FC<CryptoIconProps> = ({
   network,
   size = 40,
   ringColor: ringColorProp,
+  withRing = true,
 }) => {
-  const { theme } = useTheme();
+  const { theme, mode } = useTheme();
   const ringColor = ringColorProp ?? theme.background.paper;
   const [tokenErr, setTokenErr] = useState(false);
   const [netErr, setNetErr] = useState(false);
@@ -34,7 +31,9 @@ export const CryptoIcon: React.FC<CryptoIconProps> = ({
   const badgeSize = Math.round(size * 0.42);
   const badgeRadius = badgeSize / 2;
 
-  // Token main circle
+  const ringStyle =
+    withRing && mode === 'dark' ? borders.hairline.dark : undefined;
+
   const tokenNode =
     tokenLogo && !tokenErr ? (
       <View
@@ -46,6 +45,7 @@ export const CryptoIcon: React.FC<CryptoIconProps> = ({
             borderRadius: radius,
             backgroundColor: tokenLogo.bg || theme.text.primary,
           },
+          ringStyle,
         ]}
       >
         <Image
@@ -65,6 +65,7 @@ export const CryptoIcon: React.FC<CryptoIconProps> = ({
             borderRadius: radius,
             backgroundColor: theme.background.surface,
           },
+          ringStyle,
         ]}
       >
         <Text
@@ -78,9 +79,12 @@ export const CryptoIcon: React.FC<CryptoIconProps> = ({
       </View>
     );
 
-  // No network specified → just the token
   if (!network) {
-    return <View accessible accessibilityLabel={token}>{tokenNode}</View>;
+    return (
+      <View accessible accessibilityLabel={token}>
+        {tokenNode}
+      </View>
+    );
   }
 
   return (
@@ -90,7 +94,6 @@ export const CryptoIcon: React.FC<CryptoIconProps> = ({
       accessibilityLabel={`${token} on ${network}`}
     >
       {tokenNode}
-      {/* Network badge — bottom-right with surface ring */}
       <View
         style={[
           styles.badge,
@@ -155,6 +158,7 @@ const styles = StyleSheet.create({
   },
   fallbackText: {
     fontFamily: 'Inter_700Bold',
+    letterSpacing: -0.5,
   },
   badge: {
     position: 'absolute',

@@ -7,7 +7,8 @@ import { isApiError } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/AppNavigator';
-import { useTheme } from '../../theme';
+import { useTheme, typography } from '../../theme';
+import { palette } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PinReset'>;
 
@@ -155,7 +156,7 @@ export const PinResetScreen: React.FC<Props> = ({ route, navigation }) => {
           <View style={{ height: 28 }} />
           <Text style={[styles.headline, { color: theme.text.primary }]}>
             {getHeadline().split(' ').slice(0, -1).join(' ')}{'\n'}
-            <Text style={{ color: theme.secondary.main }}>{getHeadline().split(' ').slice(-1)}</Text>
+            <Text style={{ color: palette.royal[500] }}>{getHeadline().split(' ').slice(-1)}</Text>
           </Text>
           <Text style={[styles.desc, { color: theme.text.secondary }]}>{getDescription()}</Text>
         </View>
@@ -167,12 +168,14 @@ export const PinResetScreen: React.FC<Props> = ({ route, navigation }) => {
                 key={i}
                 style={[
                   styles.dot,
-                  { borderColor: theme.text.muted },
-                  currentValue.length > i && {
-                    backgroundColor: theme.secondary.main,
-                    borderColor: theme.secondary.main,
+                  {
+                    borderColor: error
+                      ? theme.error.main
+                      : currentValue.length > i
+                        ? palette.royal[500]
+                        : palette.grey[700],
+                    backgroundColor: currentValue.length > i ? palette.royal[500] : 'transparent',
                   },
-                  error && { borderColor: theme.error.main },
                 ]}
               />
             ))}
@@ -186,7 +189,7 @@ export const PinResetScreen: React.FC<Props> = ({ route, navigation }) => {
                 <Text
                   style={[
                     styles.resendLink,
-                    { color: theme.secondary.main },
+                    { color: palette.royal[500] },
                     resendTimer > 0 && { color: theme.text.muted },
                   ]}
                   onPress={handleResend}
@@ -231,15 +234,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'space-between' },
   header: { paddingHorizontal: 28, paddingTop: 36 },
   headline: {
-    fontFamily: 'Inter_800ExtraBold',
-    fontSize: 26,
-    letterSpacing: -0.3,
+    ...typography.h3,
     marginBottom: 8,
-    lineHeight: 31,
   },
   desc: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
+    ...typography.bodySm,
     lineHeight: 21,
   },
   pinArea: {
@@ -258,19 +257,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   errorText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 13,
+    ...typography.bodySm,
     marginTop: 16,
   },
   resendRow: {
     marginTop: 20,
   },
   resendText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
+    ...typography.caption,
   },
   resendLink: {
-    fontFamily: 'Inter_600SemiBold',
+    ...typography.caption,
   },
   bottom: {
     paddingHorizontal: 24,

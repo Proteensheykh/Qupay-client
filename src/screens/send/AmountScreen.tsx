@@ -3,20 +3,26 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
   StyleSheet,
   ActivityIndicator,
   FlatList,
+  TouchableOpacity,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
-import { ScreenHeader, CTAButton, BottomSheet } from '../../components';
+import { ScreenHeader, CTAButton, BottomSheet, Odometer, Numpad } from '../../components';
 import { getCurrencies, getRate } from '../../api/rates';
 import type { CurrencyResponse, RateResponse } from '../../api/rates';
+import { findCurrencyLogo } from '../../data/logos';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
-import { useTheme } from '../../theme';
+import { spacing, typography } from '../../theme';
+import { palette } from '../../theme/colors';
+import { radii } from '../../theme/radii';
+import { borders } from '../../theme/elevation';
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'Amount'>;
 
@@ -104,6 +110,16 @@ const CURRENCY_META: Record<string, { icon: string; color: string; symbol: strin
 
 const DEFAULT_META = { icon: '🌍', color: '#666666', symbol: '' };
 
+const CRYPTO_CODES = new Set(['USDT', 'USDC', 'BTC', 'ETH', 'SOL', 'MATIC', 'POL', 'DAI', 'BUSD', 'TUSD', 'FRAX']);
+
+const CurrencyIcon: React.FC<{ code: string; emoji: string; size: number }> = ({ code, emoji, size }) => {
+  const logo = CRYPTO_CODES.has(code) ? findCurrencyLogo(code) : undefined;
+  if (logo) {
+    return <Image source={{ uri: logo.uri }} style={{ width: size, height: size, borderRadius: size / 2 }} />;
+  }
+  return <Text style={{ fontSize: size * 0.7, lineHeight: size }}>{emoji}</Text>;
+};
+
 const FALLBACK_CURRENCIES: CurrencyDisplay[] = [
   { code: 'USDT', name: 'Tether', ...CURRENCY_META['USDT'] },
   { code: 'NGN', name: 'Nigerian Naira', ...CURRENCY_META['NGN'] },
@@ -116,7 +132,8 @@ const FALLBACK_CURRENCIES: CurrencyDisplay[] = [
   { code: 'ZAR', name: 'South African Rand', ...CURRENCY_META['ZAR'] },
 ];
 
-const isCrypto = (code: string): boolean => code === 'USDT';
+const CRYPTO_CURRENCY_CODES = new Set(['USDT', 'USDC', 'BTC', 'ETH', 'SOL', 'DAI', 'BUSD']);
+const isCrypto = (code: string): boolean => CRYPTO_CURRENCY_CODES.has(code);
 
 const formatRate = (value: number): string => {
   if (value === 0) return '0';
@@ -135,8 +152,15 @@ const formatRate = (value: number): string => {
   return value.toExponential(2);
 };
 
+const currencyPillBase = {
+  backgroundColor: palette.grey[800],
+  borderWidth: 1,
+  borderColor: palette.material.lightThin,
+  borderRadius: radii.xl,
+};
+
 export const AmountScreen: React.FC<Props> = ({ navigation }) => {
-  const { theme } = useTheme();
+  const hairline = borders.hairline.dark;
   const [currencies, setCurrencies] = useState<CurrencyDisplay[]>(FALLBACK_CURRENCIES);
   const [selectedSendCurrency, setSelectedSendCurrency] = useState<CurrencyDisplay>(FALLBACK_CURRENCIES[0]);
   const [selectedReceiveCurrency, setSelectedReceiveCurrency] = useState<CurrencyDisplay>(FALLBACK_CURRENCIES[1]);
@@ -244,6 +268,19 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
     setAmount(cleaned);
   }, []);
 
+  const odometerValue = amount.length ? amount : '0';
+
+  const onNumpadKey = useCallback(
+    (key: string) => {
+      if (key === 'del') {
+        setAmount((prev) => prev.slice(0, -1));
+        return;
+      }
+      handleAmountChange(amount + key);
+    },
+    [amount, handleAmountChange]
+  );
+
   const rate = rateData?.rate ?? 0;
   const numAmount = parseFloat(amount) || 0;
   const receivingCrypto = isCrypto(selectedReceiveCurrency.code);
@@ -262,124 +299,91 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
 
   const renderRatePillContent = () => {
     if (rateLoading) {
-      return <ActivityIndicator size="small" color={theme.secondary.main} />;
+      return <ActivityIndicator size="small" color={palette.royal[500]} />;
     }
     if (rateError || !rateData) {
-      return <Text style={[styles.ratePillText, { color: theme.error.main }]}>Rate unavailable</Text>;
+      return <Text style={[styles.ratePillText, { color: palette.status.negative }]}>Rate unavailable</Text>;
     }
     if (receivingCrypto) {
       return (
-        <Text style={[styles.ratePillText, { color: theme.secondary.main }]}>
+        <Text style={[styles.ratePillText, { color: palette.grey[300] }]}>
           1 {selectedReceiveCurrency.code} = {selectedSendCurrency.symbol}{formatRate(rateData.inverseRate)} {selectedSendCurrency.code}
         </Text>
       );
     }
     return (
-      <Text style={[styles.ratePillText, { color: theme.secondary.main }]}>
+      <Text style={[styles.ratePillText, { color: palette.grey[300] }]}>
         1 {selectedSendCurrency.code} = {selectedReceiveCurrency.symbol}{formatRate(rate)}
       </Text>
     );
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background.default }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
       <ScreenHeader title="Send" />
       <ScrollView
         style={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View
-          style={[
-            styles.amountCard,
-            {
-              backgroundColor: theme.background.surface,
-              borderColor: theme.inputBorder,
-            },
-          ]}
-        >
+        <View style={[styles.amountCard, { backgroundColor: palette.grey[800] }, hairline]}>
           <View style={styles.acSection}>
-            <Text style={[styles.acLabel, { color: theme.text.secondary }]}>You send</Text>
+            <Text style={[styles.acLabel, { color: palette.grey[500] }]}>You send</Text>
             <View style={styles.acRowSpaced}>
-              <TextInput
-                style={[styles.amountInput, { color: theme.text.primary }]}
-                value={amount}
-                onChangeText={handleAmountChange}
-                keyboardType="decimal-pad"
-                placeholder="0"
-                placeholderTextColor={theme.text.disabled}
-                selectionColor={theme.secondary.main}
-                cursorColor={theme.secondary.main}
-                underlineColorAndroid="transparent"
-                autoCorrect={false}
-                autoCapitalize="none"
-                inputMode="decimal"
-              />
-              <TouchableOpacity
-                style={[
-                  styles.sendCurrPill,
-                  {
-                    backgroundColor: theme.background.paper,
-                    borderColor: `${theme.secondary.main}4D`,
-                  },
+              <View style={styles.odometerRow}>
+                <Odometer value={odometerValue} color={palette.grey[300]} fontSize={56} />
+              </View>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.currencyPill,
+                  currencyPillBase,
+                  pressed && { opacity: 0.7 },
                 ]}
                 onPress={() => setShowSendPicker(true)}
-                activeOpacity={0.7}
               >
                 <View style={[styles.cpIconWrapSmall, { backgroundColor: selectedSendCurrency.color + '20' }]}>
-                  <Text style={styles.currFlagIcon}>{selectedSendCurrency.icon}</Text>
+                  <CurrencyIcon code={selectedSendCurrency.code} emoji={selectedSendCurrency.icon} size={24} />
                 </View>
-                <Text style={[styles.currText, { color: theme.text.primary }]}>{selectedSendCurrency.code}</Text>
-                <Ionicons name="chevron-down" size={14} color={theme.text.secondary} />
-              </TouchableOpacity>
+                <Text style={[styles.currText, { color: palette.grey[300] }]}>{selectedSendCurrency.code}</Text>
+                <Ionicons name="chevron-down" size={14} color={palette.grey[500]} />
+              </Pressable>
             </View>
           </View>
 
           <View style={styles.rateDivider}>
-            <View style={[styles.rateLine, { backgroundColor: theme.inputBorder }]} />
-            <View
-              style={[
-                styles.ratePill,
-                {
-                  backgroundColor: theme.background.default,
-                  borderColor: `${theme.secondary.main}40`,
-                },
-              ]}
-            >
+            <View style={[styles.rateLine, { backgroundColor: palette.material.lightThin }]} />
+            <View style={[styles.ratePill, { backgroundColor: palette.grey[900] }, hairline]}>
               {renderRatePillContent()}
             </View>
-            <View style={[styles.rateLine, { backgroundColor: theme.inputBorder }]} />
+            <View style={[styles.rateLine, { backgroundColor: palette.material.lightThin }]} />
           </View>
 
-          <View style={[styles.acSectionRecv, { backgroundColor: theme.background.paper }]}>
-            <Text style={[styles.acLabel, { color: theme.text.secondary }]}>They receive</Text>
+          <View style={[styles.acSectionRecv, { backgroundColor: palette.grey[900] }]}>
+            <Text style={[styles.acLabel, { color: palette.grey[500] }]}>They receive</Text>
             <View style={styles.acRowSpaced}>
-              <Text style={[styles.recvAmount, { color: theme.secondary.main }]}>
+              <Text style={[styles.recvAmount, { color: palette.grey[300] }]}>
                 {numAmount > 0 && rate > 0
                   ? receivingCrypto
                     ? receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                     : `${selectedReceiveCurrency.symbol}${receiveAmount.toLocaleString()}`
                   : '—'}
               </Text>
-              <TouchableOpacity
-                style={[
-                  styles.recvCurrPill,
-                  {
-                    backgroundColor: theme.background.surface2,
-                    borderColor: `${theme.secondary.main}40`,
-                  },
-                ]}
+              <Pressable
+                style={({ pressed }) => [styles.currencyPill, currencyPillBase, pressed && { opacity: 0.7 }]}
                 onPress={() => setShowReceivePicker(true)}
-                activeOpacity={0.7}
               >
                 <View style={[styles.cpIconWrapSmall, { backgroundColor: selectedReceiveCurrency.color + '20' }]}>
-                  <Text style={styles.currFlagIcon}>{selectedReceiveCurrency.icon}</Text>
+                  <CurrencyIcon code={selectedReceiveCurrency.code} emoji={selectedReceiveCurrency.icon} size={24} />
                 </View>
-                <Text style={[styles.currText, { color: theme.text.primary }]}>{selectedReceiveCurrency.code}</Text>
-                <Ionicons name="chevron-down" size={14} color={theme.text.secondary} />
-              </TouchableOpacity>
+                <Text style={[styles.currText, { color: palette.grey[300] }]}>{selectedReceiveCurrency.code}</Text>
+                <Ionicons name="chevron-down" size={14} color={palette.grey[500]} />
+              </Pressable>
             </View>
           </View>
+        </View>
+
+        <View style={styles.numpadSection}>
+          <Numpad onKey={onNumpadKey} size="compact" showDecimal />
         </View>
 
         <View style={styles.ctaWrap}>
@@ -393,12 +397,12 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
 
       <BottomSheet visible={showSendPicker} onClose={handleCloseSendPicker} title="Send Currency">
         <View style={styles.searchContainer}>
-          <View style={[styles.searchWrap, { backgroundColor: theme.background.surface, borderColor: theme.inputBorder }]}>
-            <Ionicons name="search" size={18} color={theme.text.muted} />
+          <View style={[styles.searchWrap, { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin }]}>
+            <Ionicons name="search" size={18} color={palette.grey[500]} />
             <TextInput
-              style={[styles.searchInput, { color: theme.text.primary }]}
+              style={[styles.searchInput, { color: palette.grey[300] }]}
               placeholder="Search currency..."
-              placeholderTextColor={theme.text.muted}
+              placeholderTextColor={palette.grey[500]}
               value={currencySearch}
               onChangeText={setCurrencySearch}
               autoCapitalize="none"
@@ -406,7 +410,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
             />
             {currencySearch.length > 0 && (
               <TouchableOpacity onPress={() => setCurrencySearch('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="close-circle" size={18} color={theme.text.muted} />
+                <Ionicons name="close-circle" size={18} color={palette.grey[500]} />
               </TouchableOpacity>
             )}
           </View>
@@ -421,26 +425,26 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
             <TouchableOpacity
               style={[
                 styles.cpItem,
-                { borderBottomColor: theme.inputBorder },
-                selectedSendCurrency.code === c.code && { backgroundColor: theme.info.bg },
+                { borderBottomColor: palette.material.lightThin },
+                selectedSendCurrency.code === c.code && { backgroundColor: 'rgba(251,251,253,0.06)' },
               ]}
               onPress={() => { setSelectedSendCurrency(c); handleCloseSendPicker(); }}
               activeOpacity={0.7}
             >
               <View style={[styles.cpIconWrap, { backgroundColor: c.color + '20' }]}>
-                <Text style={styles.cpIcon}>{c.icon}</Text>
+                <CurrencyIcon code={c.code} emoji={c.icon} size={36} />
               </View>
               <View style={styles.cpInfo}>
-                <Text style={[styles.cpName, { color: theme.text.primary }]}>{c.code}</Text>
-                <Text style={[styles.cpSub, { color: theme.text.secondary }]}>{c.name}</Text>
+                <Text style={[styles.cpName, { color: palette.grey[300] }]}>{c.code}</Text>
+                <Text style={[styles.cpSub, { color: palette.grey[500] }]}>{c.name}</Text>
               </View>
-              {selectedSendCurrency.code === c.code && <Ionicons name="checkmark" size={18} color={theme.secondary.main} />}
+              {selectedSendCurrency.code === c.code && <Ionicons name="checkmark" size={18} color={palette.royal[500]} />}
             </TouchableOpacity>
           )}
           ListEmptyComponent={
             <View style={styles.emptyList}>
-              <Ionicons name="search-outline" size={32} color={theme.text.muted} />
-              <Text style={[styles.emptyListText, { color: theme.text.muted }]}>No currencies found</Text>
+              <Ionicons name="search-outline" size={32} color={palette.grey[500]} />
+              <Text style={[styles.emptyListText, { color: palette.grey[500] }]}>No currencies found</Text>
             </View>
           }
         />
@@ -448,12 +452,12 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
 
       <BottomSheet visible={showReceivePicker} onClose={handleCloseReceivePicker} title="Receive Currency">
         <View style={styles.searchContainer}>
-          <View style={[styles.searchWrap, { backgroundColor: theme.background.surface, borderColor: theme.inputBorder }]}>
-            <Ionicons name="search" size={18} color={theme.text.muted} />
+          <View style={[styles.searchWrap, { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin }]}>
+            <Ionicons name="search" size={18} color={palette.grey[500]} />
             <TextInput
-              style={[styles.searchInput, { color: theme.text.primary }]}
+              style={[styles.searchInput, { color: palette.grey[300] }]}
               placeholder="Search currency..."
-              placeholderTextColor={theme.text.muted}
+              placeholderTextColor={palette.grey[500]}
               value={currencySearch}
               onChangeText={setCurrencySearch}
               autoCapitalize="none"
@@ -461,7 +465,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
             />
             {currencySearch.length > 0 && (
               <TouchableOpacity onPress={() => setCurrencySearch('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="close-circle" size={18} color={theme.text.muted} />
+                <Ionicons name="close-circle" size={18} color={palette.grey[500]} />
               </TouchableOpacity>
             )}
           </View>
@@ -476,26 +480,26 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
             <TouchableOpacity
               style={[
                 styles.cpItem,
-                { borderBottomColor: theme.inputBorder },
-                selectedReceiveCurrency.code === c.code && { backgroundColor: theme.info.bg },
+                { borderBottomColor: palette.material.lightThin },
+                selectedReceiveCurrency.code === c.code && { backgroundColor: 'rgba(251,251,253,0.06)' },
               ]}
               onPress={() => { setSelectedReceiveCurrency(c); handleCloseReceivePicker(); }}
               activeOpacity={0.7}
             >
               <View style={[styles.cpIconWrap, { backgroundColor: c.color + '20' }]}>
-                <Text style={styles.cpIcon}>{c.icon}</Text>
+                <CurrencyIcon code={c.code} emoji={c.icon} size={36} />
               </View>
               <View style={styles.cpInfo}>
-                <Text style={[styles.cpName, { color: theme.text.primary }]}>{c.code}</Text>
-                <Text style={[styles.cpSub, { color: theme.text.secondary }]}>{c.name}</Text>
+                <Text style={[styles.cpName, { color: palette.grey[300] }]}>{c.code}</Text>
+                <Text style={[styles.cpSub, { color: palette.grey[500] }]}>{c.name}</Text>
               </View>
-              {selectedReceiveCurrency.code === c.code && <Ionicons name="checkmark" size={18} color={theme.secondary.main} />}
+              {selectedReceiveCurrency.code === c.code && <Ionicons name="checkmark" size={18} color={palette.royal[500]} />}
             </TouchableOpacity>
           )}
           ListEmptyComponent={
             <View style={styles.emptyList}>
-              <Ionicons name="search-outline" size={32} color={theme.text.muted} />
-              <Text style={[styles.emptyListText, { color: theme.text.muted }]}>No currencies found</Text>
+              <Ionicons name="search-outline" size={32} color={palette.grey[500]} />
+              <Text style={[styles.emptyListText, { color: palette.grey[500] }]}>No currencies found</Text>
             </View>
           }
         />
@@ -508,87 +512,122 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { flex: 1 },
   amountCard: {
-    marginHorizontal: 24, marginTop: 8, marginBottom: 12,
-    borderWidth: 1, borderRadius: 20, overflow: 'hidden',
+    marginHorizontal: spacing(6),
+    marginTop: spacing(2),
+    marginBottom: spacing(3),
+    borderRadius: radii.xl,
+    overflow: 'hidden',
   },
-  acSection: { paddingVertical: 20, paddingHorizontal: 20 },
-  acSectionRecv: { paddingVertical: 16, paddingHorizontal: 20, paddingBottom: 20 },
+  acSection: { paddingVertical: spacing(5), paddingHorizontal: spacing(5) },
+  acSectionRecv: { paddingVertical: spacing(4), paddingHorizontal: spacing(5), paddingBottom: spacing(5) },
   acLabel: {
-    fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 1,
-    textTransform: 'uppercase', marginBottom: 8,
+    ...typography.label,
+    marginBottom: spacing(2),
   },
   acRowSpaced: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   amountInput: {
     flex: 1,
-    fontFamily: 'Inter_700Bold',
-    fontSize: 36,
+    ...typography.value,
     minWidth: 60,
     maxWidth: '55%',
     padding: 0,
     margin: 0,
     borderWidth: 0,
-    outlineStyle: 'none',
   } as any,
-  recvAmount: { flex: 1, fontFamily: 'Inter_700Bold', fontSize: 32 },
+  recvAmount: {
+    flex: 1,
+    ...typography.valueLg,
+  },
   sendCurrPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    borderWidth: 1.5,
-    borderRadius: 24, paddingVertical: 10, paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing(2),
+    borderRadius: radii.pill,
+    paddingVertical: spacing(2.5),
+    paddingHorizontal: spacing(3.5),
     minWidth: 125,
+    minHeight: 44,
   },
   recvCurrPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    borderWidth: 1.5,
-    borderRadius: 24, paddingVertical: 8, paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing(1.5),
+    borderRadius: radii.pill,
+    paddingVertical: spacing(2),
+    paddingHorizontal: spacing(3),
     minWidth: 125,
+    minHeight: 44,
   },
-  cpIconWrapSmall: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  currFlagIcon: { fontSize: 16 },
-  currText: { fontFamily: 'Inter_700Bold', fontSize: 14 },
-  rateDivider: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, gap: 10 },
+  cpIconWrapSmall: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  currText: { ...typography.buttonS },
+  rateDivider: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing(5), gap: spacing(2.5) },
   rateLine: { flex: 1, height: 1 },
   ratePill: {
-    borderWidth: 1,
-    borderRadius: 24, paddingVertical: 5, paddingHorizontal: 12,
-    minHeight: 28, justifyContent: 'center', alignItems: 'center',
+    borderRadius: radii.pill,
+    paddingVertical: spacing(1.5),
+    paddingHorizontal: spacing(3),
+    minHeight: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  ratePillText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, fontVariant: ['tabular-nums'] },
-  ctaWrap: { paddingHorizontal: 24, paddingBottom: 24 },
+  ratePillText: { ...typography.monoSm },
+  ctaWrap: { paddingHorizontal: spacing(6), paddingBottom: spacing(6) },
+  odometerRow: {
+    flex: 1,
+    minWidth: 0,
+    marginRight: spacing(3),
+    alignItems: 'flex-start',
+  },
+  currencyPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing(2),
+    paddingVertical: spacing(2.5),
+    paddingHorizontal: spacing(3.5),
+    minWidth: 112,
+    minHeight: 44,
+  },
+  numpadSection: {
+    alignItems: 'center',
+    marginBottom: spacing(2),
+  },
   cpItem: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 12, paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing(3),
+    paddingVertical: spacing(3),
+    paddingHorizontal: spacing(6),
     borderBottomWidth: 1,
+    minHeight: 56,
   },
-  cpIconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  cpIcon: { fontSize: 18 },
+  cpIconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   cpInfo: { flex: 1 },
-  cpName: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
-  cpSub: { fontFamily: 'Inter_400Regular', fontSize: 11 },
-  searchContainer: { paddingHorizontal: 24, paddingBottom: 12 },
+  cpName: { ...typography.main14 },
+  cpSub: { ...typography.caption },
+  searchContainer: { paddingHorizontal: spacing(6), paddingBottom: spacing(3) },
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    borderWidth: 1.5,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    gap: spacing(2.5),
+    borderWidth: 1,
+    borderRadius: radii.pill,
+    paddingVertical: spacing(3),
+    paddingHorizontal: spacing(4),
+    minHeight: 48,
   },
   searchInput: {
     flex: 1,
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
+    ...typography.body,
     padding: 0,
   },
   currencyList: { maxHeight: 350 },
   emptyList: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
-    gap: 8,
+    paddingVertical: spacing(10),
+    gap: spacing(2),
   },
   emptyListText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
+    ...typography.bodySm,
   },
 });

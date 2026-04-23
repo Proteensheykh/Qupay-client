@@ -1,7 +1,16 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Animated, StyleSheet, ViewStyle } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ViewStyle, AccessibilityInfo } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme, borderRadius, spacing } from '../theme';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
+import { palette } from '../theme/colors';
+import { radii } from '../theme/radii';
+import { durations, spacing } from '../theme';
 
 interface ShimmerProps {
   width: number | string;
@@ -14,28 +23,40 @@ export const Shimmer: React.FC<ShimmerProps> = ({
   width,
   height,
   style,
-  borderRadiusSize = borderRadius.sm,
+  borderRadiusSize = radii.sm,
 }) => {
-  const { theme } = useTheme();
-  const translateX = useRef(new Animated.Value(-1)).current;
+  const translateX = useSharedValue(-1);
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
-    const animation = Animated.loop(
-      Animated.timing(translateX, {
-        toValue: 1,
-        duration: 1500,
-        useNativeDriver: true,
-      })
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const subscription = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      setReduceMotion
     );
-    animation.start();
-    return () => animation.stop();
-  }, [translateX]);
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (!reduceMotion) {
+      translateX.value = withRepeat(
+        withTiming(1, {
+          duration: durations.shimmer,
+          easing: Easing.linear,
+        }),
+        -1,
+        false
+      );
+    }
+  }, [reduceMotion]);
 
   const numericWidth = typeof width === 'number' ? width : 200;
 
-  const animatedTranslate = translateX.interpolate({
-    inputRange: [-1, 1],
-    outputRange: [-numericWidth, numericWidth],
+  const shimmerTranslate = useAnimatedStyle(() => {
+    const range = numericWidth * 2;
+    return {
+      transform: [{ translateX: translateX.value * range - numericWidth }],
+    };
   });
 
   return (
@@ -45,32 +66,39 @@ export const Shimmer: React.FC<ShimmerProps> = ({
           width: width as any,
           height,
           borderRadius: borderRadiusSize,
-          backgroundColor: theme.background.surface,
+          backgroundColor: palette.grey[800],
           overflow: 'hidden',
         },
         style,
       ]}
+      accessibilityLabel="Loading"
+      accessibilityRole="progressbar"
     >
-      <Animated.View
-        style={{
-          position: 'absolute',
-          top: 0,
-          bottom: 0,
-          width: numericWidth,
-          transform: [{ translateX: animatedTranslate }],
-        }}
-      >
-        <LinearGradient
-          colors={[
-            'transparent',
-            theme.background.default + '80',
-            'transparent',
+      {!reduceMotion && (
+        <Animated.View
+          style={[
+            {
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              width: numericWidth,
+            },
+            shimmerTranslate,
           ]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={{ flex: 1 }}
-        />
-      </Animated.View>
+        >
+          <LinearGradient
+            colors={[
+              palette.grey[800],
+              palette.grey[700],
+              palette.grey[800],
+            ]}
+            locations={[0, 0.5, 1]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{ flex: 1 }}
+          />
+        </Animated.View>
+      )}
     </View>
   );
 };
@@ -110,7 +138,7 @@ export const ShimmerBalance: React.FC = () => {
   return (
     <View style={{ gap: spacing(2), alignItems: 'flex-start' }}>
       <Shimmer width={100} height={14} />
-      <Shimmer width={200} height={40} borderRadiusSize={borderRadius.sm} />
+      <Shimmer width={200} height={40} borderRadiusSize={radii.sm} />
       <Shimmer width={140} height={12} />
     </View>
   );
