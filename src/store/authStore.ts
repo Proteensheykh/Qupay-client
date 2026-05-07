@@ -3,6 +3,7 @@ import type { AuthTokenResponse, UserProfileResponse } from '../types/auth';
 import { serverLogout } from '../api/auth';
 import * as storage from './secureStorage';
 import { StorageKeys } from './secureStorage';
+import { queryClient } from '../api/queryClient';
 
 interface AuthState {
   accessToken: string | null;
@@ -62,6 +63,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     await storage.clearAll();
+    queryClient.clear();
     set({
       accessToken: null,
       refreshToken: null,

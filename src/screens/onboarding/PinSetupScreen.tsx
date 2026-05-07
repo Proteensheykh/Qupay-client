@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { QupayLogo, CTAButton, Numpad } from '../../components';
 import { setPin, getProfile } from '../../api/auth';
 import { isApiError } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
+import { useToast } from '../../hooks/useToast';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/AppNavigator';
 import { useTheme, typography } from '../../theme';
@@ -22,6 +23,7 @@ export const PinSetupScreen: React.FC<Props> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const setUser = useAuthStore((state) => state.setUser);
+  const toast = useToast();
 
   const currentPin = step === 'create' ? pinValue : confirmPin;
   const setCurrentPin = step === 'create' ? setPinValue : setConfirmPin;
@@ -60,7 +62,7 @@ export const PinSetupScreen: React.FC<Props> = ({ navigation }) => {
     } catch (err) {
       if (__DEV__) console.error('PIN setup error:', err);
       const message = isApiError(err) ? err.message : 'Failed to set PIN. Please try again.';
-      Alert.alert('Error', message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

@@ -13,6 +13,8 @@ import { QupayLogo, CTAButton, FormField, BottomSheet, Toast, MuralBackdrop } fr
 import { countries } from '../../data/mockData';
 import { initiateRegistration } from '../../api/auth';
 import { isApiError } from '../../api/client';
+import { parseAndFormat } from '../../utils/phone';
+import type { CountryCode } from 'libphonenumber-js';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
 import type { InitiateRegistrationRequest } from '../../types/auth';
@@ -48,7 +50,12 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const firstNameValid = firstName.trim().length >= 2;
   const lastNameValid = lastName.trim().length >= 2;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const phoneValid = phone.length >= 8;
+
+  const phoneResult = parseAndFormat(
+    `${selectedCountry.code}${phone.replace(/^0+/, '')}`,
+    selectedCountry.iso as CountryCode,
+  );
+  const phoneValid = phoneResult.valid;
   const passwordValid = password.length >= 8;
 
   const personalStepValid = firstNameValid && lastNameValid && emailValid;
@@ -67,7 +74,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       case 'email':
         return !emailValid ? 'Please enter a valid email address' : undefined;
       case 'phone':
-        return !phoneValid ? 'Please enter a valid phone number' : undefined;
+        return !phoneValid && phone.length > 0 ? `Not a valid ${selectedCountry.name} phone number` : undefined;
       case 'password':
         return !passwordValid ? 'Password must be at least 8 characters' : undefined;
       default:
@@ -90,8 +97,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     setLoading(true);
     setShowError(false);
 
-    const normalizedPhone = phone.replace(/^0+/, '');
-    const phoneNumber = `${selectedCountry.code}${normalizedPhone}`;
+    const phoneNumber = phoneResult.e164 ?? `${selectedCountry.code}${phone.replace(/^0+/, '')}`;
     const registrationPayload: InitiateRegistrationRequest = {
       phoneNumber,
       countryCode: selectedCountry.iso,

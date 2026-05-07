@@ -5,8 +5,8 @@ import { Ionicons } from '../../components/Icon';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProfileStackParamList } from '../../navigation/AppNavigator';
 import { QupayLogo, Avatar, CTAButton } from '../../components';
-import { userProfile } from '../../data/mockData';
 import { useAuthStore } from '../../store/authStore';
+import { useUser } from '../../hooks/useUser';
 import { useTheme, ThemePreference } from '../../theme';
 import { palette } from '../../theme/colors';
 import { radii } from '../../theme/radii';
@@ -28,7 +28,7 @@ const PREFERENCE_CYCLE: ThemePreference[] = ['system', 'light', 'dark'];
 export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [notifOn, setNotifOn] = useState(true);
   const logout = useAuthStore((state) => state.logout);
-  const user = useAuthStore((state) => state.user);
+  const { user } = useUser();
   const { mode, preference, setPreference } = useTheme();
   const backdrop = palette.grey[900];
   const cardBg = palette.grey[800];
@@ -44,9 +44,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
     setPreference(PREFERENCE_CYCLE[nextIndex]);
   }, [preference, setPreference]);
 
-  const displayName = user ? `${user.firstName} ${user.lastName}` : userProfile.name;
-  const displayEmail = user?.email || userProfile.email;
-  const displayPhone = user?.phoneNumber || userProfile.phone;
+  const displayName = user ? `${user.firstName} ${user.lastName}` : '—';
+  const displayEmail = user?.email ?? '—';
+  const displayPhone = user?.phoneNumber ?? '—';
   const isProcessor = user?.role === 'BOTH' || user?.role === 'MP';
 
   return (
@@ -90,17 +90,21 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             </View>
             <View style={[styles.phStats, { borderTopColor: hairline, borderTopWidth: StyleSheet.hairlineWidth }]}>
               <View style={styles.phStat}>
-                <Text style={[styles.phVal, { color: palette.grey[300] }]}>{userProfile.totalTransfers}</Text>
+                <Text style={[styles.phVal, { color: palette.grey[300] }]}>—</Text>
                 <Text style={[styles.phLabel, { color: palette.grey[500] }]}>Transfers</Text>
               </View>
               <View style={[styles.phStatDivider, { backgroundColor: hairline }]} />
               <View style={styles.phStat}>
-                <Text style={[styles.phVal, { color: palette.royal[400] }]}>${userProfile.totalSent.toLocaleString()}</Text>
+                <Text style={[styles.phVal, { color: palette.royal[400] }]}>—</Text>
                 <Text style={[styles.phLabel, { color: palette.grey[500] }]}>Total Sent</Text>
               </View>
               <View style={[styles.phStatDivider, { backgroundColor: hairline }]} />
               <View style={styles.phStat}>
-                <Text style={[styles.phVal, { color: palette.grey[300] }]}>Nov '25</Text>
+                <Text style={[styles.phVal, { color: palette.grey[300] }]}>
+                  {user?.createdAt
+                    ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+                    : '—'}
+                </Text>
                 <Text style={[styles.phLabel, { color: palette.grey[500] }]}>Member</Text>
               </View>
             </View>

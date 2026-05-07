@@ -1,6 +1,10 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { useAuthStore } from '../store/authStore';
+import { useToastStore } from '../store/toastStore';
 import type { ApiResponse, AuthTokenResponse } from '../types/auth';
+
+function getAuthStore() {
+  return require('../store/authStore').useAuthStore;
+}
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://qupay-app-f70e5cb23170.herokuapp.com/api';
 
@@ -90,7 +94,7 @@ const processQueue = (error: unknown, token: string | null = null) => {
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const { accessToken } = useAuthStore.getState();
+    const { accessToken } = getAuthStore().getState();
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
@@ -145,12 +149,17 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const { refreshToken, setTokens, logout } = useAuthStore.getState();
+      const { refreshToken, setTokens, logout } = getAuthStore().getState();
 
       if (!refreshToken) {
         if (__DEV__) console.log('🔴 [Auth] No refresh token available, logging out');
         isRefreshing = false;
         await logout(true);
+        useToastStore.getState().push({
+          type: 'info',
+          title: 'Your session has expired. Please sign in again.',
+          durationMs: 5000,
+        });
         return Promise.reject(new ApiError('Session expired', 401));
       }
 
@@ -180,6 +189,11 @@ apiClient.interceptors.response.use(
         if (__DEV__) console.error('🔴 [Auth] Token refresh failed:', refreshError);
         processQueue(refreshError, null);
         await logout(true);
+        useToastStore.getState().push({
+          type: 'info',
+          title: 'Your session has expired. Please sign in again.',
+          durationMs: 5000,
+        });
         return Promise.reject(new ApiError('Session expired', 401));
       } finally {
         isRefreshing = false;

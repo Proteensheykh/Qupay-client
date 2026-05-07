@@ -1,55 +1,31 @@
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   createTransaction,
   getTransaction,
-  getTransactionStream,
-  acceptTransaction,
-  uploadSettlementProof,
-  getUserTransactions,
+  confirmTransfer,
+  getMyTransactions,
 } from '../api/transactions';
-import type {
-  CreateTransactionRequest,
-  AcceptTransactionRequest,
-  UploadSettlementProofRequest,
-  TransactionStatus,
-} from '../types/transaction';
+import { queryKeys } from '../api/queryKeys';
+import { getPollingInterval } from '../utils/transactionStatus';
+import type { CreateTransactionRequest } from '../types/transaction';
 
-const terminalStatuses: TransactionStatus[] = ['COMPLETED', 'FAILED', 'EXPIRED'];
-
-export function useTransaction(slugOrId: string) {
+export function useTransaction(id: string) {
   return useQuery({
-    queryKey: ['transaction', slugOrId],
-    queryFn: () => getTransaction(slugOrId),
-    enabled: !!slugOrId,
+    queryKey: queryKeys.transactions.byId(id),
+    queryFn: () => getTransaction(id),
+    enabled: !!id,
     refetchInterval: (query) => {
       const status = query.state.data?.status;
-      if (status && terminalStatuses.includes(status)) {
-        return false;
-      }
-      return 5000;
+      if (!status) return 5000;
+      return getPollingInterval(status);
     },
   });
 }
 
-export function useUserTransactions(page = 1, limit = 20) {
+export function useMyTransactions(page = 0, size = 20) {
   return useQuery({
-    queryKey: ['userTransactions', page, limit],
-    queryFn: () => getUserTransactions(page, limit),
-  });
-}
-
-export function useTransactionStream() {
-  return useInfiniteQuery({
-    queryKey: ['processor', 'stream'],
-    queryFn: ({ pageParam = 1 }) => getTransactionStream(pageParam, 20),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      if (lastPage.hasMore) {
-        return lastPage.page + 1;
-      }
-      return undefined;
-    },
-    refetchInterval: 10000,
+    queryKey: queryKeys.transactions.list(page, size),
+    queryFn: () => getMyTransactions(page, size),
   });
 }
 
@@ -59,32 +35,19 @@ export function useCreateTransaction() {
   return useMutation({
     mutationFn: (data: CreateTransactionRequest) => createTransaction(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['userTransactions'] });
-      queryClient.invalidateQueries({ queryKey: ['processor', 'stream'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
     },
   });
 }
 
-export function useAcceptTransaction() {
+export function useConfirmTransfer() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: AcceptTransactionRequest) => acceptTransaction(data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['transaction', variables.transactionId] });
-      queryClient.invalidateQueries({ queryKey: ['processor', 'stream'] });
-    },
-  });
-}
-
-export function useUploadProof() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: UploadSettlementProofRequest) => uploadSettlementProof(data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['transaction', variables.transactionId] });
-      queryClient.invalidateQueries({ queryKey: ['processor', 'stream'] });
+    mutationFn: (transactionId: string) => confirmTransfer(transactionId),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.transactions.byId(data.id), data);
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
     },
   });
 }

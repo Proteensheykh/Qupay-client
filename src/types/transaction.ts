@@ -1,101 +1,82 @@
 export type TransactionStatus =
-  | 'PENDING_DEPOSIT'
-  | 'DEPOSIT_CONFIRMED'
-  | 'MATCHED'
-  | 'SETTLEMENT_IN_PROGRESS'
-  | 'SETTLEMENT_PROOF_UPLOADED'
-  | 'COMPLETED'
-  | 'FAILED'
+  | 'QUEUED'
+  | 'IN_PROGRESS'
+  | 'PAYER_PAID'
+  | 'COMPLETE'
+  | 'CANCELLED'
   | 'EXPIRED'
   | 'DISPUTED';
 
-export type ProofType = 'receipt_image' | 'transaction_hash' | 'reference_number';
+export type StatusGroup = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+
+export interface Recipient {
+  bankCode?: string | null;
+  accountNumber?: string | null;
+  accountName?: string | null;
+  walletAddress?: string | null;
+  phone?: string | null;
+}
+
+export interface MpPaymentDetails {
+  walletAddress?: string | null;
+  bankCode?: string | null;
+  accountNumber?: string | null;
+  accountName?: string | null;
+}
+
+export interface TransactionProof {
+  proofUrl: string;
+  contentType?: string;
+  description?: string;
+  uploadedAt?: string;
+}
 
 export interface CreateTransactionRequest {
-  corridorId: string;
-  sendAmount: number;
-  sendCurrency: string;
-  receiveCurrency: string;
-  receiveAmount: number;
-  recipientName: string;
-  recipientPhone?: string;
-  recipientAccountType: 'mobile_money' | 'bank' | 'wallet';
-  recipientAccountLabel: string;
-  recipientWalletAddress?: string;
-  recipientNetwork?: string;
-  depositNetwork: string;
-  depositAddress: string;
+  fromCurrency: string;
+  toCurrency: string;
+  amount: number;
+  recipient: Recipient;
+  pin: string;
 }
 
-export interface CreateTransactionResponse {
+export interface Transaction {
   id: string;
-  slug: string;
+  transactionCode: string;
+  fromCurrency: string;
+  toCurrency: string;
+  originalAmount: number;
+  chargeAmount: number;
+  convertedAmount: number;
+  fxRate: number;
   status: TransactionStatus;
-  depositAddress: string;
-  depositNetwork: string;
+  statusGroup: StatusGroup;
+  recipient: Recipient;
+  mpPaymentDetails: MpPaymentDetails | null;
   expiresAt: string;
-}
-
-export interface TransactionDetail {
-  id: string;
-  slug: string;
-  status: TransactionStatus;
-  sendAmount: number;
-  sendCurrency: string;
-  receiveAmount: number;
-  receiveCurrency: string;
-  recipientName: string;
-  recipientPhone?: string;
-  recipientAccountType: 'mobile_money' | 'bank' | 'wallet';
-  recipientAccountLabel: string;
-  recipientWalletAddress?: string;
-  recipientNetwork?: string;
-  fee: number;
-  rate: number;
-  depositAddress: string;
-  depositNetwork: string;
-  corridorId: string;
-  corridorDisplay: string;
-  settlementProofUrl?: string;
-  settlementProofType?: ProofType;
-  settlementNotes?: string;
-  processorId?: string;
-  payerId: string;
   createdAt: string;
-  updatedAt: string;
-  expiresAt: string;
-  completedAt?: string;
+  payerConfirmationDeadline: string | null;
+  proof: TransactionProof | null;
 }
 
-export interface TransactionStreamItem {
+export interface TransactionListItem {
   id: string;
-  slug: string;
+  transactionCode: string;
   status: TransactionStatus;
-  sendAmount: number;
-  sendCurrency: string;
-  receiveAmount: number;
-  receiveCurrency: string;
-  recipientAccountType: 'mobile_money' | 'bank' | 'wallet';
-  recipientAccountLabel: string;
-  corridorDisplay: string;
+  statusGroup: StatusGroup;
+  fromCurrency: string;
+  toCurrency: string;
+  originalAmount: number;
+  convertedAmount: number;
   createdAt: string;
-}
-
-export interface AcceptTransactionRequest {
-  transactionId: string;
-}
-
-export interface UploadSettlementProofRequest {
-  transactionId: string;
-  proofType: ProofType;
-  proofData: string;
-  notes?: string;
+  proof: TransactionProof | null;
 }
 
 export interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  limit: number;
-  hasMore: boolean;
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+  last: boolean;
+  first: boolean;
 }

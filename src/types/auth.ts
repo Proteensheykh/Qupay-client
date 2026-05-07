@@ -82,6 +82,8 @@ export interface CryptoWalletResponse {
   address: string;
 }
 
+export type KycStatus = 'NOT_SUBMITTED' | 'PENDING' | 'APPROVED' | 'REJECTED';
+
 export interface UserProfileResponse {
   id: string;
   phoneNumber: string;
@@ -97,6 +99,7 @@ export interface UserProfileResponse {
   bankAccounts: BankAccountResponse[];
   cryptoWallets: CryptoWalletResponse[];
   createdAt: string;
+  kycStatus: KycStatus;
 }
 
 export interface SetPinRequest {

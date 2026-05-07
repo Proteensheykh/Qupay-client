@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '../components/Icon';
 import { useAuthStore } from '../store/authStore';
+import { useUser } from '../hooks/useUser';
 import { useTheme } from '../theme';
 import type { InitiateRegistrationRequest, UserRole } from '../types/auth';
 
@@ -17,29 +18,25 @@ import { PinVerifyScreen } from '../screens/onboarding/PinVerifyScreen';
 import { PinResetScreen } from '../screens/onboarding/PinResetScreen';
 import { ForgotPasswordScreen } from '../screens/onboarding/ForgotPasswordScreen';
 import { ResetPasswordScreen } from '../screens/onboarding/ResetPasswordScreen';
+import { SuspendedScreen } from '../screens/onboarding/SuspendedScreen';
 
-export interface DestInfo {
-  flag: string;
-  name: string;
-  code: string;
-  symbol: string;
-  rate: number;
-  providers: string;
-}
 import { HistoryScreen } from '../screens/portfolio/PortfolioScreen';
 import { TransactionDetailScreen } from '../screens/transaction/TransactionDetailScreen';
 import { ProfileScreen } from '../screens/settings/SettingsScreen';
 import { RecipientScreen } from '../screens/send/RecipientScreen';
 import { AmountScreen } from '../screens/send/AmountScreen';
 import { ConfirmScreen } from '../screens/send/ConfirmScreen';
-import { DepositWaitingScreen } from '../screens/send/DepositWaitingScreen';
-import { TrackingScreen } from '../screens/send/TrackingScreen';
-import { SuccessScreen } from '../screens/send/SuccessScreen';
+import { TransactionStatusScreen } from '../screens/send/TransactionStatusScreen';
 
 // Processor Screens
-import { TransactionStreamScreen } from '../screens/processor/TransactionStreamScreen';
-import { ProcessorTransactionDetailScreen } from '../screens/processor/ProcessorTransactionDetailScreen';
-import { ProcessorOnboardingScreen } from '../screens/settings/ProcessorOnboardingScreen';
+import { MpHomeScreen } from '../screens/processor/MpHomeScreen';
+import { OrderDetailScreen } from '../screens/processor/OrderDetailScreen';
+import { MpProfileScreen } from '../screens/processor/MpProfileScreen';
+import { ProcessorSetupScreen } from '../screens/processor/ProcessorSetupScreen';
+import { KycSubmissionScreen } from '../screens/processor/onboarding/KycSubmissionScreen';
+import { BindWalletScreen } from '../screens/processor/onboarding/BindWalletScreen';
+import { BindBankAccountScreen } from '../screens/processor/onboarding/BindBankAccountScreen';
+import { MpOnboardScreen } from '../screens/processor/onboarding/MpOnboardScreen';
 
 // ─── Param lists ───
 export type OnboardingStackParamList = {
@@ -61,12 +58,12 @@ export type OnboardingStackParamList = {
 
 export type HistoryStackParamList = {
   History: undefined;
-  TransferDetail: { transferId?: string; status?: string };
+  TransferDetail: { transactionId: string };
 };
 
 export type ProfileStackParamList = {
   Profile: undefined;
-  ProcessorOnboarding: undefined;
+  ProcessorSetup: undefined;
 };
 
 export type SendFlowParamList = {
@@ -90,58 +87,24 @@ export type SendFlowParamList = {
     recipientFlag: string;
     recipientWalletAddress?: string;
     recipientNetwork?: string;
-    corridorId?: string;
+    recipientBankCode?: string;
+    recipientAccountNumber?: string;
+    recipientAccountName?: string;
   };
-  DepositWaiting: {
-    transactionSlug?: string;
-    transactionId?: string;
-    recipientName?: string;
-    recipientInitials?: string;
-    recipientMethod?: string;
-    recipientFlag?: string;
-    amount?: number;
-    receiveAmount?: number;
-    sendCurrency?: string;
-    recvCurrency?: string;
-    walletAddress?: string;
-    network?: string;
-    recipientWalletAddress?: string;
-    recipientNetwork?: string;
-  };
-  Tracking: {
-    transactionSlug?: string;
-    transactionId?: string;
-    recipientName?: string;
-    recipientInitials?: string;
-    recipientMethod?: string;
-    recipientFlag?: string;
-    amount?: number;
-    receiveAmount?: number;
-    sendCurrency?: string;
-    recvCurrency?: string;
-    recipientWalletAddress?: string;
-    recipientNetwork?: string;
-    dest?: { symbol?: string; name?: string; code?: string };
-  };
-  Success: {
-    transactionSlug?: string;
-    recipientName?: string;
-    recipientInitials?: string;
-    recipientMethod?: string;
-    recipientFlag?: string;
-    amount?: number;
-    receiveAmount?: number;
-    recvCurrency?: string;
-    sendCurrency?: string;
-    recipientWalletAddress?: string;
-    recipientNetwork?: string;
-    dest?: { symbol?: string; name?: string; code?: string };
+  TransactionStatus: {
+    transactionId: string;
   };
 };
 
 export type ProcessorStackParamList = {
-  TransactionStream: undefined;
-  ProcessorTransactionDetail: { transactionId: string; slug: string };
+  MpHome: undefined;
+  OrderDetail: { transactionId: string; orderId: string; isQueueItem: boolean };
+  MpProfile: undefined;
+  ProcessorSetup: undefined;
+  KycSubmission: undefined;
+  BindWallet: undefined;
+  BindBankAccount: undefined;
+  MpOnboard: undefined;
 };
 
 export type MainTabParamList = {
@@ -156,6 +119,7 @@ export type RootStackParamList = {
   PinSetup: undefined;
   PinVerify: undefined;
   PinReset: { cooldownSeconds: number };
+  Suspended: undefined;
   Main: undefined;
 };
 
@@ -201,7 +165,7 @@ function ProfileStackNavigator() {
       screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
     >
       <ProfileStackNav.Screen name="Profile" component={ProfileScreen} />
-      <ProfileStackNav.Screen name="ProcessorOnboarding" component={ProcessorOnboardingScreen} />
+      <ProfileStackNav.Screen name="ProcessorSetup" component={ProcessorSetupScreen} />
     </ProfileStackNav.Navigator>
   );
 }
@@ -214,9 +178,7 @@ function SendTabNavigator() {
       <SendFlowStack.Screen name="Amount" component={AmountScreen} />
       <SendFlowStack.Screen name="Recipient" component={RecipientScreen} />
       <SendFlowStack.Screen name="Confirm" component={ConfirmScreen} />
-      <SendFlowStack.Screen name="DepositWaiting" component={DepositWaitingScreen} options={{ animation: 'fade_from_bottom', gestureEnabled: false }} />
-      <SendFlowStack.Screen name="Tracking" component={TrackingScreen} options={{ animation: 'fade_from_bottom', gestureEnabled: false }} />
-      <SendFlowStack.Screen name="Success" component={SuccessScreen} options={{ animation: 'fade_from_bottom', gestureEnabled: false }} />
+      <SendFlowStack.Screen name="TransactionStatus" component={TransactionStatusScreen} options={{ animation: 'fade_from_bottom', gestureEnabled: false }} />
     </SendFlowStack.Navigator>
   );
 }
@@ -226,8 +188,14 @@ function ProcessorStackNavigator() {
     <ProcessorStackNav.Navigator
       screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
     >
-      <ProcessorStackNav.Screen name="TransactionStream" component={TransactionStreamScreen} />
-      <ProcessorStackNav.Screen name="ProcessorTransactionDetail" component={ProcessorTransactionDetailScreen} />
+      <ProcessorStackNav.Screen name="MpHome" component={MpHomeScreen} />
+      <ProcessorStackNav.Screen name="OrderDetail" component={OrderDetailScreen} />
+      <ProcessorStackNav.Screen name="MpProfile" component={MpProfileScreen} />
+      <ProcessorStackNav.Screen name="ProcessorSetup" component={ProcessorSetupScreen} />
+      <ProcessorStackNav.Screen name="KycSubmission" component={KycSubmissionScreen} />
+      <ProcessorStackNav.Screen name="BindWallet" component={BindWalletScreen} />
+      <ProcessorStackNav.Screen name="BindBankAccount" component={BindBankAccountScreen} />
+      <ProcessorStackNav.Screen name="MpOnboard" component={MpOnboardScreen} />
     </ProcessorStackNav.Navigator>
   );
 }
@@ -248,7 +216,7 @@ function getTabIcon(routeName: string): string {
 }
 
 function MainTabs() {
-  const user = useAuthStore((state) => state.user);
+  const { user } = useUser();
   const { theme } = useTheme();
   const role: UserRole = user?.role || 'PAYER';
 
@@ -338,6 +306,7 @@ export const AppNavigator: React.FC = () => {
   const isPinLocked = useAuthStore((state) => state.isPinLocked);
   
   const hasPin = user?.pinSet ?? false;
+  const isSuspended = user?.status === 'SUSPENDED' || user?.status === 'BANNED';
 
   if (!isHydrated) {
     return <LoadingScreen />;
@@ -347,6 +316,8 @@ export const AppNavigator: React.FC = () => {
     <RootStack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
       {!isAuthenticated ? (
         <RootStack.Screen name="Onboarding" component={OnboardingNavigator} />
+      ) : isSuspended ? (
+        <RootStack.Screen name="Suspended" component={SuspendedScreen} />
       ) : isPinLocked ? (
         <>
           <RootStack.Screen name="PinVerify" component={PinVerifyScreen} />

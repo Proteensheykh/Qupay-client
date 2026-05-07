@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
@@ -13,6 +12,7 @@ import { QupayLogo, CTAButton, FormField, MuralBackdrop } from '../../components
 import { login, getProfile } from '../../api/auth';
 import { isApiError } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
+import { useToast } from '../../hooks/useToast';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
 import { useTheme, typography } from '../../theme';
@@ -29,6 +29,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
 
   const setTokens = useAuthStore((state) => state.setTokens);
   const setUser = useAuthStore((state) => state.setUser);
+  const toast = useToast();
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const passwordValid = password.length >= 8;
@@ -54,7 +55,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
     } catch (error) {
       if (__DEV__) console.error('🔐 [SignIn] Error:', error);
       const message = isApiError(error) ? error.message : 'Invalid email or password';
-      Alert.alert('Login Failed', message);
+      toast.error('Login Failed', message);
     } finally {
       setLoading(false);
     }

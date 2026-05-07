@@ -10,7 +10,7 @@ import { palette } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'Splash'>;
 
-const words = ['anyone', 'anywhere'];
+const words = ['any bank', 'any wallet'];
 
 export const SplashScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
@@ -49,13 +49,13 @@ export const SplashScreen: React.FC<Props> = ({ navigation }) => {
           </View>
           <View style={styles.spacer} />
           <Text style={[styles.headline, { color: theme.text.primary }]}>
-            Quick payments,{'\n'}in any currency,{'\n'}
+            Quick payments,{'\n'}from crypto to cash,{'\n'}
             <Text style={{ color: palette.royal[500] }}>
               to <Animated.Text style={{ opacity: fadeAnim }}>{words[currentIndex]}</Animated.Text>
             </Text>
           </Text>
           <Text style={[styles.description, { color: theme.text.secondary }]}>
-            Send or receive money, in any currency, to & from anyone, anywhere, with just a mobile number.
+            Send USDT, recipients get NGN in their bank account. Backed by a live marketplace of vetted participants.
           </Text>
           {/* Stats row */}
           <View
@@ -68,18 +68,18 @@ export const SplashScreen: React.FC<Props> = ({ navigation }) => {
             ]}
           >
             <View style={styles.statItem}>
-              <Text style={[styles.statVal, { color: palette.royal[500] }]}>54+</Text>
-              <Text style={[styles.statLabel, { color: theme.text.secondary }]}>Countries</Text>
+              <Text style={[styles.statVal, { color: palette.royal[500] }]}>USDT ↔ NGN</Text>
+              <Text style={[styles.statLabel, { color: theme.text.secondary }]}>v1 corridor</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: theme.inputBorder }]} />
             <View style={styles.statItem}>
-              <Text style={[styles.statVal, { color: palette.royal[500] }]}>No fees</Text>
-              <Text style={[styles.statLabel, { color: theme.text.secondary }]}>Zero cost</Text>
+              <Text style={[styles.statVal, { color: palette.royal[500] }]}>Live rates</Text>
+              <Text style={[styles.statLabel, { color: theme.text.secondary }]}>Mid-market</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: theme.inputBorder }]} />
             <View style={styles.statItem}>
-              <Text style={[styles.statVal, { color: palette.royal[500] }]}>Quick</Text>
-              <Text style={[styles.statLabel, { color: theme.text.secondary }]}>Delivery</Text>
+              <Text style={[styles.statVal, { color: palette.royal[500] }]}>P2P</Text>
+              <Text style={[styles.statLabel, { color: theme.text.secondary }]}>Marketplace</Text>
             </View>
           </View>
         </View>

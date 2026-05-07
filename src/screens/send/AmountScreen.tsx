@@ -19,10 +19,14 @@ import type { CurrencyResponse, RateResponse } from '../../api/rates';
 import { findCurrencyLogo } from '../../data/logos';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
+import { isPairSupported, isSupportedCurrency } from '../../constants/supportedChannels';
 import { spacing, typography } from '../../theme';
 import { palette } from '../../theme/colors';
 import { radii } from '../../theme/radii';
 import { borders } from '../../theme/elevation';
+
+const MIN_AMOUNT = 0.000001;
+const MAX_AMOUNT = 10000;
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'Amount'>;
 
@@ -123,13 +127,6 @@ const CurrencyIcon: React.FC<{ code: string; emoji: string; size: number }> = ({
 const FALLBACK_CURRENCIES: CurrencyDisplay[] = [
   { code: 'USDT', name: 'Tether', ...CURRENCY_META['USDT'] },
   { code: 'NGN', name: 'Nigerian Naira', ...CURRENCY_META['NGN'] },
-  { code: 'GHS', name: 'Ghanaian Cedi', ...CURRENCY_META['GHS'] },
-  { code: 'KES', name: 'Kenyan Shilling', ...CURRENCY_META['KES'] },
-  { code: 'INR', name: 'Indian Rupee', ...CURRENCY_META['INR'] },
-  { code: 'PHP', name: 'Philippine Peso', ...CURRENCY_META['PHP'] },
-  { code: 'MXN', name: 'Mexican Peso', ...CURRENCY_META['MXN'] },
-  { code: 'PKR', name: 'Pakistani Rupee', ...CURRENCY_META['PKR'] },
-  { code: 'ZAR', name: 'South African Rand', ...CURRENCY_META['ZAR'] },
 ];
 
 const CRYPTO_CURRENCY_CODES = new Set(['USDT', 'USDC', 'BTC', 'ETH', 'SOL', 'DAI', 'BUSD']);
@@ -159,11 +156,18 @@ const currencyPillBase = {
   borderRadius: radii.xl,
 };
 
+const findByCode = (list: CurrencyDisplay[], code: string): CurrencyDisplay | undefined =>
+  list.find((c) => c.code === code);
+
 export const AmountScreen: React.FC<Props> = ({ navigation }) => {
   const hairline = borders.hairline.dark;
   const [currencies, setCurrencies] = useState<CurrencyDisplay[]>(FALLBACK_CURRENCIES);
-  const [selectedSendCurrency, setSelectedSendCurrency] = useState<CurrencyDisplay>(FALLBACK_CURRENCIES[0]);
-  const [selectedReceiveCurrency, setSelectedReceiveCurrency] = useState<CurrencyDisplay>(FALLBACK_CURRENCIES[1]);
+  const [selectedSendCurrency, setSelectedSendCurrency] = useState<CurrencyDisplay>(
+    findByCode(FALLBACK_CURRENCIES, 'USDT') ?? FALLBACK_CURRENCIES[0]
+  );
+  const [selectedReceiveCurrency, setSelectedReceiveCurrency] = useState<CurrencyDisplay>(
+    findByCode(FALLBACK_CURRENCIES, 'NGN') ?? FALLBACK_CURRENCIES[1]
+  );
   const [showSendPicker, setShowSendPicker] = useState(false);
   const [showReceivePicker, setShowReceivePicker] = useState(false);
   const [amount, setAmount] = useState('');
@@ -197,15 +201,20 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
     getCurrencies()
       .then((data) => {
         if (!mounted) return;
-        const enriched: CurrencyDisplay[] = data.map((c) => ({
-          ...c,
-          ...(CURRENCY_META[c.code] || DEFAULT_META),
-        }));
-        setCurrencies(enriched);
-        if (enriched.length >= 2) {
-          setSelectedSendCurrency(enriched[0]);
-          setSelectedReceiveCurrency(enriched[1]);
-        }
+        const enriched: CurrencyDisplay[] = data
+          .filter((c) => isSupportedCurrency(c.code))
+          .map((c) => ({
+            ...c,
+            ...(CURRENCY_META[c.code] || DEFAULT_META),
+          }));
+
+        const list = enriched.length >= 2 ? enriched : FALLBACK_CURRENCIES;
+        setCurrencies(list);
+
+        const usdt = findByCode(list, 'USDT');
+        const ngn = findByCode(list, 'NGN');
+        if (usdt) setSelectedSendCurrency(usdt);
+        if (ngn) setSelectedReceiveCurrency(ngn);
       })
       .catch(() => {
         // Keep fallback currencies on error
@@ -287,6 +296,10 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
   const receiveAmount = receivingCrypto
     ? parseFloat((numAmount * rate).toFixed(2))
     : Math.round(numAmount * rate);
+
+  const pairSupported = isPairSupported(selectedSendCurrency.code, selectedReceiveCurrency.code);
+  const amountValid = numAmount >= MIN_AMOUNT && numAmount <= MAX_AMOUNT;
+  const canContinue = amountValid && pairSupported && rate > 0 && !rateLoading;
 
   const handleContinue = () => {
     navigation.navigate('Recipient', {
@@ -387,34 +400,46 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         <View style={styles.ctaWrap}>
+          {!pairSupported && numAmount > 0 && (
+            <Text style={[styles.pairWarning, { color: palette.status.partial }]}>
+              {selectedSendCurrency.code} → {selectedReceiveCurrency.code} is not yet supported. Only USDT ↔ NGN is available.
+            </Text>
+          )}
+          {numAmount > MAX_AMOUNT && (
+            <Text style={[styles.pairWarning, { color: palette.status.negative }]}>
+              Maximum amount is {MAX_AMOUNT.toLocaleString()} {selectedSendCurrency.code}
+            </Text>
+          )}
           <CTAButton
             title="Continue"
             onPress={handleContinue}
-            disabled={numAmount <= 0 || rate <= 0 || rateLoading}
+            disabled={!canContinue}
           />
         </View>
       </ScrollView>
 
       <BottomSheet visible={showSendPicker} onClose={handleCloseSendPicker} title="Send Currency">
-        <View style={styles.searchContainer}>
-          <View style={[styles.searchWrap, { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin }]}>
-            <Ionicons name="search" size={18} color={palette.grey[500]} />
-            <TextInput
-              style={[styles.searchInput, { color: palette.grey[300] }]}
-              placeholder="Search currency..."
-              placeholderTextColor={palette.grey[500]}
-              value={currencySearch}
-              onChangeText={setCurrencySearch}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {currencySearch.length > 0 && (
-              <TouchableOpacity onPress={() => setCurrencySearch('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="close-circle" size={18} color={palette.grey[500]} />
-              </TouchableOpacity>
-            )}
+        {currencies.length > 2 && (
+          <View style={styles.searchContainer}>
+            <View style={[styles.searchWrap, { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin }]}>
+              <Ionicons name="search" size={18} color={palette.grey[500]} />
+              <TextInput
+                style={[styles.searchInput, { color: palette.grey[300] }]}
+                placeholder="Search currency..."
+                placeholderTextColor={palette.grey[500]}
+                value={currencySearch}
+                onChangeText={setCurrencySearch}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {currencySearch.length > 0 && (
+                <TouchableOpacity onPress={() => setCurrencySearch('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Ionicons name="close-circle" size={18} color={palette.grey[500]} />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
-        </View>
+        )}
         <FlatList
           data={filteredCurrencies}
           keyExtractor={(item) => item.code}
@@ -428,7 +453,14 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
                 { borderBottomColor: palette.material.lightThin },
                 selectedSendCurrency.code === c.code && { backgroundColor: 'rgba(251,251,253,0.06)' },
               ]}
-              onPress={() => { setSelectedSendCurrency(c); handleCloseSendPicker(); }}
+              onPress={() => {
+                setSelectedSendCurrency(c);
+                if (c.code === selectedReceiveCurrency.code) {
+                  const other = currencies.find((x) => x.code !== c.code);
+                  if (other) setSelectedReceiveCurrency(other);
+                }
+                handleCloseSendPicker();
+              }}
               activeOpacity={0.7}
             >
               <View style={[styles.cpIconWrap, { backgroundColor: c.color + '20' }]}>
@@ -451,25 +483,27 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
       </BottomSheet>
 
       <BottomSheet visible={showReceivePicker} onClose={handleCloseReceivePicker} title="Receive Currency">
-        <View style={styles.searchContainer}>
-          <View style={[styles.searchWrap, { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin }]}>
-            <Ionicons name="search" size={18} color={palette.grey[500]} />
-            <TextInput
-              style={[styles.searchInput, { color: palette.grey[300] }]}
-              placeholder="Search currency..."
-              placeholderTextColor={palette.grey[500]}
-              value={currencySearch}
-              onChangeText={setCurrencySearch}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {currencySearch.length > 0 && (
-              <TouchableOpacity onPress={() => setCurrencySearch('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="close-circle" size={18} color={palette.grey[500]} />
-              </TouchableOpacity>
-            )}
+        {currencies.length > 2 && (
+          <View style={styles.searchContainer}>
+            <View style={[styles.searchWrap, { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin }]}>
+              <Ionicons name="search" size={18} color={palette.grey[500]} />
+              <TextInput
+                style={[styles.searchInput, { color: palette.grey[300] }]}
+                placeholder="Search currency..."
+                placeholderTextColor={palette.grey[500]}
+                value={currencySearch}
+                onChangeText={setCurrencySearch}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {currencySearch.length > 0 && (
+                <TouchableOpacity onPress={() => setCurrencySearch('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Ionicons name="close-circle" size={18} color={palette.grey[500]} />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
-        </View>
+        )}
         <FlatList
           data={filteredCurrencies}
           keyExtractor={(item) => item.code}
@@ -483,7 +517,14 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
                 { borderBottomColor: palette.material.lightThin },
                 selectedReceiveCurrency.code === c.code && { backgroundColor: 'rgba(251,251,253,0.06)' },
               ]}
-              onPress={() => { setSelectedReceiveCurrency(c); handleCloseReceivePicker(); }}
+              onPress={() => {
+                setSelectedReceiveCurrency(c);
+                if (c.code === selectedSendCurrency.code) {
+                  const other = currencies.find((x) => x.code !== c.code);
+                  if (other) setSelectedSendCurrency(other);
+                }
+                handleCloseReceivePicker();
+              }}
               activeOpacity={0.7}
             >
               <View style={[styles.cpIconWrap, { backgroundColor: c.color + '20' }]}>
@@ -571,6 +612,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ratePillText: { ...typography.monoSm },
+  pairWarning: {
+    ...typography.helperText,
+    textAlign: 'center',
+    marginBottom: spacing(2),
+  },
   ctaWrap: { paddingHorizontal: spacing(6), paddingBottom: spacing(6) },
   odometerRow: {
     flex: 1,

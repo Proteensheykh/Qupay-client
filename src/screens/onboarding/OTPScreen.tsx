@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Easing, TextInput, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Easing, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { QupayLogo, CTAButton } from '../../components';
 import { completeRegistration, resendOtp, getProfile } from '../../api/auth';
 import { isApiError } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
+import { useToast } from '../../hooks/useToast';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
 import { useTheme, typography, radii } from '../../theme';
@@ -24,6 +25,7 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
   const inputRef = useRef<TextInput>(null);
   const setTokens = useAuthStore((state) => state.setTokens);
   const setUser = useAuthStore((state) => state.setUser);
+  const toast = useToast();
 
   const blinkAnim = useRef(new Animated.Value(1)).current;
   useEffect(() => {
@@ -58,7 +60,7 @@ export const OTPScreen: React.FC<Props> = ({ navigation, route }) => {
       setError(null);
     } catch (err) {
       const message = isApiError(err) ? err.message : 'Failed to resend code';
-      Alert.alert('Error', message);
+      toast.error(message);
     }
   }, [resendTimer, registrationPayload.email]);
 

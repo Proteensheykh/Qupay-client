@@ -8,13 +8,13 @@ import {
   Easing,
   TextInput,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
 import { QupayLogo, CTAButton, FormField } from '../../components';
 import { completePasswordReset, resendOtp } from '../../api/auth';
 import { isApiError } from '../../api/client';
+import { useToast } from '../../hooks/useToast';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
 import { useTheme, typography, radii } from '../../theme';
@@ -36,6 +36,7 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null);
+  const toast = useToast();
 
   const blinkAnim = useRef(new Animated.Value(1)).current;
   useEffect(() => {
@@ -70,7 +71,7 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
       setError(null);
     } catch (err) {
       const message = isApiError(err) ? err.message : 'Failed to resend code';
-      Alert.alert('Error', message);
+      toast.error(message);
     }
   }, [resendTimer, email]);
 
@@ -90,11 +91,8 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
         otp: code,
         newPassword,
       });
-      Alert.alert(
-        'Password Reset',
-        'Your password has been reset successfully.',
-        [{ text: 'OK', onPress: () => navigation.navigate('SignIn') }]
-      );
+      toast.success('Your password has been reset successfully.');
+      navigation.navigate('SignIn');
     } catch (err) {
       const message = isApiError(err) ? err.message : 'Failed to reset password. Please try again.';
       setError(message);

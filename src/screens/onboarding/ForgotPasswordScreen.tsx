@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { QupayLogo, CTAButton, FormField } from '../../components';
 import { initiatePasswordReset } from '../../api/auth';
 import { isApiError } from '../../api/client';
+import { useToast } from '../../hooks/useToast';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/AppNavigator';
 import { useTheme, typography } from '../../theme';
@@ -21,6 +21,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -38,7 +39,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
       });
     } catch (error) {
       const message = isApiError(error) ? error.message : 'Failed to send reset code';
-      Alert.alert('Error', message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

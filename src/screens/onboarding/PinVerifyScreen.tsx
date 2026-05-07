@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { QupayLogo, Numpad } from '../../components';
 import { verifyPin, initiatePinReset } from '../../api/auth';
 import { isApiError } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
+import { useToast } from '../../hooks/useToast';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/AppNavigator';
 import { useTheme, typography } from '../../theme';
@@ -22,6 +23,7 @@ export const PinVerifyScreen: React.FC<Props> = ({ navigation }) => {
   const [error, setError] = useState<string | null>(null);
   const setPinLocked = useAuthStore((state) => state.setPinLocked);
   const user = useAuthStore((state) => state.user);
+  const toast = useToast();
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
@@ -84,7 +86,7 @@ export const PinVerifyScreen: React.FC<Props> = ({ navigation }) => {
     } catch (err) {
       if (__DEV__) console.error('PIN reset initiate error:', err);
       const message = isApiError(err) ? err.message : 'Failed to initiate PIN reset';
-      Alert.alert('Error', message);
+      toast.error(message);
     } finally {
       setResetting(false);
     }

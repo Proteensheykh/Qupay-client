@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { QupayLogo, CTAButton, Numpad } from '../../components';
 import { completePinReset, resendOtp, getProfile } from '../../api/auth';
 import { isApiError } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
+import { useToast } from '../../hooks/useToast';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/AppNavigator';
 import { useTheme, typography } from '../../theme';
@@ -31,6 +32,7 @@ export const PinResetScreen: React.FC<Props> = ({ route, navigation }) => {
   const setUser = useAuthStore((state) => state.setUser);
   const setPinLocked = useAuthStore((state) => state.setPinLocked);
   const user = useAuthStore((state) => state.user);
+  const toast = useToast();
 
   useEffect(() => {
     if (resendTimer <= 0) return;
@@ -63,7 +65,7 @@ export const PinResetScreen: React.FC<Props> = ({ route, navigation }) => {
       setError(null);
     } catch (err) {
       const message = isApiError(err) ? err.message : 'Failed to resend code';
-      Alert.alert('Error', message);
+      toast.error(message);
     }
   }, [resendTimer, user?.email]);
 
@@ -92,9 +94,7 @@ export const PinResetScreen: React.FC<Props> = ({ route, navigation }) => {
       const profile = await getProfile();
       setUser(profile);
       setPinLocked(false);
-      Alert.alert('Success', 'Your PIN has been reset successfully.', [
-        { text: 'OK' },
-      ]);
+      toast.success('Your PIN has been reset successfully.');
     } catch (err) {
       if (__DEV__) console.error('PIN reset error:', err);
       const message = isApiError(err) ? err.message : 'Failed to reset PIN';

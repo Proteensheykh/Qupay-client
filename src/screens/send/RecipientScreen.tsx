@@ -13,10 +13,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
 import * as Clipboard from 'expo-clipboard';
 import { ScreenHeader, Avatar, CTAButton, BottomSheet } from '../../components';
-import { networks, walletContacts, Network } from '../../data/mockData';
 import { getBanks, validateBankAccount } from '../../api/banks';
 import type { BankResponse } from '../../api/banks';
 import { isApiError } from '../../api/client';
+import { useRecentRecipientsStore, type BankRecipient, type WalletRecipient } from '../../store/recentRecipientsStore';
+import { getPublicProfile } from '../../api/users';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
 import { spacing, typography } from '../../theme';
@@ -25,22 +26,15 @@ import { radii } from '../../theme/radii';
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'Recipient'>;
 
-type MockContact = {
-  name: string;
-  initials: string;
-  colors: [string, string];
-  method: string;
-  phone: string;
-  flag: string;
-  country: string;
-};
 
 const currencySymbols: Record<string, string> = {
   USDT: '', NGN: '\u20A6', GHS: '\u20B5', KES: 'KSh', INR: '\u20B9', PHP: '\u20B1', MXN: '$', PKR: 'Rs', ZAR: 'R',
 };
 
-const isValidWalletAddress = (addr: string): boolean => {
-  return /^0x[a-fA-F0-9]{40}$/.test(addr);
+const BASE58_ALPHABET = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$/;
+
+const isValidSolanaAddress = (addr: string): boolean => {
+  return addr.length >= 32 && addr.length <= 44 && BASE58_ALPHABET.test(addr);
 };
 
 const truncateAddress = (addr: string): string => {
@@ -54,45 +48,23 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
   const sendSymbol = currencySymbols[sendCurrency] || '';
   const isCryptoOut = receiveCurrency === 'USDT';
 
-  const contacts: MockContact[] = useMemo(
-    () => [
-      {
-        name: 'Emeka Johnson',
-        initials: 'EJ',
-        colors: [palette.royal[600], palette.royal[500]],
-        method: 'OPay',
-        phone: '0812 456 7890',
-        flag: '\u{1F1F3}\u{1F1EC}',
-        country: 'Nigeria',
-      },
-      {
-        name: 'Kofi Mensah',
-        initials: 'KM',
-        colors: [palette.status.partial, palette.royal[500]],
-        method: 'MTN Momo',
-        phone: '0541 234 567',
-        flag: '\u{1F1EC}\u{1F1ED}',
-        country: 'Ghana',
-      },
-      {
-        name: 'Adaeze Obi',
-        initials: 'AO',
-        colors: [palette.royal[400], palette.royal[600]],
-        method: 'GTBank',
-        phone: '\u00B7\u00B7\u00B7\u00B7 4521',
-        flag: '\u{1F1F3}\u{1F1EC}',
-        country: 'Nigeria',
-      },
-    ],
-    []
+  const recents = useRecentRecipientsStore((s) => s.recents);
+  const bankRecents = useMemo(
+    () =>
+      recents
+        .filter((r) => r.channel === 'bank')
+        .sort((a, b) => b.lastUsedAt - a.lastUsedAt),
+    [recents]
+  );
+  const walletRecents = useMemo(
+    () =>
+      recents
+        .filter((r) => r.channel === 'wallet')
+        .sort((a, b) => b.lastUsedAt - a.lastUsedAt),
+    [recents]
   );
 
-  // Shared state
-  const [inputVal, setInputVal] = useState('');
-
-  // Fiat-out state (bank/mobile money)
-  const [resolveState, setResolveState] = useState<'idle' | 'resolving' | 'resolved' | 'error'>('idle');
-  const [resolvedContact, setResolvedContact] = useState<(typeof contacts)[0] | null>(null);
+  // Fiat-out state (bank)
   const [showBankSheet, setShowBankSheet] = useState(false);
   const [showBankListSheet, setShowBankListSheet] = useState(false);
   const [bankSearch, setBankSearch] = useState('');
@@ -101,11 +73,12 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
   const [bankAccountName, setBankAccountName] = useState('');
   const [selectedBank, setSelectedBank] = useState<string | null>(null);
 
-  // Crypto-out state (wallet)
-  const [selectedNetwork, setSelectedNetwork] = useState<Network>(networks[1]); // Default to Polygon
-  const [showNetworkPicker, setShowNetworkPicker] = useState(false);
+  // Crypto-out state (wallet - Solana only)
   const [walletAddress, setWalletAddress] = useState('');
   const [walletAddressTouched, setWalletAddressTouched] = useState(false);
+  const [usernameInput, setUsernameInput] = useState('');
+  const [usernameLookupState, setUsernameLookupState] = useState<'idle' | 'loading' | 'found' | 'error'>('idle');
+  const [resolvedWallet, setResolvedWallet] = useState('');
 
   // Banks from API
   const [banks, setBanks] = useState<BankResponse[]>([]);
@@ -177,7 +150,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const bankFormValid = selectedBank && bankAccountNumber.length === 10 && bankValidationState === 'valid' && bankAccountName.trim().length >= 2;
 
-  const walletAddressValid = isValidWalletAddress(walletAddress);
+  const walletAddressValid = isValidSolanaAddress(walletAddress);
   const walletAddressError = walletAddressTouched && walletAddress.length > 0 && !walletAddressValid;
 
   const selectBank = useCallback((bank: BankResponse) => {
@@ -193,28 +166,6 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   }, [bankAccountNumber]);
 
-  const handleInput = useCallback(
-    (val: string) => {
-      setInputVal(val);
-      if (!isCryptoOut && val.length >= 10) {
-        setResolveState('resolving');
-        setResolvedContact(null);
-        setTimeout(() => {
-          if (val.startsWith('0')) {
-            setResolveState('resolved');
-            setResolvedContact(contacts[0]);
-          } else {
-            setResolveState('error');
-          }
-        }, 1200);
-      } else {
-        setResolveState('idle');
-        setResolvedContact(null);
-      }
-    },
-    [isCryptoOut, contacts]
-  );
-
   const handleWalletAddressChange = useCallback((val: string) => {
     setWalletAddress(val);
     setWalletAddressTouched(true);
@@ -228,38 +179,65 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   }, []);
 
-  const selectContact = useCallback(
-    (c: (typeof contacts)[0]) => {
+  const handleUsernameLookup = useCallback(async () => {
+    if (!usernameInput.trim()) return;
+    setUsernameLookupState('loading');
+    try {
+      const profile = await getPublicProfile(usernameInput.trim());
+      if ((profile as any).walletAddress) {
+        setResolvedWallet((profile as any).walletAddress);
+        setWalletAddress((profile as any).walletAddress);
+        setUsernameLookupState('found');
+      } else {
+        setUsernameLookupState('error');
+      }
+    } catch {
+      setUsernameLookupState('error');
+    }
+  }, [usernameInput]);
+
+  const selectBankRecent = useCallback(
+    (r: BankRecipient) => {
+      const initials = r.accountName
+        .trim()
+        .split(' ')
+        .map((w) => w[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase();
       navigation.navigate('Confirm', {
         amount,
         sendCurrency,
         receiveCurrency,
         receiveAmount,
-        recipientName: c.name,
-        recipientInitials: c.initials,
-        recipientColors: c.colors,
-        recipientMethod: c.method,
-        recipientPhone: c.phone,
-        recipientFlag: c.flag,
+        recipientName: r.accountName,
+        recipientInitials: initials,
+        recipientColors: [palette.royal[600], palette.royal[500]],
+        recipientMethod: r.bankName,
+        recipientPhone: r.accountNumber,
+        recipientFlag: '\u{1F1F3}\u{1F1EC}',
+        recipientBankCode: r.bankCode,
+        recipientAccountNumber: r.accountNumber,
+        recipientAccountName: r.accountName,
       });
     },
     [navigation, amount, sendCurrency, receiveCurrency, receiveAmount]
   );
 
-  const selectWalletContact = useCallback(
-    (w: (typeof walletContacts)[0]) => {
+  const selectWalletRecent = useCallback(
+    (r: WalletRecipient, label: string) => {
       navigation.navigate('Confirm', {
         amount,
         sendCurrency,
         receiveCurrency,
         receiveAmount,
-        recipientName: w.name,
-        recipientInitials: w.initials,
-        recipientColors: w.colors,
-        recipientMethod: w.network,
+        recipientName: label,
+        recipientInitials: 'WA',
+        recipientColors: [palette.royal[500], palette.royal[600]],
+        recipientMethod: 'Solana',
         recipientFlag: '\u{1FA99}',
-        recipientWalletAddress: w.walletAddress,
-        recipientNetwork: w.network,
+        recipientWalletAddress: r.walletAddress,
+        recipientNetwork: 'Solana',
       });
     },
     [navigation, amount, sendCurrency, receiveCurrency, receiveAmount]
@@ -267,32 +245,20 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const handleContinueWithWallet = useCallback(() => {
     if (!walletAddressValid) return;
-    const initials = 'WA';
     navigation.navigate('Confirm', {
       amount,
       sendCurrency,
       receiveCurrency,
       receiveAmount,
       recipientName: truncateAddress(walletAddress),
-      recipientInitials: initials,
+      recipientInitials: 'WA',
       recipientColors: [palette.royal[500], palette.royal[600]],
-      recipientMethod: selectedNetwork.name,
+      recipientMethod: 'Solana',
       recipientFlag: '\u{1FA99}',
       recipientWalletAddress: walletAddress,
-      recipientNetwork: selectedNetwork.name,
+      recipientNetwork: 'Solana',
     });
-  }, [
-    navigation,
-    amount,
-    sendCurrency,
-    receiveCurrency,
-    receiveAmount,
-    walletAddress,
-    walletAddressValid,
-    selectedNetwork,
-    palette.royal[500],
-    palette.royal[600],
-  ]);
+  }, [navigation, amount, sendCurrency, receiveCurrency, receiveAmount, walletAddress, walletAddressValid]);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
@@ -326,33 +292,66 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {isCryptoOut ? (
           <>
-            {/* Network Selector */}
-            <TouchableOpacity
+            {/* Network badge (Solana only) */}
+            <View
               style={[
                 styles.networkSelector,
                 { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
               ]}
-              onPress={() => setShowNetworkPicker(true)}
-              activeOpacity={0.7}
             >
               <View style={styles.networkSelectorLeft}>
                 <Text style={[styles.networkSelectorLabel, { color: palette.grey[500] }]}>Network</Text>
                 <View
                   style={[
                     styles.networkPill,
-                    {
-                      backgroundColor: palette.grey[800],
-                      borderColor: palette.material.lightThin,
-                    },
+                    { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
                   ]}
                 >
-                  <Ionicons name={selectedNetwork.icon as any} size={16} color={palette.grey[300]} />
-                  <Text style={[styles.networkPillText, { color: palette.grey[300] }]}>{selectedNetwork.name}</Text>
-                  <Ionicons name="chevron-down" size={14} color={palette.grey[500]} />
+                  <Ionicons name="ellipse" size={10} color={palette.royal[500]} />
+                  <Text style={[styles.networkPillText, { color: palette.grey[300] }]}>Solana</Text>
                 </View>
               </View>
-              <Text style={[styles.networkGas, { color: palette.grey[500] }]}>{selectedNetwork.gasEstimate} gas</Text>
-            </TouchableOpacity>
+            </View>
+
+            {/* Username lookup */}
+            <View style={[styles.walletInputCard, { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin }]}>
+              <Text style={[styles.walletInputLabel, { color: palette.grey[500] }]}>Lookup by username (optional)</Text>
+              <View style={styles.usernameLookupRow}>
+                <TextInput
+                  style={[styles.walletInput, { color: palette.grey[300], backgroundColor: palette.grey[900], borderColor: palette.material.lightThin, flex: 1 }]}
+                  placeholder="Enter Qupay username"
+                  placeholderTextColor={palette.grey[500]}
+                  value={usernameInput}
+                  onChangeText={setUsernameInput}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity
+                  style={[styles.lookupBtn, { backgroundColor: palette.royal[500] }]}
+                  onPress={handleUsernameLookup}
+                  activeOpacity={0.7}
+                  disabled={!usernameInput.trim()}
+                >
+                  {usernameLookupState === 'loading' ? (
+                    <ActivityIndicator size="small" color={palette.grey[100]} />
+                  ) : (
+                    <Ionicons name="search" size={16} color={palette.grey[100]} />
+                  )}
+                </TouchableOpacity>
+              </View>
+              {usernameLookupState === 'found' && (
+                <View style={styles.walletValidRow}>
+                  <Ionicons name="checkmark-circle" size={14} color={palette.royal[500]} />
+                  <Text style={[styles.walletValidText, { color: palette.royal[500] }]}>Wallet found and auto-filled</Text>
+                </View>
+              )}
+              {usernameLookupState === 'error' && (
+                <View style={styles.walletErrorRow}>
+                  <Ionicons name="alert-circle" size={14} color={palette.status.negative} />
+                  <Text style={[styles.walletErrorText, { color: palette.status.negative }]}>User not found or no wallet configured</Text>
+                </View>
+              )}
+            </View>
 
             {/* Wallet Address Input */}
             <View
@@ -364,7 +363,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
               ]}
             >
               <View style={styles.walletInputHeader}>
-                <Text style={[styles.walletInputLabel, { color: palette.grey[500] }]}>Recipient Wallet Address</Text>
+                <Text style={[styles.walletInputLabel, { color: palette.grey[500] }]}>Solana Wallet Address</Text>
                 <TouchableOpacity
                   onPress={handlePasteAddress}
                   style={[styles.pasteBtn, { backgroundColor: palette.grey[900], borderWidth: 1, borderColor: palette.material.lightThin }]}
@@ -377,13 +376,9 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
               <TextInput
                 style={[
                   styles.walletInput,
-                  {
-                    color: palette.grey[300],
-                    backgroundColor: palette.grey[900],
-                    borderColor: palette.material.lightThin,
-                  },
+                  { color: palette.grey[300], backgroundColor: palette.grey[900], borderColor: palette.material.lightThin },
                 ]}
-                placeholder="0x..."
+                placeholder="e.g. 7xKXtg2CW87d97TXJSDpbD5..."
                 placeholderTextColor={palette.grey[500]}
                 value={walletAddress}
                 onChangeText={handleWalletAddressChange}
@@ -393,15 +388,13 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
               {walletAddressError && (
                 <View style={styles.walletErrorRow}>
                   <Ionicons name="alert-circle" size={14} color={palette.status.negative} />
-                  <Text style={[styles.walletErrorText, { color: palette.status.negative }]}>Invalid wallet address format</Text>
+                  <Text style={[styles.walletErrorText, { color: palette.status.negative }]}>Invalid Solana address (32-44 base58 characters)</Text>
                 </View>
               )}
               {walletAddressValid && (
                 <View style={styles.walletValidRow}>
                   <Ionicons name="checkmark-circle" size={14} color={palette.royal[500]} />
-                  <Text style={[styles.walletValidText, { color: palette.royal[500] }]}>
-                    Valid {selectedNetwork.name} address
-                  </Text>
+                  <Text style={[styles.walletValidText, { color: palette.royal[500] }]}>Valid Solana address</Text>
                 </View>
               )}
             </View>
@@ -415,112 +408,43 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
               />
             </View>
 
-            {/* Saved Wallets */}
-            <Text style={[styles.sectionLabel, { color: palette.grey[500] }]}>Saved Wallets</Text>
-            <View style={styles.contactList}>
-              {walletContacts.map((w, index) => (
-                <TouchableOpacity
-                  key={w.id}
-                  style={[
-                    styles.contactItem,
-                    index === walletContacts.length - 1 && styles.contactItemLast,
-                  ]}
-                  onPress={() => selectWalletContact(w)}
-                  activeOpacity={0.7}
-                >
-                  <Avatar seed={w.name} size={44} />
-                  <View style={styles.ciInfo}>
-                    <Text style={[styles.ciName, { color: palette.grey[300] }]}>{w.name}</Text>
-                    <View style={styles.walletSubRow}>
-                      <Text style={[styles.walletAddrText, { color: palette.grey[500] }]}>{truncateAddress(w.walletAddress)}</Text>
-                      <View style={[styles.networkBadge, { backgroundColor: palette.grey[900], borderWidth: 1, borderColor: palette.material.lightThin }]}>
-                        <Ionicons name={w.networkIcon as any} size={10} color={palette.grey[300]} />
-                        <Text style={[styles.networkBadgeText, { color: palette.grey[300] }]}>{w.network}</Text>
+            {/* Recent wallets */}
+            {walletRecents.length > 0 && (
+              <>
+                <Text style={[styles.sectionLabel, { color: palette.grey[500] }]}>Recent</Text>
+                <View style={styles.contactList}>
+                  {walletRecents.map((r, index) => (
+                    <TouchableOpacity
+                      key={r.id}
+                      style={[styles.contactItem, index === walletRecents.length - 1 && styles.contactItemLast]}
+                      onPress={() => selectWalletRecent(r.data as WalletRecipient, r.label)}
+                      activeOpacity={0.7}
+                    >
+                      <Avatar seed={r.label} size={44} />
+                      <View style={styles.ciInfo}>
+                        <Text style={[styles.ciName, { color: palette.grey[300] }]}>{r.label}</Text>
+                        <View style={styles.walletSubRow}>
+                          <Text style={[styles.walletAddrText, { color: palette.grey[500] }]}>{truncateAddress((r.data as WalletRecipient).walletAddress)}</Text>
+                          <View style={[styles.networkBadge, { backgroundColor: palette.grey[900], borderWidth: 1, borderColor: palette.material.lightThin }]}>
+                            <Ionicons name="ellipse" size={8} color={palette.royal[500]} />
+                            <Text style={[styles.networkBadgeText, { color: palette.grey[300] }]}>Solana</Text>
+                          </View>
+                        </View>
                       </View>
-                    </View>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={palette.grey[500]} />
-                </TouchableOpacity>
-              ))}
-            </View>
+                      <Ionicons name="chevron-forward" size={16} color={palette.grey[500]} />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
           </>
         ) : (
           <>
-            {/* Smart input card - Fiat out */}
-            <View
-              style={[
-                styles.sendInputPill,
-                { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
-                resolveState !== 'idle' && { borderColor: palette.royal[500] },
-              ]}
-            >
-              <View style={styles.sicField}>
-                <Ionicons name="search" size={18} color={palette.grey[500]} style={styles.sicSearchIcon} />
-                <TextInput
-                  style={[styles.sicInput, { color: palette.grey[300] }]}
-                  placeholder="Name, phone number, or account\u2026"
-                  placeholderTextColor={palette.grey[500]}
-                  value={inputVal}
-                  onChangeText={handleInput}
-                />
-              </View>
-
-              {resolveState === 'resolving' && (
-                <View style={[styles.resolvingRow, { borderTopColor: palette.material.lightThin }]}>
-                  <View style={[styles.miniSpin, { borderColor: palette.material.lightThin, borderTopColor: palette.royal[500] }]} />
-                  <Text style={[styles.resolvingText, { color: palette.grey[500] }]}>Looking up account\u2026</Text>
-                </View>
-              )}
-
-              {resolveState === 'error' && (
-                <View
-                  style={[
-                    styles.errorRow,
-                    { borderTopColor: `${palette.status.negative}26`, backgroundColor: 'rgba(255,77,91,0.15)' },
-                  ]}
-                >
-                  <Ionicons name="alert-circle" size={16} color={palette.status.negative} />
-                  <View style={styles.errorInfo}>
-                    <Text style={[styles.errorTitle, { color: palette.status.negative }]}>Account not found</Text>
-                    <Text style={[styles.errorSub, { color: palette.grey[500] }]}>
-                      Check the number and try again, or add bank details below
-                    </Text>
-                  </View>
-                </View>
-              )}
-
-              {resolveState === 'resolved' && resolvedContact && (
-                <TouchableOpacity
-                  style={[styles.resolvedRow, { borderTopColor: palette.material.lightThin }]}
-                  onPress={() => selectContact(resolvedContact)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.resolvedCard}>
-                    <Avatar seed={resolvedContact.name} size={36} />
-                    <View style={styles.rcInfo}>
-                      <Text style={[styles.rcName, { color: palette.grey[300] }]}>{resolvedContact.name}</Text>
-                      <Text style={[styles.rcSub, { color: palette.grey[500] }]}>
-                        {resolvedContact.method} {'\u00B7'} {resolvedContact.phone} {'\u00B7'}{' '}
-                        {resolvedContact.country}
-                      </Text>
-                      <Text style={[styles.noAcctNote, { color: palette.grey[500] }]}>
-                        No Qupay account needed — they'll receive a standard {resolvedContact.method} credit {'\u2713'}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.rcCheck, { color: palette.status.positive }]}>{'\u2713'}</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {/* Add bank account for non-Qupay users */}
+            {/* Bank Transfer entry */}
             <TouchableOpacity
               style={[
                 styles.addBankBtn,
-                {
-                  backgroundColor: palette.grey[800],
-                  borderColor: palette.material.lightThin,
-                },
+                { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
               ]}
               onPress={() => setShowBankSheet(true)}
               activeOpacity={0.7}
@@ -530,95 +454,47 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
               </View>
               <View style={styles.addBankInfo}>
                 <Text style={[styles.addBankTitle, { color: palette.grey[300] }]}>Bank Transfer</Text>
-                <Text style={[styles.addBankSub, { color: palette.grey[500] }]}>Send directly to a bank account</Text>
+                <Text style={[styles.addBankSub, { color: palette.grey[500] }]}>Send directly to a Nigerian bank account</Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={palette.grey[500]} />
             </TouchableOpacity>
 
-            {/* Recent contacts */}
-            <Text style={[styles.sectionLabel, { color: palette.grey[500] }]}>Recent</Text>
-            <View style={styles.contactList}>
-              {contacts.map((c, index) => (
-                <TouchableOpacity
-                  key={c.initials}
-                  style={[
-                    styles.contactItem,
-                    index === contacts.length - 1 && styles.contactItemLast,
-                  ]}
-                  onPress={() => selectContact(c)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.ciAvWrap}>
-                    <Avatar seed={c.name} size={44} />
-                    <View
-                      style={[
-                        styles.ciFlag,
-                        {
-                          backgroundColor: palette.grey[900],
-                          borderColor: palette.grey[900],
-                        },
-                      ]}
+            {/* Recent bank recipients */}
+            {bankRecents.length > 0 && (
+              <>
+                <Text style={[styles.sectionLabel, { color: palette.grey[500] }]}>Recent</Text>
+                <View style={styles.contactList}>
+                  {bankRecents.map((r, index) => (
+                    <TouchableOpacity
+                      key={r.id}
+                      style={[styles.contactItem, index === bankRecents.length - 1 && styles.contactItemLast]}
+                      onPress={() => selectBankRecent(r.data as BankRecipient)}
+                      activeOpacity={0.7}
                     >
-                      <Text style={styles.ciFlagText}>{c.flag}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.ciInfo}>
-                    <Text style={[styles.ciName, { color: palette.grey[300] }]}>{c.name}</Text>
-                    <Text style={[styles.ciSub, { color: palette.grey[500] }]}>
-                      {c.method} {'\u00B7'} {c.phone} {'\u00B7'} {c.country}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={palette.grey[500]} />
-                </TouchableOpacity>
-              ))}
-            </View>
+                      <View style={styles.ciAvWrap}>
+                        <Avatar seed={r.label} size={44} />
+                        <View
+                          style={[styles.ciFlag, { backgroundColor: palette.grey[900], borderColor: palette.grey[900] }]}
+                        >
+                          <Text style={styles.ciFlagText}>{'\u{1F1F3}\u{1F1EC}'}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.ciInfo}>
+                        <Text style={[styles.ciName, { color: palette.grey[300] }]}>{r.label}</Text>
+                        <Text style={[styles.ciSub, { color: palette.grey[500] }]}>
+                          {(r.data as BankRecipient).bankName} · {(r.data as BankRecipient).accountNumber}
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color={palette.grey[500]} />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
           </>
         )}
       </ScrollView>
 
-      {/* Network Picker Sheet */}
-      <BottomSheet
-        visible={showNetworkPicker}
-        onClose={() => setShowNetworkPicker(false)}
-        title="Select Network"
-      >
-        {networks.map((n) => (
-          <TouchableOpacity
-            key={n.id}
-            style={[
-              styles.networkItem,
-              { borderBottomColor: palette.material.lightThin },
-              selectedNetwork.id === n.id && { backgroundColor: 'rgba(251,251,253,0.06)' },
-            ]}
-            onPress={() => {
-              setSelectedNetwork(n);
-              setShowNetworkPicker(false);
-            }}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.networkItemIcon, { backgroundColor: palette.material.lightThin }]}>
-              <Ionicons
-                name={n.icon as any}
-                size={20}
-                color={selectedNetwork.id === n.id ? palette.royal[500] : palette.grey[300]}
-              />
-            </View>
-            <View style={styles.networkItemInfo}>
-              <Text
-                style={[
-                  styles.networkItemName,
-                  { color: selectedNetwork.id === n.id ? palette.royal[500] : palette.grey[300] },
-                ]}
-              >
-                {n.name}
-              </Text>
-              <Text style={[styles.networkItemGas, { color: palette.grey[500] }]}>Gas {n.gasEstimate}</Text>
-            </View>
-            {selectedNetwork.id === n.id && <Ionicons name="checkmark" size={18} color={palette.royal[500]} />}
-          </TouchableOpacity>
-        ))}
-        <View style={{ height: 40 }} />
-      </BottomSheet>
 
       {/* Bank Account Entry Sheet */}
       <BottomSheet
@@ -750,6 +626,9 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                 recipientMethod: bankName,
                 recipientPhone: bankAccountNumber,
                 recipientFlag: '\u{1F1F3}\u{1F1EC}',
+                recipientBankCode: selectedBank!,
+                recipientAccountNumber: bankAccountNumber,
+                recipientAccountName: bankAccountName.trim(),
               });
             }}
             style={{ marginTop: 16 }}
@@ -967,6 +846,19 @@ const styles = StyleSheet.create({
   walletContinueWrap: {
     marginHorizontal: 24,
     marginBottom: 24,
+  },
+  usernameLookupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  lookupBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   walletSubRow: {
     flexDirection: 'row',
