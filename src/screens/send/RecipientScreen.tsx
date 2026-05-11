@@ -117,6 +117,11 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
         bankCode: selectedBank,
         accountNumber: bankAccountNumber,
       });
+      if (!result.accountName) {
+        setBankValidationError('Account not found. Please check the details and try again.');
+        setBankValidationState('invalid');
+        return;
+      }
       setBankAccountName(result.accountName);
       setBankValidationState('valid');
     } catch (err) {
@@ -148,7 +153,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
     return banks.filter((b) => b.bankName.toLowerCase().includes(search));
   }, [banks, bankSearch]);
 
-  const bankFormValid = selectedBank && bankAccountNumber.length === 10 && bankValidationState === 'valid' && bankAccountName.trim().length >= 2;
+  const bankFormValid = selectedBank && bankAccountNumber.length === 10 && bankValidationState === 'valid' && (bankAccountName ?? '').trim().length >= 2;
 
   const walletAddressValid = isValidSolanaAddress(walletAddress);
   const walletAddressError = walletAddressTouched && walletAddress.length > 0 && !walletAddressValid;
