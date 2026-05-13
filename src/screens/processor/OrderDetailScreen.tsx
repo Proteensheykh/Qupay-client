@@ -17,6 +17,7 @@ import { useAcceptOrder } from '../../hooks/useMpQueue';
 import { useUploadProof } from '../../hooks/useMyOrders';
 import { useToast } from '../../hooks/useToast';
 import { getApiErrorMessage } from '../../api/errors';
+import { isApiError } from '../../api/client';
 import { pickProofFile, uploadFile, type PickedFile } from '../../api/uploads';
 import { toStatusGroup, isTerminalStatus } from '../../utils/transactionStatus';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -32,7 +33,7 @@ type Props = NativeStackScreenProps<ProcessorStackParamList, 'OrderDetail'>;
 
 export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const { transactionId, orderId, isQueueItem } = route.params;
-  const { data: tx } = useTransaction(transactionId);
+  const { data: tx, error: txError, isError: isTxError } = useTransaction(transactionId);
   const acceptOrder = useAcceptOrder();
   const uploadProof = useUploadProof();
   const toast = useToast();
@@ -109,11 +110,38 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   }, [pickedFile, description, orderId, uploadProof, toast]);
 
+  if (isTxError) {
+    const is403 = isApiError(txError) && txError.status === 403;
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+        <ScreenHeader title="Order Detail" onBack={() => navigation.goBack()} />
+        <View style={styles.loaderWrap}>
+          <Ionicons name="alert-circle-outline" size={48} color={palette.grey[500]} />
+          <Text style={[styles.errorTitle, { color: palette.grey[300] }]}>
+            {is403 ? 'Access Denied' : 'Something went wrong'}
+          </Text>
+          <Text style={[styles.errorSubtext, { color: palette.grey[500] }]}>
+            {is403
+              ? 'You don\u2019t have permission to view this transaction.'
+              : getApiErrorMessage(txError)}
+          </Text>
+          <CTAButton
+            title="Go Back"
+            onPress={() => navigation.goBack()}
+            ghost
+            style={{ marginTop: 20, width: 160 }}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (!tx) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
         <ScreenHeader title="Order Detail" onBack={() => navigation.goBack()} />
         <View style={styles.loaderWrap}>
+          <ActivityIndicator size="large" color={palette.royal[500]} />
           <Text style={[styles.loadingText, { color: palette.grey[500] }]}>Loading...</Text>
         </View>
       </SafeAreaView>
@@ -405,8 +433,10 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 8 },
-  loaderWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  loaderWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 32 },
   loadingText: { ...typography.bodySm },
+  errorTitle: { ...typography.h4, marginTop: 4 },
+  errorSubtext: { ...typography.bodySm, textAlign: 'center', lineHeight: 20 },
   statusRow: { alignItems: 'center', marginBottom: 16 },
   card: { padding: 16, marginBottom: 14 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },

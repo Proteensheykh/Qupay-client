@@ -14,7 +14,9 @@ export function useTransaction(id: string) {
     queryKey: queryKeys.transactions.byId(id),
     queryFn: () => getTransaction(id),
     enabled: !!id,
+    retry: 2,
     refetchInterval: (query) => {
+      if (query.state.error) return false;
       const status = query.state.data?.status;
       if (!status) return 5000;
       return getPollingInterval(status);
