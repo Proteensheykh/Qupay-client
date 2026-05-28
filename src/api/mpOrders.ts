@@ -3,7 +3,7 @@ import { normalizeStatus } from '../utils/transactionStatus';
 import type { TransactionStatus, StatusGroup } from '../types/transaction';
 
 export interface MpOrder {
-  id: string;
+  orderId: string;
   transactionId: string;
   transactionCode: string;
   fromCurrency: string;
@@ -25,14 +25,18 @@ export interface MpOrder {
 }
 
 export interface UploadProofRequest {
-  proofUrl: string;
-  contentType?: string;
+  file: {
+    uri: string;
+    name: string;
+    mimeType: string;
+  };
   description?: string;
 }
 
 function normalizeOrder(raw: any): MpOrder {
   return {
     ...raw,
+    orderId: raw?.orderId ?? raw?.id,
     status: normalizeStatus(raw.status),
   };
 }
@@ -68,5 +72,34 @@ export async function uploadProof(
   orderId: string,
   data: UploadProofRequest
 ): Promise<void> {
-  await apiClient.post(`/v1/mp/orders/${orderId}/proof`, data);
+  const form = new FormData();
+  const uri = data.file.uri;
+
+  // Web (react-dom / Expo web): FormData requires Blob/File, not RN's { uri, name, type } object.
+  if (
+    typeof window !== 'undefined' &&
+    (uri.startsWith('blob:') || uri.startsWith('http://') || uri.startsWith('https://'))
+  ) {
+    const res = await fetch(uri);
+    const blob = await res.blob();
+    const typedBlob =
+      data.file.mimeType && blob.type !== data.file.mimeType
+        ? new Blob([await blob.arrayBuffer()], { type: data.file.mimeType })
+        : blob;
+    form.append('file', typedBlob, data.file.name);
+  } else {
+    // Native (iOS/Android): axios/RN can handle the { uri, name, type } shape.
+    form.append(
+      'file',
+      {
+        uri,
+        name: data.file.name,
+        type: data.file.mimeType,
+      } as any
+    );
+  }
+
+  await apiClient.post(`/v1/mp/orders/${orderId}/proof`, form, {
+    params: data.description ? { description: data.description } : undefined,
+  });
 }

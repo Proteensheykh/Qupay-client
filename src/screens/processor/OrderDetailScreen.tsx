@@ -18,7 +18,7 @@ import { useUploadProof } from '../../hooks/useMyOrders';
 import { useToast } from '../../hooks/useToast';
 import { getApiErrorMessage } from '../../api/errors';
 import { isApiError } from '../../api/client';
-import { pickProofFile, uploadFile, type PickedFile } from '../../api/uploads';
+import { pickProofFile, type PickedFile } from '../../api/uploads';
 import { toStatusGroup, isTerminalStatus } from '../../utils/transactionStatus';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ProcessorStackParamList } from '../../navigation/AppNavigator';
@@ -81,21 +81,15 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     setUploading(true);
 
     try {
-      /**
-       * TODO (Dep #1 — pending backend work):
-       * `uploadFile()` currently returns the local file URI as a pass-through.
-       * The backend's `POST /v1/mp/orders/{orderId}/proof` expects a remotely-
-       * accessible URL in the `proofUrl` field. This will fail until a real
-       * upload target (presigned URL endpoint or Cloudinary fallback) is wired.
-       * See `src/api/uploads.ts` for implementation notes.
-       */
-      const proofUrl = await uploadFile(pickedFile);
-
       await uploadProof.mutateAsync({
         orderId,
+        transactionId,
         data: {
-          proofUrl,
-          contentType: pickedFile.mimeType,
+          file: {
+            uri: pickedFile.uri,
+            name: pickedFile.name,
+            mimeType: pickedFile.mimeType,
+          },
           description: description.trim() || undefined,
         },
       });

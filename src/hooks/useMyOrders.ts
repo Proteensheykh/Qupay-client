@@ -14,11 +14,21 @@ export function useUploadProof() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ orderId, data }: { orderId: string; data: UploadProofRequest }) =>
-      uploadProof(orderId, data),
+    mutationFn: ({
+      orderId,
+      data,
+    }: {
+      orderId: string;
+      data: UploadProofRequest;
+      transactionId?: string;
+    }) => uploadProof(orderId, data),
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.mp.myOrders() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.transactions.byId(variables.orderId) });
+      if (variables.transactionId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.transactions.byId(variables.transactionId),
+        });
+      }
     },
   });
 }

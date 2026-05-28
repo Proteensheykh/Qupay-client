@@ -91,7 +91,7 @@ export const MpHomeScreen: React.FC<Props> = ({ navigation }) => {
         onPress={() =>
           navigation.navigate('OrderDetail', {
             transactionId: item.transactionId,
-            orderId: item.id,
+            orderId: item.orderId,
             isQueueItem: activeTab === 'queue',
           })
         }
@@ -194,7 +194,7 @@ export const MpHomeScreen: React.FC<Props> = ({ navigation }) => {
       ) : (
         <FlatList
           data={currentList}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.orderId}
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}

@@ -98,6 +98,14 @@ apiClient.interceptors.request.use(
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
+
+    // Multipart uploads: don't force JSON content-type.
+    // In React Native, setting multipart Content-Type manually can break the boundary.
+    if (config.data && typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      if (config.headers && 'Content-Type' in config.headers) {
+        delete (config.headers as any)['Content-Type'];
+      }
+    }
     logRequest(config);
     return config;
   },

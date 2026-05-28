@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Linking } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
@@ -213,6 +213,20 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
             {tx.proof?.contentType && (
               <Row label="Type" value={tx.proof.contentType} />
             )}
+            <TouchableOpacity
+              activeOpacity={0.6}
+              onPress={async () => {
+                await Clipboard.setStringAsync(tx.proof!.proofUrl);
+                toast.info('Proof URL copied to clipboard.');
+                try {
+                  await Linking.openURL(tx.proof!.proofUrl);
+                } catch {
+                  // Ignore if device/browser cannot open the URL.
+                }
+              }}
+            >
+              <Row label="URL" value={tx.proof.proofUrl} mono />
+            </TouchableOpacity>
             {tx.proof?.description && (
               <Row label="Note" value={tx.proof.description} />
             )}
