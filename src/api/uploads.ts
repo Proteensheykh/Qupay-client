@@ -9,6 +9,7 @@
  */
 
 import * as DocumentPicker from 'expo-document-picker';
+import { runWithoutPinLock } from '../store/pinLockGuard';
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
@@ -37,11 +38,16 @@ function isAllowedMime(mime: string): boolean {
 }
 
 export async function pickProofFile(): Promise<PickResult> {
-  const result = await DocumentPicker.getDocumentAsync({
-    type: [...ALLOWED_MIME_EXACT, 'image/*'],
-    copyToCacheDirectory: true,
-    multiple: false,
-  });
+  // The picker opens a system UI that backgrounds the app. Suppress the
+  // foreground PIN lock so returning with a file doesn't bounce the MP to the
+  // PIN-verify screen mid-upload.
+  const result = await runWithoutPinLock(() =>
+    DocumentPicker.getDocumentAsync({
+      type: [...ALLOWED_MIME_EXACT, 'image/*'],
+      copyToCacheDirectory: true,
+      multiple: false,
+    })
+  );
 
   if (result.canceled || !result.assets?.length) {
     return {

@@ -3,6 +3,7 @@ import { AppState, AppStateStatus } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '../api/queryClient';
 import { useAuthStore } from '../store/authStore';
+import { isPinLockSuppressed } from '../store/pinLockGuard';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -28,7 +29,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         appState.current.match(/inactive|background/) &&
         nextAppState === 'active'
       ) {
-        if (isAuthenticated && hasPin && !isValidating.current) {
+        if (
+          isAuthenticated &&
+          hasPin &&
+          !isValidating.current &&
+          !isPinLockSuppressed()
+        ) {
           isValidating.current = true;
           try {
             const stillValid = await validateSession();

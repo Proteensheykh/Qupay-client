@@ -14,6 +14,7 @@ import { palette } from '../../theme/colors';
 import { radii } from '../../theme/radii';
 import { borders } from '../../theme/elevation';
 import { typography } from '../../theme/typography';
+import { runWithoutPinLock } from '../../store/pinLockGuard';
 
 type Props = NativeStackScreenProps<HistoryStackParamList, 'TransferDetail'>;
 
@@ -219,7 +220,9 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
                 await Clipboard.setStringAsync(tx.proof!.proofUrl);
                 toast.info('Proof URL copied to clipboard.');
                 try {
-                  await Linking.openURL(tx.proof!.proofUrl);
+                  // Opening the URL backgrounds the app; suppress the
+                  // foreground PIN lock so returning doesn't force re-verify.
+                  await runWithoutPinLock(() => Linking.openURL(tx.proof!.proofUrl));
                 } catch {
                   // Ignore if device/browser cannot open the URL.
                 }
