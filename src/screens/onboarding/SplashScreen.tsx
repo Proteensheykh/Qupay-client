@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 4,
     borderRadius: radii.pill,
-    backgroundColor: palette.material.lightThin,
+    backgroundColor: palette.material.darkThin,
     overflow: 'hidden',
   },
   progressFill: {

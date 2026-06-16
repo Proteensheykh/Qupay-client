@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from './Icon';
 import { spacing, useTheme, typography } from '../theme';
-import { palette } from '../theme/colors';
 import { borders } from '../theme/elevation';
 import { radii } from '../theme/radii';
 import { useHaptics } from '../hooks/useHaptics';
@@ -45,7 +44,7 @@ export const Numpad: React.FC<NumpadProps> = ({ onKey, size = 'default', showDec
               width: keySize,
               height: keySize,
               borderRadius: radii.pill,
-              backgroundColor: palette.grey[800],
+              backgroundColor: theme.background.surface,
             },
             hairline,
             key === '' && styles.numKeyEmpty,

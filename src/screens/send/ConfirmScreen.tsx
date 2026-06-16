@@ -54,7 +54,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
     recipientAccountName,
   } = route.params;
 
-  const hairline = borders.hairline.dark;
+  const hairline = borders.hairline.light;
   const toast = useToast();
   const createTx = useCreateTransaction();
   const addRecent = useRecentRecipientsStore((s) => s.add);
@@ -202,7 +202,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
   const fee = Math.round(amount * 0.015 * 100) / 100;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
       <ScreenHeader title="Confirm" onBack={() => navigation.goBack()} />
       <ScrollView
         style={styles.scroll}
@@ -210,12 +210,12 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.reviewCard, { backgroundColor: palette.grey[800] }, hairline]}>
+        <View style={[styles.reviewCard, { backgroundColor: palette.grey[200] }, hairline]}>
           {/* Recipient strip */}
           <View style={styles.recipStrip}>
             <Avatar seed={recipientName} size={34} />
             <View style={styles.rsInfo}>
-              <Text style={[styles.rsName, { color: palette.grey[300] }]}>{recipientName}</Text>
+              <Text style={[styles.rsName, { color: palette.grey[900] }]}>{recipientName}</Text>
               {isCryptoOut ? (
                 <Text style={[styles.rsSub, { color: palette.grey[500] }]}>
                   {truncateAddress(recipientWalletAddress || '')} · Solana
@@ -234,14 +234,14 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
           <View style={styles.reviewPad}>
             <View style={styles.swapRow}>
               <Text style={[styles.swapLabel, { color: palette.grey[500] }]}>You send</Text>
-              <Text style={[styles.swapValue, { color: palette.grey[300] }]}>
+              <Text style={[styles.swapValue, { color: palette.grey[900] }]}>
                 {sendSymbol}{amount.toLocaleString()} {sendCurrency}
               </Text>
             </View>
             <View style={styles.reviewDivider} />
             <View style={styles.swapRow}>
               <Text style={[styles.swapLabel, { color: palette.grey[500] }]}>They receive</Text>
-              <Text style={[styles.swapValue, { color: palette.grey[300] }]}>
+              <Text style={[styles.swapValue, { color: palette.grey[900] }]}>
                 {isCryptoOut
                   ? `${liveReceiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`
                   : `${recvSymbol}${liveReceiveAmount.toLocaleString()}`}
@@ -259,7 +259,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
                 {rateLoading ? (
                   <ActivityIndicator size="small" color={palette.royal[500]} />
                 ) : liveRate ? (
-                  <Text style={[styles.feeValue, { color: palette.grey[300] }]}>
+                  <Text style={[styles.feeValue, { color: palette.grey[900] }]}>
                     1 {sendCurrency} = {recvSymbol}{liveRate.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                   </Text>
                 ) : (
@@ -273,7 +273,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
             {/* Freshness pill */}
             <View style={styles.freshRow}>
               <TouchableOpacity
-                style={[styles.freshPill, { backgroundColor: palette.grey[900] }, hairline]}
+                style={[styles.freshPill, { backgroundColor: palette.grey[100] }, hairline]}
                 onPress={refreshRate}
                 activeOpacity={0.7}
               >
@@ -287,7 +287,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
 
             <View style={styles.feeRow}>
               <Text style={[styles.feeLabel, { color: palette.grey[500] }]}>Fee (est.)</Text>
-              <Text style={[styles.feeValue, { color: palette.grey[300] }]}>
+              <Text style={[styles.feeValue, { color: palette.grey[900] }]}>
                 {sendSymbol}{fee.toLocaleString()} {sendCurrency}
               </Text>
             </View>
@@ -296,7 +296,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
               <Text style={[styles.feeLabel, { color: palette.grey[500] }]}>Delivery</Text>
               <View style={styles.deliveryPill}>
                 <Ionicons name="pulse" size={11} color={palette.grey[500]} />
-                <Text style={[styles.deliveryText, { color: palette.grey[300] }]}>
+                <Text style={[styles.deliveryText, { color: palette.grey[900] }]}>
                   Live tracking
                 </Text>
               </View>
@@ -329,7 +329,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
         title="Enter PIN"
       >
         <View style={styles.pinSheet}>
-          <Text style={[styles.pinPrompt, { color: palette.grey[300] }]}>
+          <Text style={[styles.pinPrompt, { color: palette.grey[900] }]}>
             Enter your 4-digit PIN to confirm this transfer
           </Text>
 
@@ -340,7 +340,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
                 style={[
                   styles.pinDot,
                   {
-                    backgroundColor: pin.length > i ? palette.royal[500] : palette.grey[700],
+                    backgroundColor: pin.length > i ? palette.royal[500] : palette.grey[300],
                     borderColor: pinError ? palette.status.negative : 'transparent',
                     borderWidth: pinError ? 1 : 0,
                   },
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   },
   reviewDivider: {
     height: 1,
-    backgroundColor: palette.material.lightThin,
+    backgroundColor: palette.material.darkThin,
     width: '100%',
   },
   reviewPad: {

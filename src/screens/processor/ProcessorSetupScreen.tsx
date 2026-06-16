@@ -107,7 +107,7 @@ export const ProcessorSetupScreen: React.FC<Props> = ({ navigation }) => {
   const completedCount = steps.filter((s) => s.status === 'complete').length;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
       <ScreenHeader title="Processor Setup" onBack={() => navigation.goBack()} />
       <ScrollView
         style={styles.scroll}
@@ -119,7 +119,7 @@ export const ProcessorSetupScreen: React.FC<Props> = ({ navigation }) => {
           <View style={[styles.heroIcon, { backgroundColor: 'rgba(158,121,210,0.12)' }]}>
             <Ionicons name="swap-horizontal" size={28} color={palette.royal[500]} />
           </View>
-          <Text style={[styles.heroTitle, { color: palette.grey[300] }]}>
+          <Text style={[styles.heroTitle, { color: palette.grey[900] }]}>
             Become a Processor
           </Text>
           <Text style={[styles.heroSub, { color: palette.grey[500] }]}>
@@ -128,7 +128,7 @@ export const ProcessorSetupScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         {/* Progress bar */}
-        <View style={[styles.progressBarBg, { backgroundColor: palette.grey[800] }]}>
+        <View style={[styles.progressBarBg, { backgroundColor: palette.grey[200] }]}>
           <View
             style={[
               styles.progressBarFill,
@@ -151,8 +151,8 @@ export const ProcessorSetupScreen: React.FC<Props> = ({ navigation }) => {
               key={step.key}
               style={[
                 styles.stepCard,
-                { backgroundColor: palette.grey[800] },
-                borders.hairline.dark,
+                { backgroundColor: palette.grey[200] },
+                borders.hairline.light,
                 { borderRadius: radii.lg },
                 step.disabled && styles.stepDisabled,
               ]}
@@ -160,16 +160,16 @@ export const ProcessorSetupScreen: React.FC<Props> = ({ navigation }) => {
               disabled={step.disabled}
               activeOpacity={0.7}
             >
-              <View style={[styles.stepNum, { backgroundColor: step.status === 'complete' ? 'rgba(122,232,112,0.12)' : palette.grey[700] }]}>
+              <View style={[styles.stepNum, { backgroundColor: step.status === 'complete' ? 'rgba(122,232,112,0.12)' : palette.grey[300] }]}>
                 <Text style={[styles.stepNumText, { color: step.status === 'complete' ? palette.status.positive : palette.grey[400] }]}>
                   {idx + 1}
                 </Text>
               </View>
               <View style={styles.stepBody}>
-                <Text style={[styles.stepTitle, { color: step.disabled ? palette.grey[600] : palette.grey[300] }]}>
+                <Text style={[styles.stepTitle, { color: step.disabled ? palette.grey[600] : palette.grey[900] }]}>
                   {step.title}
                 </Text>
-                <Text style={[styles.stepDesc, { color: step.disabled ? palette.grey[700] : palette.grey[500] }]}>
+                <Text style={[styles.stepDesc, { color: step.disabled ? palette.grey[600] : palette.grey[500] }]}>
                   {step.description}
                 </Text>
               </View>
@@ -181,7 +181,7 @@ export const ProcessorSetupScreen: React.FC<Props> = ({ navigation }) => {
         {mpOnboarded && (
           <View style={[styles.completeCard, { backgroundColor: 'rgba(122,232,112,0.08)', borderColor: palette.status.positive }]}>
             <Ionicons name="checkmark-circle" size={20} color={palette.status.positive} />
-            <Text style={[styles.completeText, { color: palette.grey[300] }]}>
+            <Text style={[styles.completeText, { color: palette.grey[900] }]}>
               You're all set! Go to the Process tab to start accepting orders.
             </Text>
           </View>

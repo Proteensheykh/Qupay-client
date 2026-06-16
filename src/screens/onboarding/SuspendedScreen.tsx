@@ -15,7 +15,7 @@ export const SuspendedScreen: React.FC = () => {
   }, [logout]);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]}>
       <View style={styles.container}>
         <View style={styles.header}>
           <QupayLogo size={22} />
@@ -25,7 +25,7 @@ export const SuspendedScreen: React.FC = () => {
           <View style={[styles.iconWrap, { backgroundColor: `${palette.status.negative}15` }]}>
             <Ionicons name="ban-outline" size={48} color={palette.status.negative} />
           </View>
-          <Text style={[styles.title, { color: palette.grey[200] }]}>
+          <Text style={[styles.title, { color: palette.grey[900] }]}>
             Account Suspended
           </Text>
           <Text style={[styles.message, { color: palette.grey[500] }]}>

@@ -57,7 +57,7 @@ export const MpProfileScreen: React.FC<Props> = ({ navigation }) => {
 
   if (isLoading || !mpProfile) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
         <ScreenHeader title="Processor Profile" onBack={() => navigation.goBack()} />
         <View style={styles.loaderWrap}>
           <Text style={[styles.loadingText, { color: palette.grey[500] }]}>Loading...</Text>
@@ -67,7 +67,7 @@ export const MpProfileScreen: React.FC<Props> = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
       <ScreenHeader title="Processor Profile" onBack={() => navigation.goBack()} />
       <ScrollView
         style={styles.scroll}
@@ -91,27 +91,27 @@ export const MpProfileScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         {/* Balances */}
-        <View style={[styles.card, { backgroundColor: palette.grey[800] }, borders.hairline.dark, { borderRadius: radii.lg }]}>
+        <View style={[styles.card, { backgroundColor: palette.grey[200] }, borders.hairline.light, { borderRadius: radii.lg }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="wallet-outline" size={16} color={palette.royal[500]} />
-            <Text style={[styles.cardHeaderText, { color: palette.grey[300] }]}>Balances</Text>
+            <Text style={[styles.cardHeaderText, { color: palette.grey[900] }]}>Balances</Text>
           </View>
           <View style={styles.balanceRow}>
             <View style={styles.balanceItem}>
               <Text style={[styles.balanceLabel, { color: palette.grey[500] }]}>USDT</Text>
-              <Text style={[styles.balanceValue, { color: palette.grey[100] }]}>
+              <Text style={[styles.balanceValue, { color: palette.grey[900] }]}>
                 {mpProfile.usdtBalance?.toLocaleString()}
               </Text>
             </View>
-            <View style={[styles.balanceDivider, { backgroundColor: palette.material.lightThin }]} />
+            <View style={[styles.balanceDivider, { backgroundColor: palette.material.darkThin }]} />
             <View style={styles.balanceItem}>
               <Text style={[styles.balanceLabel, { color: palette.grey[500] }]}>NGN</Text>
-              <Text style={[styles.balanceValue, { color: palette.grey[100] }]}>
+              <Text style={[styles.balanceValue, { color: palette.grey[900] }]}>
                 {mpProfile.ngnBalance?.toLocaleString()}
               </Text>
             </View>
           </View>
-          <View style={[styles.stakeRow, { borderTopColor: palette.material.lightThin }]}>
+          <View style={[styles.stakeRow, { borderTopColor: palette.material.darkThin }]}>
             <Text style={[styles.stakeLabel, { color: palette.grey[500] }]}>Staked USDT</Text>
             <Text style={[styles.stakeValue, { color: palette.royal[400] }]}>
               {mpProfile.stakedUsdt?.toLocaleString()}
@@ -119,20 +119,20 @@ export const MpProfileScreen: React.FC<Props> = ({ navigation }) => {
           </View>
           <View style={styles.limitRow}>
             <Text style={[styles.stakeLabel, { color: palette.grey[500] }]}>Daily Limit</Text>
-            <Text style={[styles.stakeValue, { color: palette.grey[300] }]}>
+            <Text style={[styles.stakeValue, { color: palette.grey[900] }]}>
               {mpProfile.dailyLimit?.toLocaleString()} USDT
             </Text>
           </View>
         </View>
 
         {/* Operating Hours */}
-        <View style={[styles.card, { backgroundColor: palette.grey[800] }, borders.hairline.dark, { borderRadius: radii.lg }]}>
+        <View style={[styles.card, { backgroundColor: palette.grey[200] }, borders.hairline.light, { borderRadius: radii.lg }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="time-outline" size={16} color={palette.royal[500]} />
-            <Text style={[styles.cardHeaderText, { color: palette.grey[300] }]}>Operating Hours</Text>
+            <Text style={[styles.cardHeaderText, { color: palette.grey[900] }]}>Operating Hours</Text>
           </View>
           <View style={styles.hoursRow}>
-            <Text style={[styles.hoursValue, { color: palette.grey[200] }]}>
+            <Text style={[styles.hoursValue, { color: palette.grey[900] }]}>
               {formatLocalTime(mpProfile.operatingHoursStart)} — {formatLocalTime(mpProfile.operatingHoursEnd)}
             </Text>
           </View>
@@ -142,17 +142,17 @@ export const MpProfileScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         {/* Bindings */}
-        <View style={[styles.card, { backgroundColor: palette.grey[800] }, borders.hairline.dark, { borderRadius: radii.lg }]}>
+        <View style={[styles.card, { backgroundColor: palette.grey[200] }, borders.hairline.light, { borderRadius: radii.lg }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="link-outline" size={16} color={palette.royal[500]} />
-            <Text style={[styles.cardHeaderText, { color: palette.grey[300] }]}>Linked Accounts</Text>
+            <Text style={[styles.cardHeaderText, { color: palette.grey[900] }]}>Linked Accounts</Text>
           </View>
           {user?.walletAddress && (
             <View style={styles.bindingRow}>
               <Ionicons name="wallet-outline" size={16} color={palette.grey[400]} />
               <View style={styles.bindingBody}>
                 <Text style={[styles.bindingLabel, { color: palette.grey[500] }]}>Solana Wallet</Text>
-                <Text style={[styles.bindingMono, { color: palette.grey[300] }]} numberOfLines={1}>
+                <Text style={[styles.bindingMono, { color: palette.grey[900] }]} numberOfLines={1}>
                   {user.walletAddress}
                 </Text>
               </View>
@@ -163,7 +163,7 @@ export const MpProfileScreen: React.FC<Props> = ({ navigation }) => {
               <Ionicons name="business-outline" size={16} color={palette.grey[400]} />
               <View style={styles.bindingBody}>
                 <Text style={[styles.bindingLabel, { color: palette.grey[500] }]}>Bank Account</Text>
-                <Text style={[styles.bindingValue, { color: palette.grey[300] }]}>
+                <Text style={[styles.bindingValue, { color: palette.grey[900] }]}>
                   {ba.accountName} ({ba.bankName})
                 </Text>
               </View>

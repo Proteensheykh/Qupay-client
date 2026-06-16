@@ -119,7 +119,7 @@ export const PinVerifyScreen: React.FC<Props> = ({ navigation }) => {
                       ? theme.error.main
                       : pin.length > i
                         ? palette.royal[500]
-                        : palette.grey[700],
+                        : palette.grey[300],
                     backgroundColor: pin.length > i ? palette.royal[500] : 'transparent',
                   },
                 ]}

@@ -173,7 +173,7 @@ export const PinResetScreen: React.FC<Props> = ({ route, navigation }) => {
                       ? theme.error.main
                       : currentValue.length > i
                         ? palette.royal[500]
-                        : palette.grey[700],
+                        : palette.grey[300],
                     backgroundColor: currentValue.length > i ? palette.royal[500] : 'transparent',
                   },
                 ]}

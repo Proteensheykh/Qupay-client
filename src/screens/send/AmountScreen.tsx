@@ -150,9 +150,9 @@ const formatRate = (value: number): string => {
 };
 
 const currencyPillBase = {
-  backgroundColor: palette.grey[800],
+  backgroundColor: palette.grey[200],
   borderWidth: 1,
-  borderColor: palette.material.lightThin,
+  borderColor: palette.material.darkThin,
   borderRadius: radii.xl,
 };
 
@@ -160,7 +160,7 @@ const findByCode = (list: CurrencyDisplay[], code: string): CurrencyDisplay | un
   list.find((c) => c.code === code);
 
 export const AmountScreen: React.FC<Props> = ({ navigation }) => {
-  const hairline = borders.hairline.dark;
+  const hairline = borders.hairline.light;
   const [currencies, setCurrencies] = useState<CurrencyDisplay[]>(FALLBACK_CURRENCIES);
   const [selectedSendCurrency, setSelectedSendCurrency] = useState<CurrencyDisplay>(
     findByCode(FALLBACK_CURRENCIES, 'USDT') ?? FALLBACK_CURRENCIES[0]
@@ -319,32 +319,32 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
     }
     if (receivingCrypto) {
       return (
-        <Text style={[styles.ratePillText, { color: palette.grey[300] }]}>
+        <Text style={[styles.ratePillText, { color: palette.grey[900] }]}>
           1 {selectedReceiveCurrency.code} = {selectedSendCurrency.symbol}{formatRate(rateData.inverseRate)} {selectedSendCurrency.code}
         </Text>
       );
     }
     return (
-      <Text style={[styles.ratePillText, { color: palette.grey[300] }]}>
+      <Text style={[styles.ratePillText, { color: palette.grey[900] }]}>
         1 {selectedSendCurrency.code} = {selectedReceiveCurrency.symbol}{formatRate(rate)}
       </Text>
     );
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
       <ScreenHeader title="Send" />
       <ScrollView
         style={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.amountCard, { backgroundColor: palette.grey[800] }, hairline]}>
+        <View style={[styles.amountCard, { backgroundColor: palette.grey[200] }, hairline]}>
           <View style={styles.acSection}>
             <Text style={[styles.acLabel, { color: palette.grey[500] }]}>You send</Text>
             <View style={styles.acRowSpaced}>
               <View style={styles.odometerRow}>
-                <Odometer value={odometerValue} color={palette.grey[300]} fontSize={56} />
+                <Odometer value={odometerValue} color={palette.grey[900]} fontSize={56} />
               </View>
               <Pressable
                 style={({ pressed }) => [
@@ -357,24 +357,24 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
                 <View style={[styles.cpIconWrapSmall, { backgroundColor: selectedSendCurrency.color + '20' }]}>
                   <CurrencyIcon code={selectedSendCurrency.code} emoji={selectedSendCurrency.icon} size={24} />
                 </View>
-                <Text style={[styles.currText, { color: palette.grey[300] }]}>{selectedSendCurrency.code}</Text>
+                <Text style={[styles.currText, { color: palette.grey[900] }]}>{selectedSendCurrency.code}</Text>
                 <Ionicons name="chevron-down" size={14} color={palette.grey[500]} />
               </Pressable>
             </View>
           </View>
 
           <View style={styles.rateDivider}>
-            <View style={[styles.rateLine, { backgroundColor: palette.material.lightThin }]} />
-            <View style={[styles.ratePill, { backgroundColor: palette.grey[900] }, hairline]}>
+            <View style={[styles.rateLine, { backgroundColor: palette.material.darkThin }]} />
+            <View style={[styles.ratePill, { backgroundColor: palette.grey[100] }, hairline]}>
               {renderRatePillContent()}
             </View>
-            <View style={[styles.rateLine, { backgroundColor: palette.material.lightThin }]} />
+            <View style={[styles.rateLine, { backgroundColor: palette.material.darkThin }]} />
           </View>
 
-          <View style={[styles.acSectionRecv, { backgroundColor: palette.grey[900] }]}>
+          <View style={[styles.acSectionRecv, { backgroundColor: palette.grey[100] }]}>
             <Text style={[styles.acLabel, { color: palette.grey[500] }]}>They receive</Text>
             <View style={styles.acRowSpaced}>
-              <Text style={[styles.recvAmount, { color: palette.grey[300] }]}>
+              <Text style={[styles.recvAmount, { color: palette.grey[900] }]}>
                 {numAmount > 0 && rate > 0
                   ? receivingCrypto
                     ? receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -388,7 +388,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
                 <View style={[styles.cpIconWrapSmall, { backgroundColor: selectedReceiveCurrency.color + '20' }]}>
                   <CurrencyIcon code={selectedReceiveCurrency.code} emoji={selectedReceiveCurrency.icon} size={24} />
                 </View>
-                <Text style={[styles.currText, { color: palette.grey[300] }]}>{selectedReceiveCurrency.code}</Text>
+                <Text style={[styles.currText, { color: palette.grey[900] }]}>{selectedReceiveCurrency.code}</Text>
                 <Ionicons name="chevron-down" size={14} color={palette.grey[500]} />
               </Pressable>
             </View>
@@ -421,10 +421,10 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
       <BottomSheet visible={showSendPicker} onClose={handleCloseSendPicker} title="Send Currency">
         {currencies.length > 2 && (
           <View style={styles.searchContainer}>
-            <View style={[styles.searchWrap, { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin }]}>
+            <View style={[styles.searchWrap, { backgroundColor: palette.grey[200], borderColor: palette.material.darkThin }]}>
               <Ionicons name="search" size={18} color={palette.grey[500]} />
               <TextInput
-                style={[styles.searchInput, { color: palette.grey[300] }]}
+                style={[styles.searchInput, { color: palette.grey[900] }]}
                 placeholder="Search currency..."
                 placeholderTextColor={palette.grey[500]}
                 value={currencySearch}
@@ -450,8 +450,8 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
             <TouchableOpacity
               style={[
                 styles.cpItem,
-                { borderBottomColor: palette.material.lightThin },
-                selectedSendCurrency.code === c.code && { backgroundColor: 'rgba(251,251,253,0.06)' },
+                { borderBottomColor: palette.material.darkThin },
+                selectedSendCurrency.code === c.code && { backgroundColor: palette.grey[200] },
               ]}
               onPress={() => {
                 setSelectedSendCurrency(c);
@@ -467,7 +467,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
                 <CurrencyIcon code={c.code} emoji={c.icon} size={36} />
               </View>
               <View style={styles.cpInfo}>
-                <Text style={[styles.cpName, { color: palette.grey[300] }]}>{c.code}</Text>
+                <Text style={[styles.cpName, { color: palette.grey[900] }]}>{c.code}</Text>
                 <Text style={[styles.cpSub, { color: palette.grey[500] }]}>{c.name}</Text>
               </View>
               {selectedSendCurrency.code === c.code && <Ionicons name="checkmark" size={18} color={palette.royal[500]} />}
@@ -485,10 +485,10 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
       <BottomSheet visible={showReceivePicker} onClose={handleCloseReceivePicker} title="Receive Currency">
         {currencies.length > 2 && (
           <View style={styles.searchContainer}>
-            <View style={[styles.searchWrap, { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin }]}>
+            <View style={[styles.searchWrap, { backgroundColor: palette.grey[200], borderColor: palette.material.darkThin }]}>
               <Ionicons name="search" size={18} color={palette.grey[500]} />
               <TextInput
-                style={[styles.searchInput, { color: palette.grey[300] }]}
+                style={[styles.searchInput, { color: palette.grey[900] }]}
                 placeholder="Search currency..."
                 placeholderTextColor={palette.grey[500]}
                 value={currencySearch}
@@ -514,8 +514,8 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
             <TouchableOpacity
               style={[
                 styles.cpItem,
-                { borderBottomColor: palette.material.lightThin },
-                selectedReceiveCurrency.code === c.code && { backgroundColor: 'rgba(251,251,253,0.06)' },
+                { borderBottomColor: palette.material.darkThin },
+                selectedReceiveCurrency.code === c.code && { backgroundColor: palette.grey[200] },
               ]}
               onPress={() => {
                 setSelectedReceiveCurrency(c);
@@ -531,7 +531,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
                 <CurrencyIcon code={c.code} emoji={c.icon} size={36} />
               </View>
               <View style={styles.cpInfo}>
-                <Text style={[styles.cpName, { color: palette.grey[300] }]}>{c.code}</Text>
+                <Text style={[styles.cpName, { color: palette.grey[900] }]}>{c.code}</Text>
                 <Text style={[styles.cpSub, { color: palette.grey[500] }]}>{c.name}</Text>
               </View>
               {selectedReceiveCurrency.code === c.code && <Ionicons name="checkmark" size={18} color={palette.royal[500]} />}

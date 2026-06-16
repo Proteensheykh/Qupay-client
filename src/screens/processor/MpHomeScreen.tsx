@@ -27,6 +27,18 @@ import { typography } from '../../theme';
 type Props = NativeStackScreenProps<ProcessorStackParamList, 'MpHome'>;
 type TabKey = 'queue' | 'active' | 'completed';
 
+function formatOrderDate(value?: string | null): string {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export const MpHomeScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useUser();
   const toast = useToast();
@@ -86,7 +98,7 @@ export const MpHomeScreen: React.FC<Props> = ({ navigation }) => {
     const group = toStatusGroup(item.status);
     return (
       <TouchableOpacity
-        style={[styles.orderCard, { backgroundColor: palette.grey[800] }]}
+        style={[styles.orderCard, { backgroundColor: palette.grey[200] }]}
         activeOpacity={0.7}
         onPress={() =>
           navigation.navigate('OrderDetail', {
@@ -106,7 +118,7 @@ export const MpHomeScreen: React.FC<Props> = ({ navigation }) => {
         }
       >
         <View style={styles.orderTop}>
-          <Text style={[styles.orderCode, { color: palette.grey[300] }]}>
+          <Text style={[styles.orderCode, { color: palette.grey[900] }]}>
             {item.transactionCode}
           </Text>
           <StatusBadge
@@ -115,16 +127,16 @@ export const MpHomeScreen: React.FC<Props> = ({ navigation }) => {
           />
         </View>
         <View style={styles.orderBody}>
-          <Text style={[styles.orderAmount, { color: palette.grey[100] }]}>
+          <Text style={[styles.orderAmount, { color: palette.grey[900] }]}>
             {item.originalAmount?.toLocaleString()} {item.fromCurrency}
           </Text>
           <Ionicons name="arrow-forward" size={14} color={palette.grey[500]} />
-          <Text style={[styles.orderAmount, { color: palette.grey[100] }]}>
+          <Text style={[styles.orderAmount, { color: palette.grey[900] }]}>
             {item.convertedAmount?.toLocaleString()} {item.toCurrency}
           </Text>
         </View>
         <Text style={[styles.orderDate, { color: palette.grey[600] }]}>
-          {new Date(item.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          {formatOrderDate(item.createdAt)}
         </Text>
       </TouchableOpacity>
     );
@@ -133,7 +145,7 @@ export const MpHomeScreen: React.FC<Props> = ({ navigation }) => {
   const loading = activeTab === 'queue' ? queueLoading : ordersLoading;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -148,7 +160,7 @@ export const MpHomeScreen: React.FC<Props> = ({ navigation }) => {
               onPress={handleToggle}
               style={[
                 styles.togglePill,
-                { backgroundColor: isOnline ? 'rgba(122,232,112,0.12)' : palette.grey[800] },
+                { backgroundColor: isOnline ? 'rgba(122,232,112,0.12)' : palette.grey[200] },
               ]}
               activeOpacity={0.7}
               disabled={toggleStatus.isPending}
@@ -169,7 +181,7 @@ export const MpHomeScreen: React.FC<Props> = ({ navigation }) => {
       </View>
 
       {/* Tabs */}
-      <View style={[styles.tabRow, { borderBottomColor: palette.grey[800] }]}>
+      <View style={[styles.tabRow, { borderBottomColor: palette.grey[200] }]}>
         {(['queue', 'active', 'completed'] as TabKey[]).map((tab) => {
           const isActive = activeTab === tab;
           const count = tab === 'queue' ? (queue?.length ?? 0) : tab === 'active' ? activeOrders.length : completedOrders.length;
@@ -180,11 +192,11 @@ export const MpHomeScreen: React.FC<Props> = ({ navigation }) => {
               onPress={() => setActiveTab(tab)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.tabText, { color: isActive ? palette.grey[200] : palette.grey[500] }]}>
+              <Text style={[styles.tabText, { color: isActive ? palette.grey[900] : palette.grey[500] }]}>
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </Text>
               {count > 0 && (
-                <View style={[styles.tabBadge, { backgroundColor: isActive ? palette.royal[500] : palette.grey[700] }]}>
+                <View style={[styles.tabBadge, { backgroundColor: isActive ? palette.royal[500] : palette.grey[300] }]}>
                   <Text style={[styles.tabBadgeText, { color: isActive ? '#fff' : palette.grey[400] }]}>
                     {count}
                   </Text>

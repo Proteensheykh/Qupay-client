@@ -67,7 +67,7 @@ export const BindBankAccountScreen: React.FC<Props> = ({ navigation }) => {
   }, [allValid, selectedBank, accountNumber, invalidate, toast, navigation]);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
       <ScreenHeader title="Bank Account" onBack={() => navigation.goBack()} />
       <KeyboardAvoidingView
         style={styles.flex}
@@ -79,13 +79,13 @@ export const BindBankAccountScreen: React.FC<Props> = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={[styles.card, { backgroundColor: palette.grey[800] }, borders.hairline.dark, { borderRadius: radii.lg }]}>
+          <View style={[styles.card, { backgroundColor: palette.grey[200] }, borders.hairline.light, { borderRadius: radii.lg }]}>
             <View style={styles.sectionHeader}>
               <View style={[styles.iconWrap, { backgroundColor: 'rgba(158,121,210,0.12)' }]}>
                 <Ionicons name="business-outline" size={18} color={palette.royal[500]} />
               </View>
               <View style={styles.sectionTextWrap}>
-                <Text style={[styles.sectionTitle, { color: palette.grey[300] }]}>Nigerian Bank Account</Text>
+                <Text style={[styles.sectionTitle, { color: palette.grey[900] }]}>Nigerian Bank Account</Text>
                 <Text style={[styles.sectionSub, { color: palette.grey[500] }]}>
                   For receiving NGN settlements
                 </Text>
@@ -97,8 +97,8 @@ export const BindBankAccountScreen: React.FC<Props> = ({ navigation }) => {
               style={[
                 styles.selectField,
                 {
-                  backgroundColor: palette.grey[900],
-                  borderColor: selectedBank ? palette.royal[500] : palette.grey[700],
+                  backgroundColor: palette.grey[100],
+                  borderColor: selectedBank ? palette.royal[500] : palette.grey[300],
                 },
               ]}
               onPress={() => setShowBankPicker(true)}
@@ -112,7 +112,7 @@ export const BindBankAccountScreen: React.FC<Props> = ({ navigation }) => {
                   <Text
                     style={[
                       selectedBank ? styles.selectValue : styles.selectPlaceholder,
-                      { color: selectedBank ? palette.grey[300] : palette.grey[600] },
+                      { color: selectedBank ? palette.grey[900] : palette.grey[600] },
                     ]}
                   >
                     {selectedBank?.bankName || 'Select your bank'}
@@ -135,7 +135,7 @@ export const BindBankAccountScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           {alreadyBound && (
-            <View style={[styles.infoCard, { backgroundColor: 'rgba(122,232,112,0.08)', borderColor: palette.grey[700] }]}>
+            <View style={[styles.infoCard, { backgroundColor: 'rgba(122,232,112,0.08)', borderColor: palette.grey[300] }]}>
               <Ionicons name="checkmark-circle" size={16} color={palette.status.positive} />
               <Text style={[styles.infoText, { color: palette.grey[400] }]}>
                 Current: {user?.bankAccounts?.[0]?.accountName} ({user?.bankAccounts?.[0]?.bankName})
@@ -144,7 +144,7 @@ export const BindBankAccountScreen: React.FC<Props> = ({ navigation }) => {
           )}
         </ScrollView>
 
-        <View style={[styles.bottomArea, { borderTopColor: palette.material.lightThin }]}>
+        <View style={[styles.bottomArea, { borderTopColor: palette.material.darkThin }]}>
           <CTAButton
             title={alreadyBound ? 'Update Bank Account' : 'Bind Bank Account'}
             onPress={handleSubmit}
@@ -165,7 +165,7 @@ export const BindBankAccountScreen: React.FC<Props> = ({ navigation }) => {
               key={bank.bankCode}
               style={[
                 styles.pickerItem,
-                { borderBottomColor: palette.grey[700] },
+                { borderBottomColor: palette.grey[300] },
                 selectedBank?.bankCode === bank.bankCode && { backgroundColor: 'rgba(158,121,210,0.08)' },
               ]}
               onPress={() => {
@@ -174,7 +174,7 @@ export const BindBankAccountScreen: React.FC<Props> = ({ navigation }) => {
               }}
               activeOpacity={0.7}
             >
-              <Text style={[styles.pickerItemText, { color: palette.grey[300] }]}>
+              <Text style={[styles.pickerItemText, { color: palette.grey[900] }]}>
                 {bank.bankName}
               </Text>
               {selectedBank?.bankCode === bank.bankCode && (

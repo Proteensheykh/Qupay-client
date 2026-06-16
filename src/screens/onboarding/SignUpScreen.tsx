@@ -144,7 +144,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
               styles.dot,
               {
                 backgroundColor:
-                  i <= currentIndex ? palette.royal[500] : palette.grey[700],
+                  i <= currentIndex ? palette.royal[500] : palette.grey[300],
               },
             ]}
           />
@@ -162,7 +162,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.form}>
-          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { backgroundColor: palette.grey[800] }]} activeOpacity={0.7}>
+          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { backgroundColor: palette.grey[200] }]} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
           </TouchableOpacity>
 
@@ -253,7 +253,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.form}>
-          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { backgroundColor: palette.grey[800] }]} activeOpacity={0.7}>
+          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { backgroundColor: palette.grey[200] }]} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
           </TouchableOpacity>
 
@@ -274,7 +274,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             style={[
               styles.phoneCard,
               {
-                backgroundColor: palette.grey[900],
+                backgroundColor: palette.grey[100],
                 borderColor: phoneFocused ? palette.royal[500] : 'transparent',
               },
               phoneValid && !getFieldError('phone') && { borderColor: `${palette.royal[500]}80` },

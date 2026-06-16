@@ -145,7 +145,7 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
                 style={[
                   styles.otpCell,
                   {
-                    backgroundColor: palette.grey[800],
+                    backgroundColor: palette.grey[200],
                     borderColor: error
                       ? theme.error.main
                       : i === code.length

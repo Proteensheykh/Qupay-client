@@ -23,16 +23,17 @@ const PREFERENCE_LABELS: Record<ThemePreference, string> = {
   dark: 'Dark',
 };
 
-const PREFERENCE_CYCLE: ThemePreference[] = ['system', 'light', 'dark'];
+// Light-theme facelift: dark mode retired, light is the only option.
+const PREFERENCE_CYCLE: ThemePreference[] = ['light'];
 
 export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [notifOn, setNotifOn] = useState(true);
   const logout = useAuthStore((state) => state.logout);
   const { user } = useUser();
   const { mode, preference, setPreference } = useTheme();
-  const backdrop = palette.grey[900];
-  const cardBg = palette.grey[800];
-  const hairline = palette.material.lightThin;
+  const backdrop = palette.grey[100];
+  const cardBg = palette.grey[200];
+  const hairline = palette.material.darkThin;
 
   const handleLogout = useCallback(async () => {
     await logout();
@@ -62,7 +63,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           style={[
             styles.heroWrap,
             { backgroundColor: cardBg },
-            borders.hairline.dark,
+            borders.hairline.light,
             { borderRadius: radii.lg },
           ]}
         >
@@ -71,7 +72,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               <Avatar seed={displayName} size={60} />
               <View style={styles.phInfo}>
                 <View style={styles.nameRow}>
-                  <Text style={[styles.phName, { color: palette.grey[300] }]}>{displayName}</Text>
+                  <Text style={[styles.phName, { color: palette.grey[900] }]}>{displayName}</Text>
                   {isProcessor && (
                     <View
                       style={[
@@ -90,7 +91,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             </View>
             <View style={[styles.phStats, { borderTopColor: hairline, borderTopWidth: StyleSheet.hairlineWidth }]}>
               <View style={styles.phStat}>
-                <Text style={[styles.phVal, { color: palette.grey[300] }]}>—</Text>
+                <Text style={[styles.phVal, { color: palette.grey[900] }]}>—</Text>
                 <Text style={[styles.phLabel, { color: palette.grey[500] }]}>Transfers</Text>
               </View>
               <View style={[styles.phStatDivider, { backgroundColor: hairline }]} />
@@ -100,7 +101,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               </View>
               <View style={[styles.phStatDivider, { backgroundColor: hairline }]} />
               <View style={styles.phStat}>
-                <Text style={[styles.phVal, { color: palette.grey[300] }]}>
+                <Text style={[styles.phVal, { color: palette.grey[900] }]}>
                   {user?.createdAt
                     ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
                     : '—'}
@@ -117,7 +118,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           style={[
             styles.card,
             { backgroundColor: cardBg, borderColor: hairline },
-            borders.hairline.dark,
+            borders.hairline.light,
             { borderRadius: radii.lg },
           ]}
         >
@@ -126,7 +127,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               <Ionicons name="lock-closed-outline" size={18} color={palette.royal[400]} />
             </View>
             <View style={styles.rowBody}>
-              <Text style={[styles.rowTitle, { color: palette.grey[300] }]}>Transaction PIN</Text>
+              <Text style={[styles.rowTitle, { color: palette.grey[900] }]}>Transaction PIN</Text>
               <Text style={[styles.rowSub, { color: palette.grey[500] }]}>Change your 4-digit PIN</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color={palette.grey[600]} />
@@ -137,7 +138,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             activeOpacity={0.7}
             onPress={cycleTheme}
           >
-            <View style={[styles.rowIcon, { backgroundColor: palette.grey[900] }]}>
+            <View style={[styles.rowIcon, { backgroundColor: palette.grey[100] }]}>
               <Ionicons
                 name={mode === 'dark' ? 'moon-outline' : 'sunny-outline'}
                 size={18}
@@ -145,7 +146,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               />
             </View>
             <View style={styles.rowBody}>
-              <Text style={[styles.rowTitle, { color: palette.grey[300] }]}>Appearance</Text>
+              <Text style={[styles.rowTitle, { color: palette.grey[900] }]}>Appearance</Text>
               <Text style={[styles.rowSub, { color: palette.grey[500] }]}>{PREFERENCE_LABELS[preference]}</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color={palette.grey[600]} />
@@ -156,14 +157,14 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               <Ionicons name="notifications-outline" size={18} color={palette.status.partial} />
             </View>
             <View style={styles.rowBody}>
-              <Text style={[styles.rowTitle, { color: palette.grey[300] }]}>Notifications</Text>
+              <Text style={[styles.rowTitle, { color: palette.grey[900] }]}>Notifications</Text>
               <Text style={[styles.rowSub, { color: palette.grey[500] }]}>Push {'\u00B7'} SMS</Text>
             </View>
             <TouchableOpacity
               onPress={() => setNotifOn(!notifOn)}
               style={[
                 styles.toggle,
-                { backgroundColor: notifOn ? palette.royal[500] : palette.grey[700] },
+                { backgroundColor: notifOn ? palette.royal[500] : palette.grey[300] },
               ]}
               activeOpacity={0.8}
             >
@@ -184,16 +185,16 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           style={[
             styles.card,
             { backgroundColor: cardBg, borderColor: hairline },
-            borders.hairline.dark,
+            borders.hairline.light,
             { borderRadius: radii.lg },
           ]}
         >
           <TouchableOpacity style={[styles.row, styles.rowLast]} activeOpacity={0.7}>
-            <View style={[styles.rowIcon, { backgroundColor: palette.grey[900] }]}>
+            <View style={[styles.rowIcon, { backgroundColor: palette.grey[100] }]}>
               <Ionicons name="chatbubble-ellipses-outline" size={18} color={palette.grey[500]} />
             </View>
             <View style={styles.rowBody}>
-              <Text style={[styles.rowTitle, { color: palette.grey[300] }]}>Help & Support</Text>
+              <Text style={[styles.rowTitle, { color: palette.grey[900] }]}>Help & Support</Text>
               <Text style={[styles.rowSub, { color: palette.grey[500] }]}>Avg. response &lt;3 mins</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color={palette.grey[600]} />

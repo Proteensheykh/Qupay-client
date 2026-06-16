@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from './Icon';
-import { typography, spacing } from '../theme';
+import { typography, spacing, useTheme } from '../theme';
 import { palette } from '../theme/colors';
 import { borders } from '../theme/elevation';
 import { radii } from '../theme/radii';
@@ -17,6 +17,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   onChangeText,
   placeholder = 'Search...',
 }) => {
+  const { theme } = useTheme();
   const [focused, setFocused] = useState(false);
 
   const borderStyle = useMemo(
@@ -28,19 +29,19 @@ export const SearchInput: React.FC<SearchInputProps> = ({
     <View
       style={[
         styles.container,
-        { backgroundColor: palette.grey[900] },
+        { backgroundColor: theme.background.surface },
         borderStyle,
       ]}
     >
-      <Ionicons name="search" size={18} color={palette.grey[600]} />
+      <Ionicons name="search" size={18} color={theme.text.muted} />
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={palette.grey[600]}
+        placeholderTextColor={theme.text.muted}
         selectionColor={palette.royal[500]}
         cursorColor={palette.royal[500]}
-        style={[typography.body, styles.input, { color: palette.grey[300] }]}
+        style={[typography.body, styles.input, { color: theme.text.primary }]}
         accessibilityLabel={placeholder}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}

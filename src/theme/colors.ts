@@ -32,6 +32,10 @@ export const palette = {
     negative: '#FF4D5B',
   },
   highlight: '#F3C23D',
+  /** Near-black used for the light-theme hero card + selected chips */
+  ink: '#141414',
+  /** Light neutral fill for chips, search fields, avatars */
+  fill: '#F3F4F6',
   material: {
     lightThin: 'rgba(251,251,253,0.10)',
     lightAverage: 'rgba(251,251,253,0.33)',
@@ -41,8 +45,8 @@ export const palette = {
     darkThick: 'rgba(23,25,28,0.66)',
   },
   marketing: {
-    ground: '#2A2438',
-    muralFg: '#6E5A8F',
+    ground: '#FFFFFF',
+    muralFg: '#D1D6E0',
   },
 } as const;
 
@@ -65,18 +69,20 @@ export const colors = {
       disabled: palette.grey[500],
       muted: palette.grey[500],
       highlight: palette.royal[500],
+      inverse: '#FFFFFF',
     },
     background: {
-      default: palette.grey[100],
+      default: '#FFFFFF',
       paper: '#FFFFFF',
-      surface: palette.grey[200],
+      surface: palette.fill,
       surface2: palette.grey[200],
-      header: palette.grey[100],
+      header: '#FFFFFF',
       disabled: palette.grey[200],
       accent: '#F5F0FC',
-      warm: palette.grey[200],
+      warm: palette.fill,
+      inverse: palette.ink,
     },
-    divider: palette.material.darkThin,
+    divider: 'rgba(17,19,28,0.06)',
     error: {
       main: palette.status.negative,
       light: '#FF8080',
@@ -134,6 +140,7 @@ export const colors = {
       disabled: palette.grey[600],
       muted: palette.grey[500],
       highlight: palette.royal[500],
+      inverse: palette.grey[900],
     },
     background: {
       default: palette.grey[900],
@@ -144,6 +151,7 @@ export const colors = {
       disabled: palette.grey[800],
       accent: '#1E1A2E',
       warm: palette.grey[800],
+      inverse: palette.grey[100],
     },
     divider: palette.material.lightThin,
     error: {

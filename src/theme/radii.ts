@@ -5,8 +5,14 @@
  */
 
 export const radii = {
+  /** 12px — buttons, inputs, chips (light-theme facelift) */
+  xs: 12,
+
   /** 15px — small menus, dropdown items */
   sm: 15,
+
+  /** 16px — cards & list containers (light-theme facelift) */
+  card: 16,
 
   /** 20px — inline buttons (md/sm), menu-lg */
   md: 20,

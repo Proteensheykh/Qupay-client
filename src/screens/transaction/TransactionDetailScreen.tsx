@@ -56,7 +56,7 @@ function formatDate(dateStr: string | undefined | null): string {
 }
 
 const hairline = {
-  borderBottomColor: palette.material.lightThin,
+  borderBottomColor: palette.material.darkThin,
   borderBottomWidth: StyleSheet.hairlineWidth,
 };
 
@@ -71,7 +71,7 @@ const Row: React.FC<{
     <Text
       style={[
         styles.rowValue,
-        { color: palette.grey[300] },
+        { color: palette.grey[900] },
         mono && styles.rowValueMono,
         emphasis && { color: palette.royal[400] },
       ]}
@@ -89,17 +89,17 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
 
   const goBack = () => navigation.goBack();
 
-  const backdrop = palette.grey[900];
-  const cardSurface = palette.grey[800];
+  const backdrop = palette.grey[100];
+  const cardSurface = palette.grey[200];
 
   if (isLoading || !tx) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: backdrop }]} edges={['top', 'bottom']}>
         <View style={styles.headerBar}>
           <View style={styles.iconBtn} />
-          <Text style={[styles.headerTitle, { color: palette.grey[300] }]}>Receipt</Text>
+          <Text style={[styles.headerTitle, { color: palette.grey[900] }]}>Receipt</Text>
           <TouchableOpacity style={styles.iconBtn} onPress={goBack} activeOpacity={0.7}>
-            <Ionicons name="close" size={24} color={palette.grey[300]} />
+            <Ionicons name="close" size={24} color={palette.grey[900]} />
           </TouchableOpacity>
         </View>
         <View style={styles.loaderWrap}>
@@ -121,9 +121,9 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
     <SafeAreaView style={[styles.safe, { backgroundColor: backdrop }]} edges={['top', 'bottom']}>
       <View style={styles.headerBar}>
         <View style={styles.iconBtn} />
-        <Text style={[styles.headerTitle, { color: palette.grey[300] }]}>Receipt</Text>
+        <Text style={[styles.headerTitle, { color: palette.grey[900] }]}>Receipt</Text>
         <TouchableOpacity style={styles.iconBtn} onPress={goBack} activeOpacity={0.7}>
-          <Ionicons name="close" size={24} color={palette.grey[300]} />
+          <Ionicons name="close" size={24} color={palette.grey[900]} />
         </TouchableOpacity>
       </View>
 
@@ -143,7 +143,7 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
           style={[
             styles.detailCard,
             { backgroundColor: cardSurface },
-            borders.hairline.dark,
+            borders.hairline.light,
             { borderRadius: radii.lg },
           ]}
         >
@@ -173,7 +173,7 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
           style={[
             styles.detailCard,
             { backgroundColor: cardSurface },
-            borders.hairline.dark,
+            borders.hairline.light,
             { borderRadius: radii.lg },
             { marginTop: 12 },
           ]}
@@ -202,7 +202,7 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
             style={[
               styles.detailCard,
               { backgroundColor: cardSurface },
-              borders.hairline.dark,
+              borders.hairline.light,
               { borderRadius: radii.lg },
               { marginTop: 12 },
             ]}
@@ -240,13 +240,13 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
         )}
       </ScrollView>
 
-      <View style={[styles.footer, { borderTopColor: palette.material.lightThin }]}>
+      <View style={[styles.footer, { borderTopColor: palette.material.darkThin }]}>
         <TouchableOpacity
-          style={[styles.ctaSecondary, { backgroundColor: palette.grey[800] }, borders.hairline.dark]}
+          style={[styles.ctaSecondary, { backgroundColor: palette.grey[200] }, borders.hairline.light]}
           onPress={goBack}
           activeOpacity={0.85}
         >
-          <Text style={[styles.ctaSecondaryText, { color: palette.grey[300] }]}>Back to history</Text>
+          <Text style={[styles.ctaSecondaryText, { color: palette.grey[900] }]}>Back to history</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   heroBadgeWrap: { marginTop: 12 },
   heroAmount: {
     ...typography.valueLg,
-    color: palette.grey[300],
+    color: palette.grey[900],
   },
   heroSub: {
     ...typography.bodySm,

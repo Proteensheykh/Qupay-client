@@ -107,7 +107,7 @@ export const PinSetupScreen: React.FC<Props> = ({ navigation }) => {
                       ? theme.error.main
                       : currentPin.length > i
                         ? palette.royal[500]
-                        : palette.grey[700],
+                        : palette.grey[300],
                     backgroundColor: currentPin.length > i ? palette.royal[500] : 'transparent',
                   },
                 ]}

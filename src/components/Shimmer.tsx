@@ -66,7 +66,7 @@ export const Shimmer: React.FC<ShimmerProps> = ({
           width: width as any,
           height,
           borderRadius: borderRadiusSize,
-          backgroundColor: palette.grey[800],
+          backgroundColor: palette.grey[200],
           overflow: 'hidden',
         },
         style,
@@ -88,9 +88,9 @@ export const Shimmer: React.FC<ShimmerProps> = ({
         >
           <LinearGradient
             colors={[
-              palette.grey[800],
-              palette.grey[700],
-              palette.grey[800],
+              palette.grey[200],
+              palette.grey[300],
+              palette.grey[200],
             ]}
             locations={[0, 0.5, 1]}
             start={{ x: 0, y: 0 }}

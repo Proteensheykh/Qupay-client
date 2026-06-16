@@ -27,7 +27,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         style={[
           styles.emojiCircle,
           {
-            backgroundColor: palette.grey[700],
+            backgroundColor: theme.background.surface,
             borderWidth: 1,
             borderColor: palette.royal[400],
           },

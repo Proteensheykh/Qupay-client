@@ -50,7 +50,7 @@ export const BindWalletScreen: React.FC<Props> = ({ navigation }) => {
   }, [walletAddress, isValid, invalidate, toast, navigation]);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
       <ScreenHeader title="Solana Wallet" onBack={() => navigation.goBack()} />
       <KeyboardAvoidingView
         style={styles.flex}
@@ -62,13 +62,13 @@ export const BindWalletScreen: React.FC<Props> = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={[styles.card, { backgroundColor: palette.grey[800] }, borders.hairline.dark, { borderRadius: radii.lg }]}>
+          <View style={[styles.card, { backgroundColor: palette.grey[200] }, borders.hairline.light, { borderRadius: radii.lg }]}>
             <View style={styles.sectionHeader}>
               <View style={[styles.iconWrap, { backgroundColor: 'rgba(158,121,210,0.12)' }]}>
                 <Ionicons name="wallet-outline" size={18} color={palette.royal[500]} />
               </View>
               <View style={styles.sectionTextWrap}>
-                <Text style={[styles.sectionTitle, { color: palette.grey[300] }]}>Primary USDT Wallet</Text>
+                <Text style={[styles.sectionTitle, { color: palette.grey[900] }]}>Primary USDT Wallet</Text>
                 <Text style={[styles.sectionSub, { color: palette.grey[500] }]}>
                   Solana network only
                 </Text>
@@ -95,7 +95,7 @@ export const BindWalletScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           {alreadyBound && (
-            <View style={[styles.infoCard, { backgroundColor: 'rgba(122,232,112,0.08)', borderColor: palette.grey[700] }]}>
+            <View style={[styles.infoCard, { backgroundColor: 'rgba(122,232,112,0.08)', borderColor: palette.grey[300] }]}>
               <Ionicons name="checkmark-circle" size={16} color={palette.status.positive} />
               <Text style={[styles.infoText, { color: palette.grey[400] }]}>
                 Current wallet: {user?.walletAddress?.slice(0, 8)}...{user?.walletAddress?.slice(-6)}
@@ -104,7 +104,7 @@ export const BindWalletScreen: React.FC<Props> = ({ navigation }) => {
           )}
         </ScrollView>
 
-        <View style={[styles.bottomArea, { borderTopColor: palette.material.lightThin }]}>
+        <View style={[styles.bottomArea, { borderTopColor: palette.material.darkThin }]}>
           <CTAButton
             title={alreadyBound ? 'Update Wallet' : 'Bind Wallet'}
             onPress={handleSubmit}

@@ -69,10 +69,10 @@ export const KycSubmissionScreen: React.FC<Props> = ({ navigation }) => {
 
   if (alreadySubmitted) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
         <ScreenHeader title="KYC Verification" onBack={() => navigation.goBack()} />
         <View style={styles.submitted}>
-          <Text style={[styles.submittedTitle, { color: palette.grey[300] }]}>
+          <Text style={[styles.submittedTitle, { color: palette.grey[900] }]}>
             {kycData?.status === 'APPROVED' ? 'KYC Approved' : 'KYC Under Review'}
           </Text>
           <Text style={[styles.submittedSub, { color: palette.grey[500] }]}>
@@ -86,7 +86,7 @@ export const KycSubmissionScreen: React.FC<Props> = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
       <ScreenHeader title="KYC Verification" onBack={() => navigation.goBack()} />
       <KeyboardAvoidingView
         style={styles.flex}
@@ -111,7 +111,7 @@ export const KycSubmissionScreen: React.FC<Props> = ({ navigation }) => {
             </View>
           )}
 
-          <View style={[styles.card, { backgroundColor: palette.grey[800] }, borders.hairline.dark, { borderRadius: radii.lg }]}>
+          <View style={[styles.card, { backgroundColor: palette.grey[200] }, borders.hairline.light, { borderRadius: radii.lg }]}>
             <FormField
               label="BVN (Bank Verification Number)"
               placeholder="Enter your 11-digit BVN"
@@ -150,14 +150,14 @@ export const KycSubmissionScreen: React.FC<Props> = ({ navigation }) => {
             )}
           </View>
 
-          <View style={[styles.infoCard, { backgroundColor: 'rgba(158,121,210,0.08)', borderColor: palette.grey[700] }]}>
+          <View style={[styles.infoCard, { backgroundColor: 'rgba(158,121,210,0.08)', borderColor: palette.grey[300] }]}>
             <Text style={[styles.infoText, { color: palette.grey[400] }]}>
               Your BVN and NIN will be used for identity verification. This information is kept secure and only used for compliance purposes.
             </Text>
           </View>
         </ScrollView>
 
-        <View style={[styles.bottomArea, { borderTopColor: palette.material.lightThin }]}>
+        <View style={[styles.bottomArea, { borderTopColor: palette.material.darkThin }]}>
           <CTAButton
             title="Submit KYC"
             onPress={handleSubmit}

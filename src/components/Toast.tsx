@@ -13,7 +13,7 @@ import {
   typography,
   spacing,
   radii,
-  borders,
+  shadows,
   springs,
   durations,
 } from '../theme';
@@ -109,8 +109,8 @@ export const Toast: React.FC<ToastProps> = ({
       style={[
         styles.container,
         animatedStyle,
-        { backgroundColor: palette.grey[900] },
-        borders.hairline.dark,
+        { backgroundColor: theme.background.inverse },
+        shadows.elevated,
       ]}
     >
       <Pressable
@@ -121,7 +121,7 @@ export const Toast: React.FC<ToastProps> = ({
       >
         <Ionicons name={c.icon} size={22} color={c.color} />
         <Text
-          style={[typography.main14, { color: theme.text.primary, flex: 1 }]}
+          style={[typography.main14, { color: theme.text.inverse, flex: 1 }]}
           numberOfLines={2}
         >
           {message}

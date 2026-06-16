@@ -3,8 +3,13 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Geist_400Regular } from '@expo-google-fonts/geist';
-import { useFonts } from '@expo-google-fonts/geist/useFonts';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
+import { useFonts } from '@expo-google-fonts/inter/useFonts';
 import * as SplashScreen from 'expo-splash-screen';
 import { View } from 'react-native';
 
@@ -47,7 +52,10 @@ function AppShell({ onLayout }: { onLayout: () => void }) {
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Geist_400Regular,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
   });
 
   const onLayoutRootView = useCallback(async () => {

@@ -200,7 +200,7 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
 
   if (isLoading || !tx || !status || !config) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top', 'bottom']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top', 'bottom']}>
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={palette.royal[500]} />
           <Text style={[styles.loadingText, { color: palette.grey[500] }]}>Loading transaction…</Text>
@@ -210,7 +210,7 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top', 'bottom']}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -242,9 +242,9 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
               {
                 backgroundColor: isTerminal
                   ? (status === 'COMPLETE' ? 'rgba(122,232,112,0.12)' : 'rgba(255,77,91,0.12)')
-                  : palette.grey[800],
+                  : palette.grey[200],
                 borderWidth: isTerminal ? 0 : 1,
-                borderColor: isTerminal ? 'transparent' : palette.material.lightThin,
+                borderColor: isTerminal ? 'transparent' : palette.material.darkThin,
               },
             ]}
           >
@@ -253,7 +253,7 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
         </View>
 
         {/* Title + subtitle */}
-        <Text style={[styles.statusTitle, { color: palette.grey[300] }]}>
+        <Text style={[styles.statusTitle, { color: palette.grey[900] }]}>
           {config.title}
         </Text>
         <Text style={[styles.statusSub, { color: palette.grey[500] }]}>
@@ -262,9 +262,9 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
 
         {/* Countdown */}
         {countdown && !isTerminal ? (
-          <View style={[styles.countdownPill, { backgroundColor: palette.grey[800] }]}>
+          <View style={[styles.countdownPill, { backgroundColor: palette.grey[200] }]}>
             <Ionicons name="time-outline" size={14} color={palette.grey[400]} />
-            <Text style={[styles.countdownText, { color: palette.grey[300] }]}>
+            <Text style={[styles.countdownText, { color: palette.grey[900] }]}>
               {countdown} remaining
             </Text>
           </View>
@@ -272,10 +272,10 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
 
         {/* MP Payment Details card (IN_PROGRESS state) */}
         {status === 'IN_PROGRESS' && tx?.mpPaymentDetails ? (
-          <View style={[styles.detailCard, { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin }]}>
+          <View style={[styles.detailCard, { backgroundColor: palette.grey[200], borderColor: palette.material.darkThin }]}>
             <View style={styles.detailHeader}>
               <Ionicons name="wallet-outline" size={18} color={palette.royal[500]} />
-              <Text style={[styles.detailHeaderText, { color: palette.grey[300] }]}>
+              <Text style={[styles.detailHeaderText, { color: palette.grey[900] }]}>
                 Send to this {tx.fromCurrency === 'USDT' ? 'wallet' : 'account'}
               </Text>
             </View>
@@ -283,7 +283,7 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
             {tx.fromCurrency === 'USDT' && tx.mpPaymentDetails.walletAddress ? (
               <View style={styles.detailBody}>
                 <Text style={[styles.detailLabel, { color: palette.grey[500] }]}>Solana wallet</Text>
-                <Text style={[styles.detailMono, { color: palette.grey[300] }]} selectable>
+                <Text style={[styles.detailMono, { color: palette.grey[900] }]} selectable>
                   {tx.mpPaymentDetails.walletAddress}
                 </Text>
               </View>
@@ -292,7 +292,7 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
             {tx.fromCurrency === 'NGN' && tx.mpPaymentDetails.bankCode ? (
               <View style={styles.detailBody}>
                 <Text style={[styles.detailLabel, { color: palette.grey[500] }]}>Bank account</Text>
-                <Text style={[styles.detailValue, { color: palette.grey[300] }]}>
+                <Text style={[styles.detailValue, { color: palette.grey[900] }]}>
                   {tx.mpPaymentDetails.accountName}
                 </Text>
                 <Text style={[styles.detailMono, { color: palette.grey[400] }]}>
@@ -303,7 +303,7 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
 
             <View style={styles.detailAmountRow}>
               <Text style={[styles.detailLabel, { color: palette.grey[500] }]}>Amount to send</Text>
-              <Text style={[styles.detailAmount, { color: palette.grey[100] }]}>
+              <Text style={[styles.detailAmount, { color: palette.grey[900] }]}>
                 {tx.originalAmount?.toLocaleString()} {tx.fromCurrency}
               </Text>
             </View>
@@ -312,17 +312,17 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
 
         {/* Transaction summary */}
         {tx ? (
-          <View style={[styles.summaryCard, { backgroundColor: palette.grey[800] }]}>
+          <View style={[styles.summaryCard, { backgroundColor: palette.grey[200] }]}>
             <View style={styles.summaryRow}>
               <Text style={[styles.summaryLabel, { color: palette.grey[500] }]}>Amount</Text>
-              <Text style={[styles.summaryValue, { color: palette.grey[300] }]}>
+              <Text style={[styles.summaryValue, { color: palette.grey[900] }]}>
                 {tx.originalAmount?.toLocaleString()} {tx.fromCurrency} → {tx.convertedAmount?.toLocaleString()} {tx.toCurrency}
               </Text>
             </View>
             {tx.fxRate ? (
               <View style={styles.summaryRow}>
                 <Text style={[styles.summaryLabel, { color: palette.grey[500] }]}>Rate</Text>
-                <Text style={[styles.summaryValue, { color: palette.grey[300] }]}>
+                <Text style={[styles.summaryValue, { color: palette.grey[900] }]}>
                   1 {tx.fromCurrency} = {tx.fxRate.toLocaleString()} {tx.toCurrency}
                 </Text>
               </View>
@@ -330,14 +330,14 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
             {tx.chargeAmount ? (
               <View style={styles.summaryRow}>
                 <Text style={[styles.summaryLabel, { color: palette.grey[500] }]}>Fee</Text>
-                <Text style={[styles.summaryValue, { color: palette.grey[300] }]}>
+                <Text style={[styles.summaryValue, { color: palette.grey[900] }]}>
                   {tx.chargeAmount} {tx.fromCurrency}
                 </Text>
               </View>
             ) : null}
             <View style={styles.summaryRow}>
               <Text style={[styles.summaryLabel, { color: palette.grey[500] }]}>Code</Text>
-              <Text style={[styles.summaryValue, { color: palette.grey[300] }]}>
+              <Text style={[styles.summaryValue, { color: palette.grey[900] }]}>
                 {tx.transactionCode}
               </Text>
             </View>
@@ -367,7 +367,7 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
       >
         <View style={styles.confirmSheet}>
           <Ionicons name="warning-outline" size={32} color={palette.status.partial} />
-          <Text style={[styles.confirmText, { color: palette.grey[300] }]}>
+          <Text style={[styles.confirmText, { color: palette.grey[900] }]}>
             I confirm that I have sent the funds shown above. Submitting a false confirmation may result in account suspension.
           </Text>
           <CTAButton
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: palette.material.lightThin,
+    borderTopColor: palette.material.darkThin,
   },
   detailAmount: {
     ...typography.h4,

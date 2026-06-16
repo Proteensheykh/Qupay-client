@@ -177,7 +177,7 @@ export const DesignSystemScreen: React.FC = () => {
         </Section>
 
         {/* Typography */}
-        <Section title="Typography (Geist 400)">
+        <Section title="Typography (Inter 400/500/600/700)">
           <Text style={[typography.display1, { color: theme.text.primary }]}>Display 1</Text>
           <Text style={[typography.display2, { color: theme.text.primary }]}>Display 2</Text>
           <Text style={[typography.h1, { color: theme.text.primary }]}>Heading 1</Text>

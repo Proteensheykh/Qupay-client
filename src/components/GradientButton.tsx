@@ -104,7 +104,7 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
         ? typography.buttonM
         : typography.buttonS;
 
-  const cornerRadius = size === 'large' ? radii.xl : radii.md;
+  const cornerRadius = size === 'large' ? radii.card : radii.xs;
 
   const variantStyle = useMemo(() => {
     switch (variant) {
@@ -117,17 +117,17 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
         };
       case 'secondary':
         return {
-          backgroundColor: palette.grey[100],
-          color: palette.grey[800],
-          borderWidth: 0 as number,
-          borderColor: undefined as string | undefined,
+          backgroundColor: theme.background.paper,
+          color: theme.text.primary,
+          borderWidth: 1,
+          borderColor: theme.divider,
         };
       case 'tertiary':
         return {
-          backgroundColor: palette.grey[800],
-          color: palette.grey[300],
+          backgroundColor: theme.background.surface,
+          color: theme.text.primary,
           borderWidth: 1,
-          borderColor: palette.material.lightThin,
+          borderColor: theme.divider,
         };
       case 'outline':
         return {
@@ -151,7 +151,15 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
           borderColor: undefined as string | undefined,
         };
     }
-  }, [variant, palette, theme.text.primary, theme.text.secondary, theme.divider]);
+  }, [
+    variant,
+    palette,
+    theme.text.primary,
+    theme.text.secondary,
+    theme.divider,
+    theme.background.paper,
+    theme.background.surface,
+  ]);
 
   return (
     <AnimatedPressable

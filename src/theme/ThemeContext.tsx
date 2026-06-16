@@ -6,7 +6,6 @@ import React, {
   useMemo,
   useEffect,
 } from 'react';
-import { useColorScheme } from 'react-native';
 import { colors, palette, ColorMode, ThemeColors } from './colors';
 import { gradients } from './gradients';
 import { radii } from './radii';
@@ -50,12 +49,12 @@ const defaultMotion = {
 };
 
 const ThemeContext = createContext<ThemeContextType>({
-  mode: 'dark',
-  preference: 'system',
-  theme: colors.dark,
+  mode: 'light',
+  preference: 'light',
+  theme: colors.light,
   palette,
   brand: colors.brand,
-  gradient: colors.gradient.dark,
+  gradient: colors.gradient.light,
   gradients,
   radii,
   shadows,
@@ -70,15 +69,16 @@ const ThemeContext = createContext<ThemeContextType>({
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const systemColorScheme = useColorScheme();
-  const [preference, setPreferenceState] = useState<ThemePreference>('dark');
+  const [preference, setPreferenceState] = useState<ThemePreference>('light');
   const [isThemeLoaded, setIsThemeLoaded] = useState(false);
 
   useEffect(() => {
     const loadPreference = async () => {
       try {
         const saved = await getItem(StorageKeys.THEME_PREFERENCE);
-        if (saved === 'system' || saved === 'light' || saved === 'dark') {
+        // Light-theme facelift: dark mode is retired. Honour a saved light
+        // preference but ignore any legacy 'dark'/'system' value.
+        if (saved === 'light') {
           setPreferenceState(saved);
         }
       } catch {
@@ -99,12 +99,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  const mode: ColorMode = useMemo(() => {
-    if (preference === 'system') {
-      return systemColorScheme === 'light' ? 'light' : 'dark';
-    }
-    return preference;
-  }, [preference, systemColorScheme]);
+  // Light-theme facelift: the dual-mode plumbing is kept for easy rollback,
+  // but the app is locked to light. `preference`/`systemColorScheme` no longer
+  // influence the resolved mode.
+  const mode: ColorMode = 'light';
 
   const value = useMemo(
     () => ({

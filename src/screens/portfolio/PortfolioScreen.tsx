@@ -49,8 +49,8 @@ export const HistoryScreen: React.FC<Props> = ({ navigation }) => {
   const { data: transactions, isLoading, refetch } = useMyTransactions();
   const { refreshControl } = usePullToRefresh(useCallback(() => refetch().then(() => {}), [refetch]));
 
-  const backdrop = palette.grey[900];
-  const hairline = palette.material.lightThin;
+  const backdrop = palette.grey[100];
+  const hairline = palette.material.darkThin;
 
   const renderItem = (item: TransactionListItem) => {
     const dot = statusDot(item.status);
@@ -78,7 +78,7 @@ export const HistoryScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
         <View style={styles.info}>
-          <Text style={[styles.name, { color: palette.grey[300] }]}>{item.transactionCode}</Text>
+          <Text style={[styles.name, { color: palette.grey[900] }]}>{item.transactionCode}</Text>
           <Text style={[styles.detail, { color: palette.grey[500] }]}>
             {recipientLabel} {'\u00B7'} {timeAgo(item.createdAt)}
           </Text>
@@ -87,7 +87,7 @@ export const HistoryScreen: React.FC<Props> = ({ navigation }) => {
           <Text
             style={[
               styles.receiveAmt,
-              { color: palette.grey[300] },
+              { color: palette.grey[900] },
               group === 'FAILED' && { color: palette.status.negative },
             ]}
           >
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   statusDotText: {
-    fontFamily: 'Geist_400Regular',
+    fontFamily: 'Inter_600SemiBold',
     fontSize: 7,
   },
   info: { flex: 1 },

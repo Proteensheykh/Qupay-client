@@ -68,7 +68,7 @@ export const CorridorWire: React.FC<CorridorWireProps> = ({
           y1={lineY}
           x2={width - padX}
           y2={lineY}
-          stroke={palette.grey[700]}
+          stroke={palette.grey[300]}
           strokeWidth={2}
           strokeLinecap="round"
         />
@@ -86,7 +86,7 @@ export const CorridorWire: React.FC<CorridorWireProps> = ({
         {/* Start anchor */}
         <Circle cx={padX} cy={lineY} r={5} fill={palette.royal[500]} />
         {/* End anchor */}
-        <Circle cx={width - padX} cy={lineY} r={5} fill={palette.grey[700]} />
+        <Circle cx={width - padX} cy={lineY} r={5} fill={palette.grey[300]} />
         {/* Leading bead */}
         <AnimatedCircle
           cx={padX}

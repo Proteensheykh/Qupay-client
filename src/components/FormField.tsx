@@ -53,14 +53,14 @@ export const FormField: React.FC<FormFieldProps> = ({
       <View
         style={[
           styles.field,
-          { backgroundColor: palette.grey[900] },
+          { backgroundColor: theme.background.surface },
           borderStyle,
         ]}
       >
         {leftIcon}
         <TextInput
-          style={[styles.input, { color: palette.grey[300] }, style]}
-          placeholderTextColor={palette.grey[600]}
+          style={[styles.input, { color: theme.text.primary }, style]}
+          placeholderTextColor={theme.text.muted}
           selectionColor={palette.royal[500]}
           cursorColor={palette.royal[500]}
           underlineColorAndroid="transparent"

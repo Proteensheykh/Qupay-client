@@ -266,7 +266,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
   }, [navigation, amount, sendCurrency, receiveCurrency, receiveAmount, walletAddress, walletAddressValid]);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
       <ScreenHeader title="Who are you sending to?" onBack={() => navigation.goBack()} />
       <ScrollView
         style={styles.scroll}
@@ -277,7 +277,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
         <View style={styles.swapSummary}>
           <View style={[styles.swapRow, styles.swapRowFirst]}>
             <Text style={[styles.swapLabel, { color: palette.grey[500] }]}>Sending</Text>
-            <Text style={[styles.swapValue, { color: palette.grey[300] }]}>
+            <Text style={[styles.swapValue, { color: palette.grey[900] }]}>
               {sendSymbol}
               {amount.toLocaleString()} {sendCurrency}
             </Text>
@@ -287,7 +287,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
           <View style={styles.swapRow}>
             <Text style={[styles.swapLabel, { color: palette.grey[500] }]}>They receive</Text>
-            <Text style={[styles.swapValue, { color: palette.grey[300] }]}>
+            <Text style={[styles.swapValue, { color: palette.grey[900] }]}>
               {isCryptoOut
                 ? `${receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`
                 : `${recvSymbol}${receiveAmount.toLocaleString()} ${receiveCurrency}`}
@@ -301,7 +301,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             <View
               style={[
                 styles.networkSelector,
-                { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
+                { backgroundColor: palette.grey[200], borderColor: palette.material.darkThin },
               ]}
             >
               <View style={styles.networkSelectorLeft}>
@@ -309,21 +309,21 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                 <View
                   style={[
                     styles.networkPill,
-                    { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
+                    { backgroundColor: palette.grey[200], borderColor: palette.material.darkThin },
                   ]}
                 >
                   <Ionicons name="ellipse" size={10} color={palette.royal[500]} />
-                  <Text style={[styles.networkPillText, { color: palette.grey[300] }]}>Solana</Text>
+                  <Text style={[styles.networkPillText, { color: palette.grey[900] }]}>Solana</Text>
                 </View>
               </View>
             </View>
 
             {/* Username lookup */}
-            <View style={[styles.walletInputCard, { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin }]}>
+            <View style={[styles.walletInputCard, { backgroundColor: palette.grey[200], borderColor: palette.material.darkThin }]}>
               <Text style={[styles.walletInputLabel, { color: palette.grey[500] }]}>Lookup by username (optional)</Text>
               <View style={styles.usernameLookupRow}>
                 <TextInput
-                  style={[styles.walletInput, { color: palette.grey[300], backgroundColor: palette.grey[900], borderColor: palette.material.lightThin, flex: 1 }]}
+                  style={[styles.walletInput, { color: palette.grey[900], backgroundColor: palette.grey[100], borderColor: palette.material.darkThin, flex: 1 }]}
                   placeholder="Enter Qupay username"
                   placeholderTextColor={palette.grey[500]}
                   value={usernameInput}
@@ -362,7 +362,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             <View
               style={[
                 styles.walletInputCard,
-                { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
+                { backgroundColor: palette.grey[200], borderColor: palette.material.darkThin },
                 walletAddressError && { borderColor: palette.status.negative },
                 walletAddressValid && { borderColor: palette.royal[500] },
               ]}
@@ -371,17 +371,17 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                 <Text style={[styles.walletInputLabel, { color: palette.grey[500] }]}>Solana Wallet Address</Text>
                 <TouchableOpacity
                   onPress={handlePasteAddress}
-                  style={[styles.pasteBtn, { backgroundColor: palette.grey[900], borderWidth: 1, borderColor: palette.material.lightThin }]}
+                  style={[styles.pasteBtn, { backgroundColor: palette.grey[100], borderWidth: 1, borderColor: palette.material.darkThin }]}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="clipboard-outline" size={14} color={palette.grey[300]} />
-                  <Text style={[styles.pasteBtnText, { color: palette.grey[300] }]}>Paste</Text>
+                  <Ionicons name="clipboard-outline" size={14} color={palette.grey[900]} />
+                  <Text style={[styles.pasteBtnText, { color: palette.grey[900] }]}>Paste</Text>
                 </TouchableOpacity>
               </View>
               <TextInput
                 style={[
                   styles.walletInput,
-                  { color: palette.grey[300], backgroundColor: palette.grey[900], borderColor: palette.material.lightThin },
+                  { color: palette.grey[900], backgroundColor: palette.grey[100], borderColor: palette.material.darkThin },
                 ]}
                 placeholder="e.g. 7xKXtg2CW87d97TXJSDpbD5..."
                 placeholderTextColor={palette.grey[500]}
@@ -427,12 +427,12 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                     >
                       <Avatar seed={r.label} size={44} />
                       <View style={styles.ciInfo}>
-                        <Text style={[styles.ciName, { color: palette.grey[300] }]}>{r.label}</Text>
+                        <Text style={[styles.ciName, { color: palette.grey[900] }]}>{r.label}</Text>
                         <View style={styles.walletSubRow}>
                           <Text style={[styles.walletAddrText, { color: palette.grey[500] }]}>{truncateAddress((r.data as WalletRecipient).walletAddress)}</Text>
-                          <View style={[styles.networkBadge, { backgroundColor: palette.grey[900], borderWidth: 1, borderColor: palette.material.lightThin }]}>
+                          <View style={[styles.networkBadge, { backgroundColor: palette.grey[100], borderWidth: 1, borderColor: palette.material.darkThin }]}>
                             <Ionicons name="ellipse" size={8} color={palette.royal[500]} />
-                            <Text style={[styles.networkBadgeText, { color: palette.grey[300] }]}>Solana</Text>
+                            <Text style={[styles.networkBadgeText, { color: palette.grey[900] }]}>Solana</Text>
                           </View>
                         </View>
                       </View>
@@ -449,16 +449,16 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             <TouchableOpacity
               style={[
                 styles.addBankBtn,
-                { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
+                { backgroundColor: palette.grey[200], borderColor: palette.material.darkThin },
               ]}
               onPress={() => setShowBankSheet(true)}
               activeOpacity={0.7}
             >
-              <View style={[styles.addBankIcon, { backgroundColor: palette.grey[900], borderWidth: 1, borderColor: palette.material.lightThin }]}>
-                <Ionicons name="business-outline" size={18} color={palette.grey[300]} />
+              <View style={[styles.addBankIcon, { backgroundColor: palette.grey[100], borderWidth: 1, borderColor: palette.material.darkThin }]}>
+                <Ionicons name="business-outline" size={18} color={palette.grey[900]} />
               </View>
               <View style={styles.addBankInfo}>
-                <Text style={[styles.addBankTitle, { color: palette.grey[300] }]}>Bank Transfer</Text>
+                <Text style={[styles.addBankTitle, { color: palette.grey[900] }]}>Bank Transfer</Text>
                 <Text style={[styles.addBankSub, { color: palette.grey[500] }]}>Send directly to a Nigerian bank account</Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={palette.grey[500]} />
@@ -479,13 +479,13 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                       <View style={styles.ciAvWrap}>
                         <Avatar seed={r.label} size={44} />
                         <View
-                          style={[styles.ciFlag, { backgroundColor: palette.grey[900], borderColor: palette.grey[900] }]}
+                          style={[styles.ciFlag, { backgroundColor: palette.grey[100], borderColor: palette.material.darkThin }]}
                         >
                           <Text style={styles.ciFlagText}>{'\u{1F1F3}\u{1F1EC}'}</Text>
                         </View>
                       </View>
                       <View style={styles.ciInfo}>
-                        <Text style={[styles.ciName, { color: palette.grey[300] }]}>{r.label}</Text>
+                        <Text style={[styles.ciName, { color: palette.grey[900] }]}>{r.label}</Text>
                         <Text style={[styles.ciSub, { color: palette.grey[500] }]}>
                           {(r.data as BankRecipient).bankName} · {(r.data as BankRecipient).accountNumber}
                         </Text>
@@ -512,7 +512,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
           <TouchableOpacity
             style={[
               styles.bankDropdown,
-              { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
+              { backgroundColor: palette.grey[200], borderColor: palette.material.darkThin },
               selectedBank && { borderColor: palette.royal[500] },
             ]}
             onPress={() => setShowBankListSheet(true)}
@@ -526,7 +526,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             <Text
               style={[
                 styles.bankDropdownText,
-                { color: selectedBank ? palette.grey[300] : palette.grey[500] },
+                { color: selectedBank ? palette.grey[900] : palette.grey[500] },
               ]}
             >
               {bankName || 'Choose a bank...'}
@@ -542,13 +542,13 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                 styles.bankInput,
                 styles.accountNumberInput,
                 {
-                  backgroundColor: palette.grey[800],
+                  backgroundColor: palette.grey[200],
                   borderColor: bankValidationState === 'valid' 
                     ? palette.royal[500] 
                     : bankValidationState === 'invalid' 
                       ? palette.status.negative 
-                      : palette.material.lightThin,
-                  color: palette.grey[300],
+                      : palette.material.darkThin,
+                  color: palette.grey[900],
                 },
               ]}
               placeholder="Enter 10-digit account number"
@@ -588,8 +588,8 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
               styles.bankInput,
               styles.accountNameDisplay,
               {
-                backgroundColor: palette.grey[800],
-                borderColor: bankValidationState === 'valid' ? palette.royal[500] : palette.material.lightThin,
+                backgroundColor: palette.grey[200],
+                borderColor: bankValidationState === 'valid' ? palette.royal[500] : palette.material.darkThin,
               },
             ]}
           >
@@ -598,7 +598,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                 Verifying account...
               </Text>
             ) : bankAccountName ? (
-              <Text style={[styles.accountNameText, { color: palette.grey[300] }]}>
+              <Text style={[styles.accountNameText, { color: palette.grey[900] }]}>
                 {bankAccountName}
               </Text>
             ) : (
@@ -655,12 +655,12 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
           <View
             style={[
               styles.bankSearchWrap,
-              { backgroundColor: palette.grey[800], borderColor: palette.material.lightThin },
+              { backgroundColor: palette.grey[200], borderColor: palette.material.darkThin },
             ]}
           >
             <Ionicons name="search" size={18} color={palette.grey[500]} />
             <TextInput
-              style={[styles.bankSearchInput, { color: palette.grey[300] }]}
+              style={[styles.bankSearchInput, { color: palette.grey[900] }]}
               placeholder="Search banks..."
               placeholderTextColor={palette.grey[500]}
               value={bankSearch}
@@ -689,13 +689,13 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                 <TouchableOpacity
                   style={[
                     styles.bankListItem,
-                    { borderBottomColor: palette.material.lightThin },
-                    selectedBank === item.bankCode && [styles.bankListItemSelected, { backgroundColor: 'rgba(251,251,253,0.06)' }],
+                    { borderBottomColor: palette.material.darkThin },
+                    selectedBank === item.bankCode && [styles.bankListItemSelected, { backgroundColor: palette.grey[200] }],
                   ]}
                   onPress={() => selectBank(item)}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.bankListIcon, { backgroundColor: palette.material.lightThin }]}>
+                  <View style={[styles.bankListIcon, { backgroundColor: palette.material.darkThin }]}>
                     <Ionicons
                       name="business"
                       size={16}
@@ -705,7 +705,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                   <Text
                     style={[
                       styles.bankListName,
-                      { color: selectedBank === item.bankCode ? palette.royal[500] : palette.grey[300] },
+                      { color: selectedBank === item.bankCode ? palette.royal[500] : palette.grey[900] },
                     ]}
                   >
                     {item.bankName}
@@ -743,7 +743,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 4,
     borderBottomWidth: 1,
-    borderBottomColor: palette.material.lightThin,
+    borderBottomColor: palette.material.darkThin,
   },
   swapRowFirst: {
     marginBottom: 4,
@@ -892,7 +892,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: palette.material.lightThin,
+    borderBottomColor: palette.material.darkThin,
   },
   networkItemIcon: {
     width: 40,
@@ -940,7 +940,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderTopWidth: 1,
-    borderTopColor: palette.material.lightThin,
+    borderTopColor: palette.material.darkThin,
   },
   miniSpin: {
     width: 14,
@@ -958,7 +958,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderTopWidth: 1,
-    borderTopColor: palette.material.lightThin,
+    borderTopColor: palette.material.darkThin,
   },
   resolvedCard: {
     flex: 1,
@@ -984,7 +984,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 18,
     borderTopWidth: 1,
-    borderTopColor: palette.material.lightThin,
+    borderTopColor: palette.material.darkThin,
   },
   errorInfo: { flex: 1 },
   errorTitle: {
@@ -1011,7 +1011,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: palette.material.lightThin,
+    borderBottomColor: palette.material.darkThin,
   },
   contactItemLast: {
     borderBottomWidth: 0,
@@ -1025,7 +1025,7 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     borderWidth: 1,
-    borderColor: palette.material.lightThin,
+    borderColor: palette.material.darkThin,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1147,7 +1147,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 4,
     borderBottomWidth: 1,
-    borderBottomColor: palette.material.lightThin,
+    borderBottomColor: palette.material.darkThin,
   },
   bankListItemSelected: {
     marginHorizontal: -4,

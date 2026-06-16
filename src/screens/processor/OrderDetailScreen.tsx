@@ -108,7 +108,7 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   if (isQueueItem && queuePreview) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
         <ScreenHeader title="Order Detail" onBack={() => navigation.goBack()} />
         <ScrollView
           style={styles.scroll}
@@ -119,24 +119,24 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             <StatusBadge label="QUEUED" variant="warning" />
           </View>
 
-          <View style={[styles.card, { backgroundColor: palette.grey[800] }, borders.hairline.dark, { borderRadius: radii.lg }]}>
+          <View style={[styles.card, { backgroundColor: palette.grey[200] }, borders.hairline.light, { borderRadius: radii.lg }]}>
             <View style={styles.amountRow}>
               <View style={styles.amountCol}>
                 <Text style={[styles.amountLabel, { color: palette.grey[500] }]}>From</Text>
-                <Text style={[styles.amountValue, { color: palette.grey[100] }]}>
+                <Text style={[styles.amountValue, { color: palette.grey[900] }]}>
                   {queuePreview.originalAmount?.toLocaleString()} {queuePreview.fromCurrency}
                 </Text>
               </View>
               <Ionicons name="arrow-forward" size={18} color={palette.grey[500]} />
               <View style={[styles.amountCol, { alignItems: 'flex-end' }]}>
                 <Text style={[styles.amountLabel, { color: palette.grey[500] }]}>To</Text>
-                <Text style={[styles.amountValue, { color: palette.grey[100] }]}>
+                <Text style={[styles.amountValue, { color: palette.grey[900] }]}>
                   {queuePreview.convertedAmount?.toLocaleString()} {queuePreview.toCurrency}
                 </Text>
               </View>
             </View>
 
-            <View style={[styles.divider, { backgroundColor: palette.material.lightThin }]} />
+            <View style={[styles.divider, { backgroundColor: palette.material.darkThin }]} />
 
             <View style={styles.detailRows}>
               {queuePreview.fxRate != null && (
@@ -167,11 +167,11 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   if (isTxError) {
     const is403 = isApiError(txError) && txError.status === 403;
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
         <ScreenHeader title="Order Detail" onBack={() => navigation.goBack()} />
         <View style={styles.loaderWrap}>
           <Ionicons name="alert-circle-outline" size={48} color={palette.grey[500]} />
-          <Text style={[styles.errorTitle, { color: palette.grey[300] }]}>
+          <Text style={[styles.errorTitle, { color: palette.grey[900] }]}>
             {is403 ? 'Access Denied' : 'Something went wrong'}
           </Text>
           <Text style={[styles.errorSubtext, { color: palette.grey[500] }]}>
@@ -192,7 +192,7 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   if (!tx) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
         <ScreenHeader title="Order Detail" onBack={() => navigation.goBack()} />
         <View style={styles.loaderWrap}>
           <ActivityIndicator size="large" color={palette.royal[500]} />
@@ -205,7 +205,7 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const isImageProof = pickedFile?.mimeType.startsWith('image/');
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
       <ScreenHeader title="Order Detail" onBack={() => navigation.goBack()} />
       <ScrollView
         style={styles.scroll}
@@ -221,24 +221,24 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         </View>
 
         {/* Amount card */}
-        <View style={[styles.card, { backgroundColor: palette.grey[800] }, borders.hairline.dark, { borderRadius: radii.lg }]}>
+        <View style={[styles.card, { backgroundColor: palette.grey[200] }, borders.hairline.light, { borderRadius: radii.lg }]}>
           <View style={styles.amountRow}>
             <View style={styles.amountCol}>
               <Text style={[styles.amountLabel, { color: palette.grey[500] }]}>From</Text>
-              <Text style={[styles.amountValue, { color: palette.grey[100] }]}>
+              <Text style={[styles.amountValue, { color: palette.grey[900] }]}>
                 {tx.originalAmount?.toLocaleString()} {tx.fromCurrency}
               </Text>
             </View>
             <Ionicons name="arrow-forward" size={18} color={palette.grey[500]} />
             <View style={[styles.amountCol, { alignItems: 'flex-end' }]}>
               <Text style={[styles.amountLabel, { color: palette.grey[500] }]}>To</Text>
-              <Text style={[styles.amountValue, { color: palette.grey[100] }]}>
+              <Text style={[styles.amountValue, { color: palette.grey[900] }]}>
                 {tx.convertedAmount?.toLocaleString()} {tx.toCurrency}
               </Text>
             </View>
           </View>
 
-          <View style={[styles.divider, { backgroundColor: palette.material.lightThin }]} />
+          <View style={[styles.divider, { backgroundColor: palette.material.darkThin }]} />
 
           <View style={styles.detailRows}>
             <DetailRow label="Rate" value={`1 ${tx.fromCurrency} = ${tx.fxRate?.toLocaleString()} ${tx.toCurrency}`} />
@@ -254,10 +254,10 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         </View>
 
         {/* Recipient details */}
-        <View style={[styles.card, { backgroundColor: palette.grey[800] }, borders.hairline.dark, { borderRadius: radii.lg }]}>
+        <View style={[styles.card, { backgroundColor: palette.grey[200] }, borders.hairline.light, { borderRadius: radii.lg }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="person-outline" size={16} color={palette.royal[500]} />
-            <Text style={[styles.cardHeaderText, { color: palette.grey[300] }]}>Recipient</Text>
+            <Text style={[styles.cardHeaderText, { color: palette.grey[900] }]}>Recipient</Text>
           </View>
           {tx.recipient?.accountName && (
             <DetailRow label="Account name" value={tx.recipient.accountName} />
@@ -275,10 +275,10 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Payer confirmation status */}
         {!isQueueItem && (
-          <View style={[styles.card, { backgroundColor: palette.grey[800] }, borders.hairline.dark, { borderRadius: radii.lg }]}>
+          <View style={[styles.card, { backgroundColor: palette.grey[200] }, borders.hairline.light, { borderRadius: radii.lg }]}>
             <View style={styles.cardHeader}>
               <Ionicons name="checkmark-done-outline" size={16} color={palette.royal[500]} />
-              <Text style={[styles.cardHeaderText, { color: palette.grey[300] }]}>Payer Status</Text>
+              <Text style={[styles.cardHeaderText, { color: palette.grey[900] }]}>Payer Status</Text>
             </View>
             <DetailRow
               label="Payer confirmed"
@@ -289,10 +289,10 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Existing proof preview */}
         {showProofPreview && (
-          <View style={[styles.card, { backgroundColor: palette.grey[800] }, borders.hairline.dark, { borderRadius: radii.lg }]}>
+          <View style={[styles.card, { backgroundColor: palette.grey[200] }, borders.hairline.light, { borderRadius: radii.lg }]}>
             <View style={styles.cardHeader}>
               <Ionicons name="checkmark-circle" size={16} color={palette.status.positive} />
-              <Text style={[styles.cardHeaderText, { color: palette.grey[300] }]}>Proof Submitted</Text>
+              <Text style={[styles.cardHeaderText, { color: palette.grey[900] }]}>Proof Submitted</Text>
             </View>
             {tx.proof?.description && (
               <Text style={[styles.proofDescription, { color: palette.grey[400] }]}>
@@ -311,10 +311,10 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Proof upload section */}
         {showProofSection && !hasExistingProof && (
-          <View style={[styles.card, { backgroundColor: palette.grey[800] }, borders.hairline.dark, { borderRadius: radii.lg }]}>
+          <View style={[styles.card, { backgroundColor: palette.grey[200] }, borders.hairline.light, { borderRadius: radii.lg }]}>
             <View style={styles.cardHeader}>
               <Ionicons name="document-attach-outline" size={16} color={palette.royal[500]} />
-              <Text style={[styles.cardHeaderText, { color: palette.grey[300] }]}>Proof of Payment</Text>
+              <Text style={[styles.cardHeaderText, { color: palette.grey[900] }]}>Proof of Payment</Text>
             </View>
 
             {!pickedFile ? (
@@ -325,7 +325,7 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                 accessibilityRole="button"
               >
                 <Ionicons name="cloud-upload-outline" size={28} color={palette.royal[400]} />
-                <Text style={[styles.uploadTitle, { color: palette.grey[300] }]}>
+                <Text style={[styles.uploadTitle, { color: palette.grey[900] }]}>
                   Tap to select proof
                 </Text>
                 <Text style={[styles.uploadHint, { color: palette.grey[500] }]}>
@@ -334,7 +334,7 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
               </Pressable>
             ) : (
               <View>
-                <View style={[styles.filePreview, { backgroundColor: palette.grey[700] }]}>
+                <View style={[styles.filePreview, { backgroundColor: palette.grey[200] }]}>
                   {isImageProof && (
                     <Image
                       source={{ uri: pickedFile.uri }}
@@ -350,7 +350,7 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                     />
                     <View style={styles.fileInfoText}>
                       <Text
-                        style={[styles.fileName, { color: palette.grey[200] }]}
+                        style={[styles.fileName, { color: palette.grey[900] }]}
                         numberOfLines={1}
                       >
                         {pickedFile.name}
@@ -377,7 +377,7 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                   <TextInput
                     style={[
                       styles.descriptionInput,
-                      { color: palette.grey[200], borderColor: palette.grey[600], backgroundColor: palette.grey[700] },
+                      { color: palette.grey[900], borderColor: palette.grey[600], backgroundColor: palette.grey[100] },
                     ]}
                     value={description}
                     onChangeText={(text) => setDescription(text.slice(0, DESCRIPTION_MAX_LENGTH))}
@@ -425,21 +425,21 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         title="Confirm Proof Upload"
       >
         <View style={styles.sheetBody}>
-          <Text style={[styles.sheetText, { color: palette.grey[300] }]}>
+          <Text style={[styles.sheetText, { color: palette.grey[900] }]}>
             You are about to submit proof of payment for this order.
             Please ensure the file accurately reflects the completed payout.
             Submitting false proof may result in account suspension.
           </Text>
 
           {pickedFile && (
-            <View style={[styles.sheetFileRow, { backgroundColor: palette.grey[700] }]}>
+            <View style={[styles.sheetFileRow, { backgroundColor: palette.grey[200] }]}>
               <Ionicons
                 name={isImageProof ? 'image-outline' : 'document-outline'}
                 size={16}
                 color={palette.royal[400]}
               />
               <Text
-                style={[styles.sheetFileName, { color: palette.grey[200] }]}
+                style={[styles.sheetFileName, { color: palette.grey[900] }]}
                 numberOfLines={1}
               >
                 {pickedFile.name}
@@ -472,7 +472,7 @@ function DetailRow({ label, value, mono }: { label: string; value: string; mono?
       <Text
         style={[
           mono ? styles.detailMono : styles.detailValue,
-          { color: palette.grey[300] },
+          { color: palette.grey[900] },
         ]}
         selectable={mono}
         numberOfLines={mono ? 2 : 1}

@@ -20,6 +20,8 @@ export interface MpOrder {
   payerConfirmed: boolean;
   proofUrl?: string | null;
   createdAt: string;
+  assignedAt?: string | null;
+  expiresAt?: string | null;
   acceptedAt?: string | null;
   completedAt?: string | null;
 }
@@ -34,10 +36,22 @@ export interface UploadProofRequest {
 }
 
 function normalizeOrder(raw: any): MpOrder {
+  // The backend sends two distinct fields: `transactionStatus` is the
+  // transaction lifecycle (QUEUED → IN_PROGRESS → PAYER_PAID → COMPLETE / ...),
+  // while `status` is the order-assignment state (e.g. ACCEPTED). The UI buckets
+  // orders into Queue/Active/Completed off the lifecycle, so prefer
+  // `transactionStatus` and fall back to `status` for older/partial payloads.
+  const lifecycleStatus = raw?.transactionStatus ?? raw?.status;
+  // The my-orders payload carries `assignedAt`/`expiresAt` but no `createdAt`,
+  // so the home-screen card was rendering "Invalid Date". Fall back through the
+  // timestamps the backend actually sends.
+  const createdAt =
+    raw?.createdAt ?? raw?.assignedAt ?? raw?.acceptedAt ?? raw?.expiresAt;
   return {
     ...raw,
     orderId: raw?.orderId ?? raw?.id,
-    status: normalizeStatus(raw.status),
+    status: normalizeStatus(lifecycleStatus),
+    createdAt,
   };
 }
 

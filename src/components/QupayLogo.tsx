@@ -12,7 +12,7 @@ interface QupayLogoProps {
 /**
  * Qupay logo — lowercase 'q' monogram or wordmark.
  * Single-color fill (royal-500 default), with optional amber accent dot.
- * Rounded geometric vocabulary, Geist-like strokes.
+ * Rounded geometric vocabulary, Inter-based strokes.
  */
 export const QupayLogo: React.FC<QupayLogoProps> = ({
   size = 32,
@@ -53,9 +53,9 @@ export const QupayLogo: React.FC<QupayLogoProps> = ({
           x="0"
           y="26"
           fill={color}
-          fontFamily="Geist_400Regular"
+          fontFamily="Inter_700Bold"
           fontSize="28"
-          fontWeight="400"
+          fontWeight="700"
           letterSpacing="-1"
         >
           qupay

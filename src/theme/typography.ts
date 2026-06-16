@@ -1,18 +1,18 @@
 import { TextStyle } from 'react-native';
 
 /**
- * Qupay typography tokens — sourced from Squid Router CSS variables
+ * Qupay typography tokens — Inter, light-theme facelift.
  *
- * Geist Variable at weight 400 only. Hierarchy via size + color, not weight.
- * Font sizes rounded from Squid's rem-based scale (at 16px root).
+ * Inter at four weights (400/500/600/700). Hierarchy comes from weight + size,
+ * not size + color alone (the prior Geist-400-only model).
  */
 export const fontFamily = {
-  regular: 'Geist_400Regular',
-  // Legacy aliases — all map to Geist 400 since Squid uses 400 everywhere
-  medium: 'Geist_400Regular',
-  semiBold: 'Geist_400Regular',
-  bold: 'Geist_400Regular',
-  extraBold: 'Geist_400Regular',
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semiBold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+  // Legacy alias — no dedicated 800 face loaded; map to the boldest weight.
+  extraBold: 'Inter_700Bold',
 };
 
 type TypographyVariant = TextStyle;
@@ -20,13 +20,13 @@ type TypographyVariant = TextStyle;
 export const typography: Record<string, TypographyVariant> = {
   // Display — heading-large (70px) and heading-medium (49px)
   display1: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.bold,
     fontSize: 70,
     lineHeight: 76,
     letterSpacing: -1.4,
   },
   display2: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.bold,
     fontSize: 49,
     lineHeight: 56,
     letterSpacing: -0.98,
@@ -34,30 +34,30 @@ export const typography: Record<string, TypographyVariant> = {
 
   // Headings
   h1: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.bold,
     fontSize: 35,
     lineHeight: 42,
     letterSpacing: -0.7,
   },
   h2: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.bold,
     fontSize: 28,
     lineHeight: 34,
     letterSpacing: -0.56,
   },
   h3: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.semiBold,
     fontSize: 22,
     lineHeight: 28,
     letterSpacing: -0.22,
   },
   h4: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.semiBold,
     fontSize: 18,
     lineHeight: 24,
   },
   h5: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.semiBold,
     fontSize: 16,
     lineHeight: 22,
   },
@@ -69,7 +69,7 @@ export const typography: Record<string, TypographyVariant> = {
     lineHeight: 26,
   },
   bodyMedium: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.medium,
     fontSize: 22,
     lineHeight: 30,
   },
@@ -79,19 +79,19 @@ export const typography: Record<string, TypographyVariant> = {
     lineHeight: 20,
   },
   bodySmMedium: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.medium,
     fontSize: 14,
     lineHeight: 20,
   },
 
   // Subheaders
   subheader1: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.medium,
     fontSize: 14,
     lineHeight: 20,
   },
   subheader2: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.semiBold,
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.3,
@@ -104,79 +104,79 @@ export const typography: Record<string, TypographyVariant> = {
     lineHeight: 20,
   },
   captionMedium: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.medium,
     fontSize: 14,
     lineHeight: 20,
   },
   label: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.semiBold,
     fontSize: 11,
     lineHeight: 14,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
   labelSm: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.semiBold,
     fontSize: 10,
     lineHeight: 13,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
   labelXs: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.semiBold,
     fontSize: 9,
     lineHeight: 12,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
 
-  // Buttons — all weight 400 per Squid
+  // Buttons — semibold for legible CTAs
   buttonL: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.semiBold,
     fontSize: 18,
     lineHeight: 24,
   },
   buttonM: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.semiBold,
     fontSize: 16,
     lineHeight: 22,
   },
   buttonS: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.semiBold,
     fontSize: 14,
     lineHeight: 20,
   },
 
   // Numbers / values — tabular with tight tracking
   value: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.bold,
     fontSize: 70,
     lineHeight: 76,
     letterSpacing: -1.4,
     fontVariant: ['tabular-nums'],
   },
   valueLg: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.medium,
     fontSize: 49,
     lineHeight: 56,
     letterSpacing: -0.98,
     fontVariant: ['tabular-nums'],
   },
   valueMd: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.bold,
     fontSize: 28,
     lineHeight: 34,
     letterSpacing: -0.56,
     fontVariant: ['tabular-nums'],
   },
   valueSm: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.semiBold,
     fontSize: 22,
     lineHeight: 28,
     fontVariant: ['tabular-nums'],
   },
   valueXs: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.semiBold,
     fontSize: 18,
     lineHeight: 24,
     fontVariant: ['tabular-nums'],
@@ -184,19 +184,19 @@ export const typography: Record<string, TypographyVariant> = {
 
   // Mono-style text (rates, references, timers)
   mono: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.medium,
     fontSize: 14,
     lineHeight: 20,
     fontVariant: ['tabular-nums'],
   },
   monoSm: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.medium,
     fontSize: 12,
     lineHeight: 16,
     fontVariant: ['tabular-nums'],
   },
   monoXs: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.medium,
     fontSize: 11,
     lineHeight: 14,
     fontVariant: ['tabular-nums'],
@@ -204,7 +204,7 @@ export const typography: Record<string, TypographyVariant> = {
 
   // Numpad key text
   numKeyText: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.medium,
     fontSize: 28,
     lineHeight: 34,
   },

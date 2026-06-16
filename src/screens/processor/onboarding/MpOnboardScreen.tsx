@@ -70,7 +70,7 @@ export const MpOnboardScreen: React.FC<Props> = ({ navigation }) => {
   }, [allValid, stakeNum, sH, sM, eH, eM, user?.phoneNumber, onboardMp, toast, navigation]);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
       <ScreenHeader title="MP Onboarding" onBack={() => navigation.goBack()} />
       <KeyboardAvoidingView
         style={styles.flex}
@@ -83,13 +83,13 @@ export const MpOnboardScreen: React.FC<Props> = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         >
           {/* Staked USDT */}
-          <View style={[styles.card, { backgroundColor: palette.grey[800] }, borders.hairline.dark, { borderRadius: radii.lg }]}>
+          <View style={[styles.card, { backgroundColor: palette.grey[200] }, borders.hairline.light, { borderRadius: radii.lg }]}>
             <View style={styles.sectionHeader}>
               <View style={[styles.iconWrap, { backgroundColor: 'rgba(158,121,210,0.12)' }]}>
                 <Ionicons name="shield-checkmark-outline" size={18} color={palette.royal[500]} />
               </View>
               <View style={styles.sectionTextWrap}>
-                <Text style={[styles.sectionTitle, { color: palette.grey[300] }]}>Staked USDT</Text>
+                <Text style={[styles.sectionTitle, { color: palette.grey[900] }]}>Staked USDT</Text>
                 <Text style={[styles.sectionSub, { color: palette.grey[500] }]}>
                   Minimum 100 USDT required
                 </Text>
@@ -113,13 +113,13 @@ export const MpOnboardScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           {/* Operating Hours */}
-          <View style={[styles.card, { backgroundColor: palette.grey[800] }, borders.hairline.dark, { borderRadius: radii.lg }]}>
+          <View style={[styles.card, { backgroundColor: palette.grey[200] }, borders.hairline.light, { borderRadius: radii.lg }]}>
             <View style={styles.sectionHeader}>
               <View style={[styles.iconWrap, { backgroundColor: 'rgba(158,121,210,0.12)' }]}>
                 <Ionicons name="time-outline" size={18} color={palette.royal[500]} />
               </View>
               <View style={styles.sectionTextWrap}>
-                <Text style={[styles.sectionTitle, { color: palette.grey[300] }]}>Operating Hours</Text>
+                <Text style={[styles.sectionTitle, { color: palette.grey[900] }]}>Operating Hours</Text>
                 <Text style={[styles.sectionSub, { color: palette.grey[500] }]}>
                   Cannot be changed after onboarding
                 </Text>
@@ -181,7 +181,7 @@ export const MpOnboardScreen: React.FC<Props> = ({ navigation }) => {
             </View>
           </View>
 
-          <View style={[styles.infoCard, { backgroundColor: 'rgba(243,175,37,0.08)', borderColor: palette.grey[700] }]}>
+          <View style={[styles.infoCard, { backgroundColor: 'rgba(243,175,37,0.08)', borderColor: palette.grey[300] }]}>
             <Ionicons name="information-circle-outline" size={16} color={palette.status.partial} />
             <Text style={[styles.infoText, { color: palette.grey[400] }]}>
               Mobile money is coming soon. Your verified phone number will be used as a placeholder for now.
@@ -189,7 +189,7 @@ export const MpOnboardScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </ScrollView>
 
-        <View style={[styles.bottomArea, { borderTopColor: palette.material.lightThin }]}>
+        <View style={[styles.bottomArea, { borderTopColor: palette.material.darkThin }]}>
           <CTAButton
             title="Complete Onboarding"
             onPress={handleSubmit}
