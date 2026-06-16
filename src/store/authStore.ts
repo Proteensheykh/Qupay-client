@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { AuthTokenResponse, UserProfileResponse } from '../types/auth';
 import { serverLogout } from '../api/auth';
+import { silentTokenRefresh } from '../api/client';
 import * as storage from './secureStorage';
 import { StorageKeys } from './secureStorage';
 import { queryClient } from '../api/queryClient';
@@ -18,6 +19,7 @@ interface AuthState {
   setPinLocked: (value: boolean) => void;
   logout: (skipServerCall?: boolean) => Promise<void>;
   hydrate: () => Promise<void>;
+  validateSession: () => Promise<boolean>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -105,6 +107,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       console.error('Failed to hydrate auth state:', error);
       set({ isHydrated: true });
+    }
+  },
+
+  validateSession: async () => {
+    const { refreshToken, setTokens, logout } = get();
+
+    if (!refreshToken) {
+      await logout(true);
+      return false;
+    }
+
+    try {
+      const tokens = await silentTokenRefresh(refreshToken);
+      await setTokens(tokens);
+      return true;
+    } catch {
+      await logout(true);
+      return false;
     }
   },
 }));

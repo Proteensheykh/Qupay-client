@@ -213,6 +213,20 @@ apiClient.interceptors.response.use(
   }
 );
 
+export async function silentTokenRefresh(
+  currentRefreshToken: string
+): Promise<AuthTokenResponse> {
+  const response = await refreshClient.post<ApiResponse<AuthTokenResponse>>(
+    '/v1/auth/token/refresh',
+    { refreshToken: currentRefreshToken }
+  );
+  const data = response.data;
+  if (!data.success || !data.data) {
+    throw new Error('Refresh failed');
+  }
+  return data.data;
+}
+
 export class ApiError extends Error {
   status: number;
 

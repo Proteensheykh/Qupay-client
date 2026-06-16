@@ -12,22 +12,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const hydrate = useAuthStore((state) => state.hydrate);
   const setPinLocked = useAuthStore((state) => state.setPinLocked);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const validateSession = useAuthStore((state) => state.validateSession);
   const user = useAuthStore((state) => state.user);
   const hasPin = user?.pinSet ?? false;
   const appState = useRef<AppStateStatus>(AppState.currentState);
+  const isValidating = useRef(false);
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
       if (
         appState.current.match(/inactive|background/) &&
         nextAppState === 'active'
       ) {
-        if (isAuthenticated && hasPin) {
-          setPinLocked(true);
+        if (isAuthenticated && hasPin && !isValidating.current) {
+          isValidating.current = true;
+          const stillValid = await validateSession();
+          isValidating.current = false;
+          if (stillValid) {
+            setPinLocked(true);
+          }
         }
       }
       appState.current = nextAppState;
@@ -36,7 +43,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       subscription.remove();
     };
-  }, [isAuthenticated, hasPin, setPinLocked]);
+  }, [isAuthenticated, hasPin, setPinLocked, validateSession]);
 
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
