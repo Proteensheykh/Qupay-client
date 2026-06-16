@@ -30,10 +30,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       ) {
         if (isAuthenticated && hasPin && !isValidating.current) {
           isValidating.current = true;
-          const stillValid = await validateSession();
-          isValidating.current = false;
-          if (stillValid) {
-            setPinLocked(true);
+          try {
+            const stillValid = await validateSession();
+            if (stillValid) {
+              setPinLocked(true);
+            }
+          } finally {
+            isValidating.current = false;
           }
         }
       }
