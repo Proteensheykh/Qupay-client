@@ -1,29 +1,11 @@
 /**
- * Proof-upload pipeline.
+ * Proof-upload file picker.
  *
- * PENDING BACKEND DEPENDENCY (Dep #1):
- * The backend does not yet expose a presigned-URL or direct file-upload endpoint.
- * `POST /v1/mp/orders/{orderId}/proof` accepts only a `{ proofUrl }` JSON body,
- * meaning the file must be hosted elsewhere before the URL is submitted.
- *
- * Current behaviour (pass-through):
- *   `uploadFile()` is a **no-op placeholder** that returns the local file URI
- *   unchanged. Once a real upload target is available, replace its implementation
- *   with one of:
- *
- *   Option A (preferred): Backend ships a presigned-upload endpoint.
- *     1. `GET /v1/uploads/presigned?contentType=...` → returns `{ uploadUrl, publicUrl }`.
- *     2. `PUT <uploadUrl>` with the raw file bytes.
- *     3. Return `publicUrl` to the caller.
- *
- *   Option B (Cloudinary fallback):
- *     1. Add `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` and `EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET` to env.
- *     2. POST to `https://api.cloudinary.com/v1_1/<cloud>/auto/upload` with a
- *        FormData body containing the file + upload preset.
- *     3. Return `secure_url` from the response.
- *
- * When either option is implemented, remove the pass-through and update the
- * integration-plan.md Phase 5 section accordingly.
+ * The MP picks a proof file here; the raw file is then sent directly to
+ * `POST /v1/mp/orders/{orderId}/proof` as multipart/form-data (see
+ * `src/api/mpOrders.ts#uploadProof`). The backend hosts the file itself and
+ * returns a server-hosted `proofUrl`, which the payer reads back on the
+ * transaction's `proof` record. No client-side file hosting is required.
  */
 
 import * as DocumentPicker from 'expo-document-picker';
@@ -102,20 +84,4 @@ export async function pickProofFile(): Promise<PickResult> {
       size,
     },
   };
-}
-
-/**
- * Upload the file to a remote host and return its public URL.
- *
- * TODO (Dep #1): Replace this pass-through with a real upload once the backend
- * ships a presigned-URL endpoint or we commit to the Cloudinary fallback.
- * Currently returns the local URI so the rest of the pipeline can be exercised,
- * but `POST /v1/mp/orders/{orderId}/proof` will likely reject it since the
- * backend expects a remotely-accessible URL.
- */
-export async function uploadFile(file: PickedFile): Promise<string> {
-  // --- PLACEHOLDER: pass-through returning the local URI ---
-  // When a real upload target is available, implement the upload here
-  // and return the remotely-accessible URL instead.
-  return file.uri;
 }

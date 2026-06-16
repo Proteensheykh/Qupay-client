@@ -90,7 +90,7 @@ function formatCountdown(deadline: string): string {
 }
 
 export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { transactionId } = route.params;
+  const { transactionId, origin = 'send' } = route.params;
   const { data: tx, refetch, isLoading, error } = useTransaction(transactionId);
   const confirmTransfer = useConfirmTransfer();
   const toast = useToast();
@@ -159,6 +159,11 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
   }, [transactionId, confirmTransfer, toast]);
 
   const handleViewReceipt = useCallback(() => {
+    if (origin === 'history') {
+      // Reached from the History tab: swap this screen for the receipt in-place.
+      (navigation as any).replace('TransferDetail', { transactionId });
+      return;
+    }
     navigation.dispatch(
       CommonActions.reset({ index: 0, routes: [{ name: 'Amount' }] })
     );
@@ -169,13 +174,17 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
         params: { transactionId },
       });
     }
-  }, [navigation, transactionId]);
+  }, [navigation, transactionId, origin]);
 
   const handleClose = useCallback(() => {
+    if (origin === 'history') {
+      navigation.goBack();
+      return;
+    }
     navigation.dispatch(
       CommonActions.reset({ index: 0, routes: [{ name: 'Amount' }] })
     );
-  }, [navigation]);
+  }, [navigation, origin]);
 
   // Pulse animation state
   const [pulseOn, setPulseOn] = useState(true);

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
 import { Avatar, ScreenHeader, usePullToRefresh, EmptyState } from '../../components';
 import { useMyTransactions } from '../../hooks/useTransactions';
-import { toStatusGroup } from '../../utils/transactionStatus';
+import { toStatusGroup, isTerminalStatus } from '../../utils/transactionStatus';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HistoryStackParamList } from '../../navigation/AppNavigator';
 import type { TransactionListItem, TransactionStatus } from '../../types/transaction';
@@ -61,7 +61,14 @@ export const HistoryScreen: React.FC<Props> = ({ navigation }) => {
       <TouchableOpacity
         key={item.id}
         style={[styles.row, { borderBottomColor: hairline }]}
-        onPress={() => navigation.navigate('TransferDetail', { transactionId: item.id })}
+        onPress={() =>
+          isTerminalStatus(item.status)
+            ? navigation.navigate('TransferDetail', { transactionId: item.id })
+            : navigation.navigate('TransactionStatus', {
+                transactionId: item.id,
+                origin: 'history',
+              })
+        }
         activeOpacity={0.7}
       >
         <View style={styles.avWrap}>

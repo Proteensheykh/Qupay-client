@@ -92,13 +92,13 @@ export async function setPin(request: SetPinRequest): Promise<void> {
   await apiClient.post('/v1/users/me/pin', request);
 }
 
-export async function verifyPin(request: VerifyPinRequest): Promise<boolean> {
-  try {
-    await apiClient.post('/v1/users/me/pin/verify', request);
-    return true;
-  } catch {
-    return false;
-  }
+/**
+ * Verifies the user's PIN. Resolves on success (backend returns 204 No Content).
+ * Throws an `ApiError` on failure so callers can surface the real reason
+ * (incorrect PIN, locked account, expired session, etc.) instead of masking it.
+ */
+export async function verifyPin(request: VerifyPinRequest): Promise<void> {
+  await apiClient.post('/v1/users/me/pin/verify', request);
 }
 
 export async function changePin(request: ChangePinRequest): Promise<void> {

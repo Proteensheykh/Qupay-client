@@ -59,6 +59,7 @@ export type OnboardingStackParamList = {
 export type HistoryStackParamList = {
   History: undefined;
   TransferDetail: { transactionId: string };
+  TransactionStatus: { transactionId: string; origin?: 'send' | 'history' };
 };
 
 export type ProfileStackParamList = {
@@ -93,6 +94,7 @@ export type SendFlowParamList = {
   };
   TransactionStatus: {
     transactionId: string;
+    origin?: 'send' | 'history';
   };
 };
 
@@ -170,6 +172,7 @@ function HistoryStackNavigator() {
     >
       <HistoryStackNav.Screen name="History" component={HistoryScreen} />
       <HistoryStackNav.Screen name="TransferDetail" component={TransactionDetailScreen} />
+      <HistoryStackNav.Screen name="TransactionStatus" component={TransactionStatusScreen} />
     </HistoryStackNav.Navigator>
   );
 }

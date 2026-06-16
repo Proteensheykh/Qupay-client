@@ -1,7 +1,7 @@
 # Backend Integration Plan
 
-> **Status:** Phase 7 complete — stakeholder-testing readiness reached. Dep #1 (proof upload target) still pending; tracked as known debt.
-> **Last updated:** 2026-05-06.
+> **Status:** Phase 8 complete — payer lifecycle resumable from History; Dep #1 (proof upload target) closed as obsolete (backend hosts the multipart file directly).
+> **Last updated:** 2026-06-16.
 > **Owner:** Frontend.
 > **Companion docs:** [`FE_TRANSACTION_INTEGRATION.md`](../FE_TRANSACTION_INTEGRATION.md) (backend contract — **stale in places**, see [§4.0 Phase 0 reconciliation](#phase-0-reconciliation)). The live OpenAPI spec at `https://qupay-app-f70e5cb23170.herokuapp.com/api/v3/api-docs` is the actual source of truth.
 
@@ -21,6 +21,7 @@ This document is the persistent record of every design decision made during the 
 | 2026-05-06 | 6 | Phase 6 complete. Cleanup & polish. See [§4.6 Phase 6 completion notes](#phase-6-completion-notes). |
 | 2026-05-06 | 7 | Phase 7 added. Stakeholder testing readiness — remove all remaining dummy data, mocked screens, and hardcoded responses so the UI reflects only real backend state. See [§4.7 Phase 7](#phase-7--stakeholder-testing-readiness). |
 | 2026-05-06 | 7 | Phase 7 complete. Dummy screens deleted (HomeScreen, WelcomeScreen, DepositScreen, SuccessScreen). PortfolioScreen + TransactionDetailScreen rewritten to use live `useMyTransactions` / `useTransaction`. TransactionStatusScreen no longer defaults to QUEUED while loading. ConfirmScreen + SplashScreen marketing copy made truthful for v1. See [§4.7 Phase 7 completion notes](#phase-7-completion-notes). |
+| 2026-06-16 | 8 | Phase 8 added. (a) **Dep #1 closed (obsolete).** Live OpenAPI confirms `POST /v1/mp/orders/{orderId}/proof` accepts a `multipart/form-data` binary `file` and the backend hosts it itself, returning a real server-hosted `proofUrl`. No presigned endpoint or Cloudinary fallback is needed; the dead `uploads.ts#uploadFile()` pass-through was removed. (b) **Payer lifecycle made resumable from History.** The actionable `TransactionStatusScreen` is now reachable from the History tab for non-terminal transactions (terminal → receipt). See [§4.8 Phase 8](#phase-8--payer-lifecycle-resumability--proof-contract-reconciliation). |
 
 ---
 
@@ -195,7 +196,7 @@ These are **blocking** unknowns the frontend cannot resolve alone. Status reflec
 
 | # | Dependency | Owner | Blocks | Status (Phase 0) |
 |---|---|---|---|---|
-| 1 | **Proof-upload endpoint** — presigned URL (preferred) or direct upload (fallback). | Backend | Phase 5 | **Answered (negative).** Spec exposes only `POST /v1/mp/orders/{orderId}/proof` taking a `proofUrl` string. There is no presigned/direct upload endpoint. **Decision needed (carry into Phase 5):** commit to Cloudinary signed-upload fallback now, or pause Phase 5 pending backend work. |
+| 1 | **Proof-upload endpoint** — presigned URL (preferred) or direct upload (fallback). | Backend | Phase 5 | **CLOSED — obsolete (2026-06-16).** Earlier reading of the spec was stale. The live OpenAPI now shows `POST /v1/mp/orders/{orderId}/proof` accepts a **`multipart/form-data` binary `file`** (with `description` as a query param) and the backend **hosts the file itself**, returning a server-hosted `proofUrl` on the order/transaction `proof` record. The current `mpOrders.ts#uploadProof` multipart implementation already matches this. **No presigned endpoint or Cloudinary fallback is required.** Dead `uploads.ts#uploadFile()` pass-through removed. |
 | 2 | **`mobileMoneyNumber` required-field policy** in `OnboardMpRequest`. | Backend / Product | Phase 4 (`MpOnboardScreen`) | **Open.** Spec confirms field is required. Two acceptable resolutions: (a) ask backend to make it optional, or (b) FE submits the user's verified phone number as a sentinel value (since mobile money is "Coming soon" per Q2). Recommended: (b), tracked as debt. |
 | 3 | **Operating-hours mutability** post-onboarding. | Backend | Phase 4 (`MpProfile`) | **Answered (negative).** No `PUT /v1/mp/me/operating-hours` exists; spec exposes only `PUT /v1/mp/me/balances`. Treat hours as **immutable post-onboarding** in `MpProfileScreen`; show as read-only with a "Contact support to change" affordance. Re-open if backend ships an update endpoint. |
 | 4 | **KYC auto-approval in dev/staging.** | Backend | Phase 0 / demo continuity | **Open.** Spec exposes admin endpoints under `/v1/admin/kyc` but they require an `ADMIN` role; the FE cannot self-approve. Need a privileged backend operator to approve the MP test account, or a backend-side dev toggle. |
@@ -487,7 +488,7 @@ The companion contract doc [`FE_TRANSACTION_INTEGRATION.md`](../FE_TRANSACTION_I
 
 **Phase exit criterion:** the MP test account can complete a real transaction including proof upload. PAYER test account sees the proof in `TransferDetail`.
 
-> **Phase 5 exit status:** UI pipeline complete. End-to-end proof upload is blocked on Dep #1 (no remote file hosting). The `uploadFile()` pass-through in `src/api/uploads.ts` returns the local URI, which the backend will reject. Once a presigned-URL endpoint or Cloudinary fallback is implemented, replace the pass-through and this criterion is met.
+> **Phase 5 exit status (updated 2026-06-16):** ✅ **Complete.** Dep #1 turned out to be obsolete — the live backend accepts a multipart binary `file` at `POST /v1/mp/orders/{orderId}/proof`, hosts it, and returns a server-hosted `proofUrl`. The MP's proof now flows end-to-end: MP uploads the file → backend hosts it → the payer reads back a real, openable `proofUrl` on the transaction's `proof` record (rendered in `TransactionDetailScreen`). The dead `uploadFile()` pass-through was removed in Phase 8.
 
 <a id="phase-5-completion-notes"></a>
 #### Phase 5 completion notes (2026-05-06)
@@ -507,11 +508,8 @@ The companion contract doc [`FE_TRANSACTION_INTEGRATION.md`](../FE_TRANSACTION_I
   - Wired `useUploadProof` hook for the mutation
 - `src/hooks/useMyOrders.ts` — `useUploadProof` `onSuccess` now also invalidates `transactions.byId(orderId)` so the order detail screen reflects updated proof status
 
-**Pending work (Dep #1):**
-- `uploadFile()` in `src/api/uploads.ts` is a pass-through that returns the local file URI. The backend's `POST /v1/mp/orders/{orderId}/proof` expects a remotely-accessible URL. The full pipeline will work once either:
-  - (a) Backend ships a presigned-URL upload endpoint, or
-  - (b) Frontend implements the Cloudinary signed-upload fallback
-- Code comments in `src/api/uploads.ts` and `OrderDetailScreen.tsx` document this pending work.
+**Pending work (Dep #1): — RESOLVED 2026-06-16.**
+- Superseded by the Phase 8 finding: the backend accepts a multipart binary `file` and hosts it itself, so no client-side hosting (presigned URL or Cloudinary) is needed. The `mpOrders.ts#uploadProof` multipart call is correct and spec-aligned. The dead `uploads.ts#uploadFile()` pass-through was removed.
 
 **TypeScript health:** zero new errors introduced.
 
@@ -582,7 +580,7 @@ The companion contract doc [`FE_TRANSACTION_INTEGRATION.md`](../FE_TRANSACTION_I
 
 **What this phase does NOT change:**
 
-- `uploads.ts#uploadFile()` pass-through is still pending Dep #1 \u2014 documented as known debt.
+- ~~`uploads.ts#uploadFile()` pass-through is still pending Dep #1~~ \u2014 RESOLVED in Phase 8 (Dep #1 obsolete; backend hosts the multipart file; helper removed).
 - `MpProfileScreen` online/offline toggle handler is implemented but not wired to a button \u2014 cosmetic gap, fix in a follow-up.
 - `RecipientScreen` Solana base58 validation stays client-side (no chain RPC) \u2014 by design (Q5).
 - `ConfirmScreen` 1.5% local fee estimate stays \u2014 by design (Q11), only relabelled as "Estimated".
@@ -629,7 +627,7 @@ The companion contract doc [`FE_TRANSACTION_INTEGRATION.md`](../FE_TRANSACTION_I
 - `src/data/mockData.ts` \u2014 unused `networks` export and `Network` interface (containing fake EVM addresses like `0x7a3B8c9\u2026`) deleted; stale header comments cleaned up. Only `countries` (used by the SignUp country picker) remains.
 
 **What this phase deliberately did not change (still acceptable for stakeholder testing):**
-- `src/api/uploads.ts#uploadFile()` is still a pass-through returning the local URI \u2014 documented in code and in this plan as Dep #1.
+- ~~`src/api/uploads.ts#uploadFile()` is still a pass-through returning the local URI~~ \u2014 superseded by Phase 8 (Dep #1 obsolete; helper removed).
 - `ConfirmScreen` 1.5% fee estimate stays client-side per Q11; only the labelling was tightened.
 - `RecipientScreen` Solana base58 validation stays client-side per Q5.
 - The MP `online/offline` toggle handler is implemented but not yet wired to a UI button \u2014 cosmetic gap, follow-up issue.
@@ -644,6 +642,26 @@ The companion contract doc [`FE_TRANSACTION_INTEGRATION.md`](../FE_TRANSACTION_I
 5. `View receipt` navigates to `TransferDetail`, which fetches the same transaction by ID and shows the committed FX, charge, recipient, and (when present) the proof-of-payment block uploaded by the MP.
 6. From `History`, the list is `GET /v1/transactions` for the signed-in user; pull-to-refresh re-pulls; tapping any row opens the same `TransferDetail` view.
 7. For an MP test account: complete `ProcessorSetup` (KYC + bank + wallet + MP details), open `Process \u2192 Queue`, accept a real order, mark payment + upload proof (note: upload is a local-URI pass-through pending Dep #1).
+
+---
+
+<a id="phase-8--payer-lifecycle-resumability--proof-contract-reconciliation"></a>
+### Phase 8 — Payer lifecycle resumability + proof-contract reconciliation (2026-06-16)
+
+**Goal:** a payer can resume and act on an in-progress transaction from the History tab, and the proof/receipt contract is reconciled against the live backend.
+
+**Context (what was actually broken):** the payer's actionable lifecycle UI (`TransactionStatusScreen`: `mpPaymentDetails` card, "I've sent the funds" confirm, adaptive polling) lived **only** in the Send tab. History's `TransferDetail` is a read-only receipt with no `mpPaymentDetails` and no CTA. So a transaction the payer navigated away from became unresumable — they could not see the MP's payment details (which the backend *does* return) nor confirm the transfer. This presented as "the MP accepted but the client never updated."
+
+Separately, Dep #1 (proof hosting) was found to be obsolete — see the changelog and Dep #1 row.
+
+#### Phase 8 task checklist
+
+- [x] **Reuse the lifecycle screen from History.** Added `TransactionStatus: { transactionId; origin?: 'send' | 'history' }` to `HistoryStackParamList` and registered the existing `TransactionStatusScreen` in the History stack (no duplication).
+- [x] **Status-aware routing in `PortfolioScreen`.** Row taps route by `isTerminalStatus(status)`: terminal (`COMPLETE/CANCELLED/EXPIRED/DISPUTED`) → `TransferDetail` receipt; non-terminal (`QUEUED/IN_PROGRESS/PAYER_PAID`) → `TransactionStatus` with `origin: 'history'`.
+- [x] **Context-aware exit nav in `TransactionStatusScreen`.** Exit handlers branch on `origin` (default `'send'`): from History, `View receipt` → `navigation.replace('TransferDetail', { transactionId })` and `Close` → `goBack()`; from Send, the original reset-to-`Amount` behavior is unchanged.
+- [x] **Proof-contract cleanup.** Removed dead `uploads.ts#uploadFile()` pass-through and the stale Dep #1 comment block; `pickProofFile()` retained. `mpOrders.ts#uploadProof` (multipart) is the correct, spec-aligned path.
+
+**Phase exit criterion:** a payer who leaves an in-progress transfer can reopen it from History, see the MP's payment details, send funds, confirm, and on completion view the receipt with the backend-hosted proof — all without re-creating the transaction.
 
 ---
 
@@ -790,7 +808,7 @@ export const useRecentRecipientsStore = create<{ recents: RecentRecipient[]; add
 | **status** | Fine-grained `QUEUED / IN_PROGRESS / PAYER_PAID / COMPLETE / CANCELLED / EXPIRED / DISPUTED`. Use for precise conditionals. |
 | **Committed FX rate** | The `fxRate` returned by `POST /v1/transactions`. Source of truth from `TransactionStatus` onwards. |
 | **Estimated rate** | Pre-creation FX read from `/v1/rates/convert`. Display-only, may drift from committed rate. |
-| **Proof of payment** | File uploaded by MP after settling NGN to the payer's recipient. Required to mark `COMPLETE`. |
+| **Proof of payment** | File uploaded by MP (multipart) after settling NGN to the payer's recipient. Backend hosts it and returns a `proofUrl` on the transaction's `proof` record. Required to mark `COMPLETE`. |
 
 ---
 

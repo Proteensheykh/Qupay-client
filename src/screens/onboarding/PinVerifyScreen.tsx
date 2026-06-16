@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { QupayLogo, Numpad } from '../../components';
 import { verifyPin, initiatePinReset } from '../../api/auth';
 import { isApiError } from '../../api/client';
+import { getApiErrorMessage } from '../../api/errors';
 import { useAuthStore } from '../../store/authStore';
 import { useToast } from '../../hooks/useToast';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -51,19 +52,18 @@ export const PinVerifyScreen: React.FC<Props> = ({ navigation }) => {
     setLoading(true);
 
     try {
-      const valid = await verifyPin({ pin });
-      if (__DEV__) console.log('🔐 [PinVerify] Valid:', valid);
-      if (valid) {
-        setPinLocked(false);
-      } else {
-        setError('Incorrect PIN');
-        setPin('');
-        shake();
-      }
+      await verifyPin({ pin });
+      setPinLocked(false);
     } catch (err) {
-      if (__DEV__) console.error('PIN verify error:', err);
-      const message = isApiError(err) ? err.message : 'Verification failed';
-      setError(message);
+      if (__DEV__) {
+        console.error('🔐 [PinVerify] verify failed:', err);
+        if (isApiError(err)) {
+          console.error('🔐 [PinVerify] status:', err.status, 'message:', err.message);
+        }
+      }
+      // Surface the backend's real reason (incorrect PIN, locked, expired, etc.)
+      // instead of always showing a generic "Incorrect PIN".
+      setError(getApiErrorMessage(err) || 'Incorrect PIN');
       setPin('');
       shake();
     } finally {
