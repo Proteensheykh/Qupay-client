@@ -124,7 +124,7 @@ export const MpHomeScreen: React.FC<Props> = ({ navigation }) => {
           </Text>
         </View>
         <Text style={[styles.orderDate, { color: palette.grey[600] }]}>
-          {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          {new Date(item.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
         </Text>
       </TouchableOpacity>
     );

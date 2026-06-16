@@ -145,7 +145,7 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
               <DetailRow label="Code" value={queuePreview.transactionCode} />
               <DetailRow
                 label="Created"
-                value={new Date(queuePreview.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                value={new Date(queuePreview.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
               />
             </View>
           </View>
@@ -248,7 +248,7 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             <DetailRow label="Code" value={tx.transactionCode} />
             <DetailRow
               label="Created"
-              value={new Date(tx.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              value={new Date(tx.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
             />
           </View>
         </View>
@@ -303,7 +303,7 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             {tx.proof?.uploadedAt && (
               <DetailRow
                 label="Uploaded"
-                value={new Date(tx.proof.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                value={new Date(tx.proof.uploadedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
               />
             )}
           </View>
