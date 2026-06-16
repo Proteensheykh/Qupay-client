@@ -96,9 +96,24 @@ export type SendFlowParamList = {
   };
 };
 
+export type QueueItemPreview = {
+  transactionCode: string;
+  fromCurrency: string;
+  toCurrency: string;
+  originalAmount: number;
+  convertedAmount: number;
+  fxRate?: number;
+  createdAt: string;
+};
+
 export type ProcessorStackParamList = {
   MpHome: undefined;
-  OrderDetail: { transactionId: string; orderId: string; isQueueItem: boolean };
+  OrderDetail: {
+    transactionId: string;
+    orderId?: string;
+    isQueueItem: boolean;
+    queuePreview?: QueueItemPreview;
+  };
   MpProfile: undefined;
   ProcessorSetup: undefined;
   KycSubmission: undefined;

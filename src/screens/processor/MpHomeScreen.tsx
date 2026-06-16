@@ -93,6 +93,15 @@ export const MpHomeScreen: React.FC<Props> = ({ navigation }) => {
             transactionId: item.transactionId,
             orderId: item.orderId,
             isQueueItem: activeTab === 'queue',
+            queuePreview: activeTab === 'queue' ? {
+              transactionCode: item.transactionCode,
+              fromCurrency: item.fromCurrency,
+              toCurrency: item.toCurrency,
+              originalAmount: item.originalAmount,
+              convertedAmount: item.convertedAmount,
+              fxRate: item.fxRate,
+              createdAt: item.createdAt,
+            } : undefined,
           })
         }
       >
@@ -194,7 +203,7 @@ export const MpHomeScreen: React.FC<Props> = ({ navigation }) => {
       ) : (
         <FlatList
           data={currentList}
-          keyExtractor={(item) => item.orderId}
+          keyExtractor={(item) => item.transactionId ?? item.orderId}
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}

@@ -32,8 +32,10 @@ const DESCRIPTION_MAX_LENGTH = 280;
 type Props = NativeStackScreenProps<ProcessorStackParamList, 'OrderDetail'>;
 
 export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { transactionId, orderId, isQueueItem } = route.params;
-  const { data: tx, error: txError, isError: isTxError } = useTransaction(transactionId);
+  const { transactionId, orderId, isQueueItem, queuePreview } = route.params;
+  const { data: tx, error: txError, isError: isTxError } = useTransaction(transactionId, {
+    enabled: !isQueueItem,
+  });
   const acceptOrder = useAcceptOrder();
   const uploadProof = useUploadProof();
   const toast = useToast();
@@ -75,7 +77,7 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   }, []);
 
   const handleSubmitProof = useCallback(async () => {
-    if (!pickedFile) return;
+    if (!pickedFile || !orderId) return;
 
     setConfirmSheetVisible(false);
     setUploading(true);
@@ -103,6 +105,64 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       setUploading(false);
     }
   }, [pickedFile, description, orderId, uploadProof, toast]);
+
+  if (isQueueItem && queuePreview) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[900] }]} edges={['top']}>
+        <ScreenHeader title="Order Detail" onBack={() => navigation.goBack()} />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.statusRow}>
+            <StatusBadge label="QUEUED" variant="warning" />
+          </View>
+
+          <View style={[styles.card, { backgroundColor: palette.grey[800] }, borders.hairline.dark, { borderRadius: radii.lg }]}>
+            <View style={styles.amountRow}>
+              <View style={styles.amountCol}>
+                <Text style={[styles.amountLabel, { color: palette.grey[500] }]}>From</Text>
+                <Text style={[styles.amountValue, { color: palette.grey[100] }]}>
+                  {queuePreview.originalAmount?.toLocaleString()} {queuePreview.fromCurrency}
+                </Text>
+              </View>
+              <Ionicons name="arrow-forward" size={18} color={palette.grey[500]} />
+              <View style={[styles.amountCol, { alignItems: 'flex-end' }]}>
+                <Text style={[styles.amountLabel, { color: palette.grey[500] }]}>To</Text>
+                <Text style={[styles.amountValue, { color: palette.grey[100] }]}>
+                  {queuePreview.convertedAmount?.toLocaleString()} {queuePreview.toCurrency}
+                </Text>
+              </View>
+            </View>
+
+            <View style={[styles.divider, { backgroundColor: palette.material.lightThin }]} />
+
+            <View style={styles.detailRows}>
+              {queuePreview.fxRate != null && (
+                <DetailRow label="Rate" value={`1 ${queuePreview.fromCurrency} = ${queuePreview.fxRate.toLocaleString()} ${queuePreview.toCurrency}`} />
+              )}
+              <DetailRow label="Code" value={queuePreview.transactionCode} />
+              <DetailRow
+                label="Created"
+                value={new Date(queuePreview.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              />
+            </View>
+          </View>
+
+          <View style={styles.ctaWrap}>
+            <CTAButton
+              title="Accept Order"
+              onPress={handleAccept}
+              loading={acceptOrder.isPending}
+            />
+          </View>
+
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   if (isTxError) {
     const is403 = isApiError(txError) && txError.status === 403;

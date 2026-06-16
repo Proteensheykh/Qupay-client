@@ -3,6 +3,7 @@ import type { TransactionStatus, StatusGroup } from '../types/transaction';
 const LEGACY_STATUS_MAP: Record<string, TransactionStatus> = {
   INITIATED: 'QUEUED',
   MATCHING: 'QUEUED',
+  ACCEPTED: 'IN_PROGRESS',
   AWAITING_DEPOSIT: 'IN_PROGRESS',
   ESCROW_FUNDED: 'IN_PROGRESS',
   MP_PROCESSING: 'PAYER_PAID',

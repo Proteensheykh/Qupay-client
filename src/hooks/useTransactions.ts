@@ -9,11 +9,12 @@ import { queryKeys } from '../api/queryKeys';
 import { getPollingInterval } from '../utils/transactionStatus';
 import type { CreateTransactionRequest } from '../types/transaction';
 
-export function useTransaction(id: string) {
+export function useTransaction(id: string, options?: { enabled?: boolean }) {
+  const externalEnabled = options?.enabled ?? true;
   return useQuery({
     queryKey: queryKeys.transactions.byId(id),
     queryFn: () => getTransaction(id),
-    enabled: !!id,
+    enabled: !!id && externalEnabled,
     retry: 2,
     refetchInterval: (query) => {
       if (query.state.error) return false;
