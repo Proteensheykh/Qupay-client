@@ -80,7 +80,8 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
     getRate(sendCurrency, receiveCurrency)
       .then((data) => {
         if (!mounted) return;
-        setLiveRate(data.rate);
+        const spread = data.spreadRate ?? 0;
+        setLiveRate(data.effectiveRate ?? data.rate * (1 - spread));
         setRateFetchedAt(new Date());
       })
       .catch(() => {
@@ -112,7 +113,8 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
     setRateLoading(true);
     getRate(sendCurrency, receiveCurrency)
       .then((data) => {
-        setLiveRate(data.rate);
+        const spread = data.spreadRate ?? 0;
+        setLiveRate(data.effectiveRate ?? data.rate * (1 - spread));
         setRateFetchedAt(new Date());
       })
       .catch(() => {
@@ -259,9 +261,15 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
                 {rateLoading ? (
                   <ActivityIndicator size="small" color={palette.royal[500]} />
                 ) : liveRate ? (
-                  <Text style={[styles.feeValue, { color: palette.grey[900] }]}>
-                    1 {sendCurrency} = {recvSymbol}{liveRate.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                  </Text>
+                  isCryptoOut ? (
+                    <Text style={[styles.feeValue, { color: palette.grey[900] }]}>
+                      1 {receiveCurrency} = {sendSymbol}{(1 / liveRate).toLocaleString(undefined, { maximumFractionDigits: 2 })} {sendCurrency}
+                    </Text>
+                  ) : (
+                    <Text style={[styles.feeValue, { color: palette.grey[900] }]}>
+                      1 {sendCurrency} = {recvSymbol}{liveRate.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    </Text>
+                  )
                 ) : (
                   <Text style={[styles.feeValue, { color: palette.status.negative }]}>
                     Unavailable

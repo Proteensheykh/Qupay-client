@@ -496,6 +496,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
                 }
                 setSendAmount('');
                 setReceiveAmountStr('');
+                setRateData(null);
                 setActiveField('send');
                 handleCloseSendPicker();
               }}
@@ -563,6 +564,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
                 }
                 setSendAmount('');
                 setReceiveAmountStr('');
+                setRateData(null);
                 setActiveField('send');
                 handleCloseReceivePicker();
               }}
