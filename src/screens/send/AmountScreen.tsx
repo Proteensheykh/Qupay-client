@@ -170,7 +170,9 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
   );
   const [showSendPicker, setShowSendPicker] = useState(false);
   const [showReceivePicker, setShowReceivePicker] = useState(false);
-  const [amount, setAmount] = useState('');
+  const [activeField, setActiveField] = useState<'send' | 'receive'>('send');
+  const [sendAmount, setSendAmount] = useState('');
+  const [receiveAmountStr, setReceiveAmountStr] = useState('');
   const [currencySearch, setCurrencySearch] = useState('');
 
   const filteredCurrencies = useMemo(() => {
@@ -258,55 +260,80 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
     return () => clearTimeout(timeoutId);
   }, [selectedSendCurrency.code, selectedReceiveCurrency.code]);
 
-  const handleAmountChange = useCallback((text: string) => {
+  const sanitizeAmount = useCallback((text: string) => {
     let cleaned = text.replace(/[^0-9.]/g, '');
-    
     const parts = cleaned.split('.');
     if (parts.length > 2) {
       cleaned = parts[0] + '.' + parts.slice(1).join('');
     }
-    
     if (parts.length === 2 && parts[1].length > 2) {
       cleaned = parts[0] + '.' + parts[1].slice(0, 2);
     }
-    
     if (cleaned.length > 1 && cleaned[0] === '0' && cleaned[1] !== '.') {
       cleaned = cleaned.slice(1);
     }
-    
-    setAmount(cleaned);
+    return cleaned;
   }, []);
 
-  const odometerValue = amount.length ? amount : '0';
+  const rawRate = rateData?.rate ?? 0;
+  const spreadRate = rateData?.spreadRate ?? 0;
+  const effectiveRate = rateData?.effectiveRate ?? rawRate * (1 - spreadRate);
+  const effectiveInverseRate =
+    spreadRate < 1 && effectiveRate > 0 ? 1 / effectiveRate : 0;
+
+  const receivingCrypto = isCrypto(selectedReceiveCurrency.code);
+  const sendingCrypto = isCrypto(selectedSendCurrency.code);
+
+  const formatComputed = useCallback((value: number, crypto: boolean): string => {
+    if (value <= 0) return '';
+    return crypto ? value.toFixed(2) : Math.round(value).toString();
+  }, []);
 
   const onNumpadKey = useCallback(
     (key: string) => {
+      const current = activeField === 'send' ? sendAmount : receiveAmountStr;
+      let newValue: string;
+
       if (key === 'del') {
-        setAmount((prev) => prev.slice(0, -1));
-        return;
+        newValue = current.slice(0, -1);
+      } else {
+        newValue = sanitizeAmount(current + key);
       }
-      handleAmountChange(amount + key);
+
+      if (activeField === 'send') {
+        setSendAmount(newValue);
+        const parsed = parseFloat(newValue) || 0;
+        setReceiveAmountStr(
+          parsed > 0 && effectiveRate > 0
+            ? formatComputed(parsed * effectiveRate, receivingCrypto)
+            : ''
+        );
+      } else {
+        setReceiveAmountStr(newValue);
+        const parsed = parseFloat(newValue) || 0;
+        setSendAmount(
+          parsed > 0 && effectiveInverseRate > 0
+            ? formatComputed(parsed * effectiveInverseRate, sendingCrypto)
+            : ''
+        );
+      }
     },
-    [amount, handleAmountChange]
+    [activeField, sendAmount, receiveAmountStr, sanitizeAmount, effectiveRate, effectiveInverseRate, receivingCrypto, sendingCrypto, formatComputed]
   );
 
-  const rate = rateData?.rate ?? 0;
-  const numAmount = parseFloat(amount) || 0;
-  const receivingCrypto = isCrypto(selectedReceiveCurrency.code);
-  const receiveAmount = receivingCrypto
-    ? parseFloat((numAmount * rate).toFixed(2))
-    : Math.round(numAmount * rate);
+  const numSendAmount = parseFloat(sendAmount) || 0;
+  const numReceiveAmount = parseFloat(receiveAmountStr) || 0;
 
   const pairSupported = isPairSupported(selectedSendCurrency.code, selectedReceiveCurrency.code);
-  const amountValid = numAmount >= MIN_AMOUNT && numAmount <= MAX_AMOUNT;
-  const canContinue = amountValid && pairSupported && rate > 0 && !rateLoading;
+  const amountValid = numSendAmount >= MIN_AMOUNT && numSendAmount <= MAX_AMOUNT;
+  const canContinue = amountValid && pairSupported && effectiveRate > 0 && !rateLoading;
 
   const handleContinue = () => {
     navigation.navigate('Recipient', {
-      amount: numAmount,
+      amount: numSendAmount,
       sendCurrency: selectedSendCurrency.code,
       receiveCurrency: selectedReceiveCurrency.code,
-      receiveAmount,
+      receiveAmount: numReceiveAmount,
     });
   };
 
@@ -320,13 +347,13 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
     if (receivingCrypto) {
       return (
         <Text style={[styles.ratePillText, { color: palette.grey[900] }]}>
-          1 {selectedReceiveCurrency.code} = {selectedSendCurrency.symbol}{formatRate(rateData.inverseRate)} {selectedSendCurrency.code}
+          1 {selectedReceiveCurrency.code} = {selectedSendCurrency.symbol}{formatRate(effectiveInverseRate)} {selectedSendCurrency.code}
         </Text>
       );
     }
     return (
       <Text style={[styles.ratePillText, { color: palette.grey[900] }]}>
-        1 {selectedSendCurrency.code} = {selectedReceiveCurrency.symbol}{formatRate(rate)}
+        1 {selectedSendCurrency.code} = {selectedReceiveCurrency.symbol}{formatRate(effectiveRate)}
       </Text>
     );
   };
@@ -341,11 +368,17 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
       >
         <View style={[styles.amountCard, { backgroundColor: palette.grey[200] }, hairline]}>
           <View style={styles.acSection}>
-            <Text style={[styles.acLabel, { color: palette.grey[500] }]}>You send</Text>
+            <Pressable onPress={() => setActiveField('send')}>
+              <Text style={[styles.acLabel, { color: activeField === 'send' ? palette.royal[500] : palette.grey[500] }]}>You send</Text>
+            </Pressable>
             <View style={styles.acRowSpaced}>
-              <View style={styles.odometerRow}>
-                <Odometer value={odometerValue} color={palette.grey[900]} fontSize={56} />
-              </View>
+              <Pressable style={styles.odometerRow} onPress={() => setActiveField('send')}>
+                <Odometer
+                  value={sendAmount || '0'}
+                  color={activeField === 'send' ? palette.grey[900] : palette.grey[500]}
+                  fontSize={56}
+                />
+              </Pressable>
               <Pressable
                 style={({ pressed }) => [
                   styles.currencyPill,
@@ -372,15 +405,17 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           <View style={[styles.acSectionRecv, { backgroundColor: palette.grey[100] }]}>
-            <Text style={[styles.acLabel, { color: palette.grey[500] }]}>They receive</Text>
+            <Pressable onPress={() => setActiveField('receive')}>
+              <Text style={[styles.acLabel, { color: activeField === 'receive' ? palette.royal[500] : palette.grey[500] }]}>They receive</Text>
+            </Pressable>
             <View style={styles.acRowSpaced}>
-              <Text style={[styles.recvAmount, { color: palette.grey[900] }]}>
-                {numAmount > 0 && rate > 0
-                  ? receivingCrypto
-                    ? receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                    : `${selectedReceiveCurrency.symbol}${receiveAmount.toLocaleString()}`
-                  : '—'}
-              </Text>
+              <Pressable style={styles.odometerRow} onPress={() => setActiveField('receive')}>
+                <Odometer
+                  value={receiveAmountStr || '—'}
+                  color={activeField === 'receive' ? palette.grey[900] : palette.grey[500]}
+                  fontSize={36}
+                />
+              </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.currencyPill, currencyPillBase, pressed && { opacity: 0.7 }]}
                 onPress={() => setShowReceivePicker(true)}
@@ -400,12 +435,12 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         <View style={styles.ctaWrap}>
-          {!pairSupported && numAmount > 0 && (
+          {!pairSupported && numSendAmount > 0 && (
             <Text style={[styles.pairWarning, { color: palette.status.partial }]}>
               {selectedSendCurrency.code} → {selectedReceiveCurrency.code} is not yet supported. Only USDT ↔ NGN is available.
             </Text>
           )}
-          {numAmount > MAX_AMOUNT && (
+          {numSendAmount > MAX_AMOUNT && (
             <Text style={[styles.pairWarning, { color: palette.status.negative }]}>
               Maximum amount is {MAX_AMOUNT.toLocaleString()} {selectedSendCurrency.code}
             </Text>

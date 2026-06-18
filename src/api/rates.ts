@@ -12,6 +12,9 @@ export interface RateResponse {
   inverseRate: number;
   source: string;
   fetchedAt: string;
+  tier?: string;
+  spreadRate?: number;
+  effectiveRate?: number;
 }
 
 export async function getCurrencies(): Promise<CurrencyResponse[]> {
