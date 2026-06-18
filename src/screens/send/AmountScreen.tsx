@@ -494,6 +494,9 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
                   const other = currencies.find((x) => x.code !== c.code);
                   if (other) setSelectedReceiveCurrency(other);
                 }
+                setSendAmount('');
+                setReceiveAmountStr('');
+                setActiveField('send');
                 handleCloseSendPicker();
               }}
               activeOpacity={0.7}
@@ -558,6 +561,9 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
                   const other = currencies.find((x) => x.code !== c.code);
                   if (other) setSelectedSendCurrency(other);
                 }
+                setSendAmount('');
+                setReceiveAmountStr('');
+                setActiveField('send');
                 handleCloseReceivePicker();
               }}
               activeOpacity={0.7}
