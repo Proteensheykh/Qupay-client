@@ -1,11 +1,13 @@
-import React from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, ActivityIndicator, Modal, AppState, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '../components/Icon';
 import { useAuthStore } from '../store/authStore';
 import { useUser } from '../hooks/useUser';
 import { useTheme } from '../theme';
+import { palette } from '../theme/colors';
 import type { InitiateRegistrationRequest, UserRole } from '../types/auth';
 
 // Screens
@@ -131,6 +133,11 @@ export type MainTabParamList = {
   ProfileTab: undefined;
 };
 
+export type PinLockParamList = {
+  PinVerify: undefined;
+  PinReset: { cooldownSeconds: number };
+};
+
 export type RootStackParamList = {
   Onboarding: undefined;
   PinSetup: undefined;
@@ -142,6 +149,7 @@ export type RootStackParamList = {
 
 // ─── Navigators ───
 const RootStack = createNativeStackNavigator<RootStackParamList>();
+const PinLockStack = createNativeStackNavigator<PinLockParamList>();
 const OnboardingStack = createNativeStackNavigator<OnboardingStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const HistoryStackNav = createNativeStackNavigator<HistoryStackParamList>();
@@ -317,6 +325,40 @@ function LoadingScreen() {
   );
 }
 
+function PinLockOverlay() {
+  return (
+    <NavigationContainer independent>
+      <PinLockStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+        <PinLockStack.Screen name="PinVerify" component={PinVerifyScreen} />
+        <PinLockStack.Screen name="PinReset" component={PinResetScreen} />
+      </PinLockStack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+function PrivacyScreen() {
+  const [appInactive, setAppInactive] = useState(false);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      setAppInactive(state !== 'active');
+    });
+    return () => sub.remove();
+  }, []);
+
+  if (!appInactive) return null;
+
+  return <View style={privacyStyles.overlay} />;
+}
+
+const privacyStyles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: palette.grey[100],
+    zIndex: 9999,
+  },
+});
+
 export const AppNavigator: React.FC = () => {
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -330,23 +372,45 @@ export const AppNavigator: React.FC = () => {
     return <LoadingScreen />;
   }
 
-  return (
-    <RootStack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
-      {!isAuthenticated ? (
+  if (!isAuthenticated) {
+    return (
+      <RootStack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
         <RootStack.Screen name="Onboarding" component={OnboardingNavigator} />
-      ) : isSuspended ? (
+      </RootStack.Navigator>
+    );
+  }
+
+  if (isSuspended) {
+    return (
+      <RootStack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
         <RootStack.Screen name="Suspended" component={SuspendedScreen} />
-      ) : isPinLocked ? (
-        <>
-          <RootStack.Screen name="PinVerify" component={PinVerifyScreen} />
-          <RootStack.Screen name="PinReset" component={PinResetScreen} />
-        </>
-      ) : !hasPin ? (
+      </RootStack.Navigator>
+    );
+  }
+
+  if (!hasPin) {
+    return (
+      <RootStack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
         <RootStack.Screen name="PinSetup" component={PinSetupScreen} />
-      ) : (
+      </RootStack.Navigator>
+    );
+  }
+
+  return (
+    <>
+      <RootStack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
         <RootStack.Screen name="Main" component={MainTabs} />
-      )}
-    </RootStack.Navigator>
+      </RootStack.Navigator>
+      <Modal
+        visible={isPinLocked}
+        animationType="fade"
+        statusBarTranslucent
+        hardwareAccelerated
+      >
+        <PinLockOverlay />
+      </Modal>
+      <PrivacyScreen />
+    </>
   );
 };
 

@@ -8,11 +8,11 @@ import { getApiErrorMessage } from '../../api/errors';
 import { useAuthStore } from '../../store/authStore';
 import { useToast } from '../../hooks/useToast';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../../navigation/AppNavigator';
+import type { PinLockParamList } from '../../navigation/AppNavigator';
 import { useTheme, typography } from '../../theme';
 import { palette } from '../../theme/colors';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'PinVerify'>;
+type Props = NativeStackScreenProps<PinLockParamList, 'PinVerify'>;
 
 const PIN_LENGTH = 4;
 

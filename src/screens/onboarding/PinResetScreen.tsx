@@ -7,11 +7,11 @@ import { isApiError } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
 import { useToast } from '../../hooks/useToast';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../../navigation/AppNavigator';
+import type { PinLockParamList } from '../../navigation/AppNavigator';
 import { useTheme, typography } from '../../theme';
 import { palette } from '../../theme/colors';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'PinReset'>;
+type Props = NativeStackScreenProps<PinLockParamList, 'PinReset'>;
 
 const OTP_LENGTH = 6;
 const PIN_LENGTH = 4;
