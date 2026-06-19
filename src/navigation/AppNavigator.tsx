@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ActivityIndicator, Modal, AppState, StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '../components/Icon';
@@ -149,7 +148,6 @@ export type RootStackParamList = {
 
 // ─── Navigators ───
 const RootStack = createNativeStackNavigator<RootStackParamList>();
-const PinLockStack = createNativeStackNavigator<PinLockParamList>();
 const OnboardingStack = createNativeStackNavigator<OnboardingStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const HistoryStackNav = createNativeStackNavigator<HistoryStackParamList>();
@@ -326,13 +324,40 @@ function LoadingScreen() {
 }
 
 function PinLockOverlay() {
+  const [screen, setScreen] = useState<'verify' | 'reset'>('verify');
+  const [resetCooldown, setResetCooldown] = useState(0);
+
+  const showReset = useCallback((cooldownSeconds: number) => {
+    setResetCooldown(cooldownSeconds);
+    setScreen('reset');
+  }, []);
+
+  const showVerify = useCallback(() => {
+    setScreen('verify');
+  }, []);
+
+  const pinNavigation = {
+    navigate: (name: string, params?: { cooldownSeconds: number }) => {
+      if (name === 'PinReset' && params) showReset(params.cooldownSeconds);
+      if (name === 'PinVerify') showVerify();
+    },
+    goBack: showVerify,
+  };
+
+  if (screen === 'reset') {
+    return (
+      <PinResetScreen
+        navigation={pinNavigation as any}
+        route={{ key: 'PinReset', name: 'PinReset', params: { cooldownSeconds: resetCooldown } } as any}
+      />
+    );
+  }
+
   return (
-    <NavigationContainer independent>
-      <PinLockStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
-        <PinLockStack.Screen name="PinVerify" component={PinVerifyScreen} />
-        <PinLockStack.Screen name="PinReset" component={PinResetScreen} />
-      </PinLockStack.Navigator>
-    </NavigationContainer>
+    <PinVerifyScreen
+      navigation={pinNavigation as any}
+      route={{ key: 'PinVerify', name: 'PinVerify', params: undefined } as any}
+    />
   );
 }
 
