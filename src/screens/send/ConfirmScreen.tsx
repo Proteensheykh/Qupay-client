@@ -4,6 +4,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   ScrollView,
   StyleSheet,
   ActivityIndicator,
@@ -341,35 +342,45 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
             Enter your 4-digit PIN to confirm this transfer
           </Text>
 
-          <View style={styles.pinDotsRow}>
-            {[0, 1, 2, 3].map((i) => (
-              <View
-                key={i}
-                style={[
-                  styles.pinDot,
-                  {
-                    backgroundColor: pin.length > i ? palette.royal[500] : palette.grey[300],
-                    borderColor: pinError ? palette.status.negative : 'transparent',
-                    borderWidth: pinError ? 1 : 0,
-                  },
-                ]}
-              />
-            ))}
-          </View>
+          <Pressable
+            style={styles.pinInputWrap}
+            onPress={() => pinInputRef.current?.focus()}
+            accessibilityRole="button"
+            accessibilityLabel="Enter PIN"
+          >
+            <View style={styles.pinDotsRow}>
+              {[0, 1, 2, 3].map((i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.pinDot,
+                    {
+                      backgroundColor: pin.length > i ? palette.royal[500] : palette.grey[300],
+                      borderColor: pinError ? palette.status.negative : 'transparent',
+                      borderWidth: pinError ? 1 : 0,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
 
-          <TextInput
-            ref={pinInputRef}
-            style={styles.pinHidden}
-            value={pin}
-            onChangeText={(text) => {
-              const digits = text.replace(/\D/g, '').slice(0, 4);
-              setPin(digits);
-              setPinError('');
-            }}
-            keyboardType="number-pad"
-            maxLength={4}
-            autoFocus
-          />
+            <TextInput
+              ref={pinInputRef}
+              style={styles.pinOverlayInput}
+              value={pin}
+              onChangeText={(text) => {
+                const digits = text.replace(/\D/g, '').slice(0, 4);
+                setPin(digits);
+                setPinError('');
+              }}
+              keyboardType="number-pad"
+              inputMode="numeric"
+              maxLength={4}
+              autoFocus
+              caretHidden
+              textContentType="oneTimeCode"
+            />
+          </Pressable>
 
           {pinError ? (
             <Text style={[styles.pinErrorText, { color: palette.status.negative }]}>
@@ -490,21 +501,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
   },
+  pinInputWrap: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
   pinDotsRow: {
     flexDirection: 'row',
     gap: 16,
-    marginBottom: 16,
   },
   pinDot: {
     width: 16,
     height: 16,
     borderRadius: 8,
   },
-  pinHidden: {
-    position: 'absolute',
-    opacity: 0,
-    width: 1,
-    height: 1,
+  pinOverlayInput: {
+    ...StyleSheet.absoluteFillObject,
+    color: 'transparent',
+    backgroundColor: 'transparent',
+    textAlign: 'center',
   },
   pinErrorText: {
     ...typography.bodySm,
