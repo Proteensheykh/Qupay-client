@@ -11,11 +11,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader, CTAButton, FormField } from '../../../components';
 import { Ionicons } from '../../../components/Icon';
 import { bindPrimaryWallet } from '../../../api/users';
+import { validateWallet } from '../../../api/wallets';
 import { useToast } from '../../../hooks/useToast';
 import { useUser } from '../../../hooks/useUser';
 import { getApiErrorMessage } from '../../../api/errors';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ProcessorStackParamList } from '../../../navigation/AppNavigator';
+import { ActivityIndicator } from 'react-native';
 import { palette } from '../../../theme/colors';
 import { radii } from '../../../theme/radii';
 import { borders } from '../../../theme/elevation';
@@ -30,12 +32,48 @@ export const BindWalletScreen: React.FC<Props> = ({ navigation }) => {
   const { user, invalidate } = useUser();
   const [walletAddress, setWalletAddress] = useState(user?.walletAddress ?? '');
   const [loading, setLoading] = useState(false);
+  const [validationState, setValidationState] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
+  const [validationError, setValidationError] = useState('');
 
-  const isValid = SOLANA_BASE58.test(walletAddress);
+  const isFormatValid = SOLANA_BASE58.test(walletAddress);
   const alreadyBound = !!user?.walletAddress;
 
+  const handleValidate = useCallback(async () => {
+    if (!isFormatValid) return;
+
+    setValidationState('validating');
+    setValidationError('');
+
+    try {
+      const result = await validateWallet({ address: walletAddress, network: 'SOLANA' });
+      if (result.valid) {
+        setValidationState('valid');
+      } else {
+        setValidationError('This wallet address could not be verified');
+        setValidationState('invalid');
+      }
+    } catch (error) {
+      setValidationError(getApiErrorMessage(error));
+      setValidationState('invalid');
+    }
+  }, [walletAddress, isFormatValid]);
+
+  const handleAddressChange = useCallback((text: string) => {
+    setWalletAddress(text);
+    if (validationState !== 'idle') {
+      setValidationState('idle');
+      setValidationError('');
+    }
+  }, [validationState]);
+
+  const handleAddressBlur = useCallback(() => {
+    if (isFormatValid && validationState === 'idle') {
+      handleValidate();
+    }
+  }, [isFormatValid, validationState, handleValidate]);
+
   const handleSubmit = useCallback(async () => {
-    if (!isValid) return;
+    if (validationState !== 'valid') return;
     setLoading(true);
     try {
       await bindPrimaryWallet({ walletAddress });
@@ -47,7 +85,7 @@ export const BindWalletScreen: React.FC<Props> = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, [walletAddress, isValid, invalidate, toast, navigation]);
+  }, [walletAddress, validationState, invalidate, toast, navigation]);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
@@ -81,16 +119,42 @@ export const BindWalletScreen: React.FC<Props> = ({ navigation }) => {
               autoCapitalize="none"
               autoCorrect={false}
               value={walletAddress}
-              onChangeText={setWalletAddress}
+              onChangeText={handleAddressChange}
+              onBlur={handleAddressBlur}
               maxLength={44}
-              isValid={isValid}
+              isValid={validationState === 'valid'}
+              editable={validationState !== 'validating'}
               accessibilityLabel="Solana wallet address"
             />
 
-            {walletAddress.length > 0 && !isValid && (
+            {walletAddress.length > 0 && !isFormatValid && (
               <Text style={[styles.errorText, { color: palette.status.negative }]}>
                 Must be a valid Solana address (32-44 base58 characters)
               </Text>
+            )}
+            {validationState === 'validating' && (
+              <View style={styles.validationRow}>
+                <ActivityIndicator size="small" color={palette.royal[500]} />
+                <Text style={[styles.validationText, { color: palette.royal[500] }]}>
+                  Verifying wallet address…
+                </Text>
+              </View>
+            )}
+            {validationState === 'valid' && (
+              <View style={styles.validationRow}>
+                <Ionicons name="checkmark-circle" size={14} color={palette.royal[500]} />
+                <Text style={[styles.validationText, { color: palette.royal[500] }]}>
+                  Verified wallet address
+                </Text>
+              </View>
+            )}
+            {validationState === 'invalid' && (
+              <View style={styles.validationRow}>
+                <Ionicons name="alert-circle" size={14} color={palette.status.negative} />
+                <Text style={[styles.validationText, { color: palette.status.negative }]}>
+                  {validationError || 'Invalid wallet address'}
+                </Text>
+              </View>
             )}
           </View>
 
@@ -108,8 +172,8 @@ export const BindWalletScreen: React.FC<Props> = ({ navigation }) => {
           <CTAButton
             title={alreadyBound ? 'Update Wallet' : 'Bind Wallet'}
             onPress={handleSubmit}
-            disabled={!isValid}
-            loading={loading}
+            disabled={validationState !== 'valid'}
+            loading={loading || validationState === 'validating'}
           />
         </View>
       </KeyboardAvoidingView>
@@ -128,6 +192,8 @@ const styles = StyleSheet.create({
   sectionTitle: { fontFamily: 'Inter_700Bold', fontSize: 15 },
   sectionSub: { fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 2 },
   errorText: { ...typography.helperText, marginTop: -4, marginBottom: 8 },
+  validationRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6, marginTop: 4, marginBottom: 8 },
+  validationText: { ...typography.helperText },
   infoCard: {
     flexDirection: 'row',
     alignItems: 'center',

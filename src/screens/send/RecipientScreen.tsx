@@ -15,6 +15,7 @@ import * as Clipboard from 'expo-clipboard';
 import { ScreenHeader, Avatar, CTAButton, BottomSheet } from '../../components';
 import { getBanks, validateBankAccount } from '../../api/banks';
 import type { BankResponse } from '../../api/banks';
+import { validateWallet } from '../../api/wallets';
 import { isApiError } from '../../api/client';
 import { useRecentRecipientsStore, type BankRecipient, type WalletRecipient } from '../../store/recentRecipientsStore';
 import { getPublicProfile } from '../../api/users';
@@ -87,6 +88,10 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
   // Bank validation state
   const [bankValidationState, setBankValidationState] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
   const [bankValidationError, setBankValidationError] = useState('');
+
+  // Wallet validation state
+  const [walletValidationState, setWalletValidationState] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
+  const [walletValidationError, setWalletValidationError] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -171,18 +176,49 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   }, [bankAccountNumber]);
 
+  const validateWalletAddress = useCallback(async (address: string) => {
+    if (!isValidSolanaAddress(address)) return;
+
+    setWalletValidationState('validating');
+    setWalletValidationError('');
+
+    try {
+      const result = await validateWallet({ address, network: 'SOLANA' });
+      if (result.valid) {
+        setWalletValidationState('valid');
+      } else {
+        setWalletValidationError('This wallet address could not be verified');
+        setWalletValidationState('invalid');
+      }
+    } catch (err) {
+      const message = isApiError(err)
+        ? err.message
+        : 'Could not verify wallet address';
+      setWalletValidationError(message);
+      setWalletValidationState('invalid');
+    }
+  }, []);
+
   const handleWalletAddressChange = useCallback((val: string) => {
     setWalletAddress(val);
     setWalletAddressTouched(true);
-  }, []);
+    if (walletValidationState !== 'idle') {
+      setWalletValidationState('idle');
+      setWalletValidationError('');
+    }
+  }, [walletValidationState]);
 
   const handlePasteAddress = useCallback(async () => {
     const text = await Clipboard.getStringAsync();
     if (text) {
-      setWalletAddress(text.trim());
+      const trimmed = text.trim();
+      setWalletAddress(trimmed);
       setWalletAddressTouched(true);
+      if (isValidSolanaAddress(trimmed)) {
+        validateWalletAddress(trimmed);
+      }
     }
-  }, []);
+  }, [validateWalletAddress]);
 
   const handleUsernameLookup = useCallback(async () => {
     if (!usernameInput.trim()) return;
@@ -190,16 +226,18 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
     try {
       const profile = await getPublicProfile(usernameInput.trim());
       if ((profile as any).walletAddress) {
-        setResolvedWallet((profile as any).walletAddress);
-        setWalletAddress((profile as any).walletAddress);
+        const resolved = (profile as any).walletAddress;
+        setResolvedWallet(resolved);
+        setWalletAddress(resolved);
         setUsernameLookupState('found');
+        validateWalletAddress(resolved);
       } else {
         setUsernameLookupState('error');
       }
     } catch {
       setUsernameLookupState('error');
     }
-  }, [usernameInput]);
+  }, [usernameInput, validateWalletAddress]);
 
   const selectBankRecent = useCallback(
     (r: BankRecipient) => {
@@ -248,8 +286,14 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
     [navigation, amount, sendCurrency, receiveCurrency, receiveAmount]
   );
 
+  const handleWalletAddressBlur = useCallback(() => {
+    if (isValidSolanaAddress(walletAddress) && walletValidationState === 'idle') {
+      validateWalletAddress(walletAddress);
+    }
+  }, [walletAddress, walletValidationState, validateWalletAddress]);
+
   const handleContinueWithWallet = useCallback(() => {
-    if (!walletAddressValid) return;
+    if (walletValidationState !== 'valid') return;
     navigation.navigate('Confirm', {
       amount,
       sendCurrency,
@@ -263,7 +307,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
       recipientWalletAddress: walletAddress,
       recipientNetwork: 'Solana',
     });
-  }, [navigation, amount, sendCurrency, receiveCurrency, receiveAmount, walletAddress, walletAddressValid]);
+  }, [navigation, amount, sendCurrency, receiveCurrency, receiveAmount, walletAddress, walletValidationState]);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
@@ -364,7 +408,8 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                 styles.walletInputCard,
                 { backgroundColor: palette.grey[200], borderColor: palette.material.darkThin },
                 walletAddressError && { borderColor: palette.status.negative },
-                walletAddressValid && { borderColor: palette.royal[500] },
+                walletValidationState === 'valid' && { borderColor: palette.royal[500] },
+                walletValidationState === 'invalid' && { borderColor: palette.status.negative },
               ]}
             >
               <View style={styles.walletInputHeader}>
@@ -387,8 +432,10 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                 placeholderTextColor={palette.grey[500]}
                 value={walletAddress}
                 onChangeText={handleWalletAddressChange}
+                onBlur={handleWalletAddressBlur}
                 autoCapitalize="none"
                 autoCorrect={false}
+                editable={walletValidationState !== 'validating'}
               />
               {walletAddressError && (
                 <View style={styles.walletErrorRow}>
@@ -396,10 +443,22 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                   <Text style={[styles.walletErrorText, { color: palette.status.negative }]}>Invalid Solana address (32-44 base58 characters)</Text>
                 </View>
               )}
-              {walletAddressValid && (
+              {walletValidationState === 'validating' && (
+                <View style={styles.walletValidRow}>
+                  <ActivityIndicator size="small" color={palette.royal[500]} />
+                  <Text style={[styles.walletValidText, { color: palette.royal[500] }]}>Verifying wallet address…</Text>
+                </View>
+              )}
+              {walletValidationState === 'valid' && (
                 <View style={styles.walletValidRow}>
                   <Ionicons name="checkmark-circle" size={14} color={palette.royal[500]} />
-                  <Text style={[styles.walletValidText, { color: palette.royal[500] }]}>Valid Solana address</Text>
+                  <Text style={[styles.walletValidText, { color: palette.royal[500] }]}>Verified wallet address</Text>
+                </View>
+              )}
+              {walletValidationState === 'invalid' && (
+                <View style={styles.walletErrorRow}>
+                  <Ionicons name="alert-circle" size={14} color={palette.status.negative} />
+                  <Text style={[styles.walletErrorText, { color: palette.status.negative }]}>{walletValidationError || 'Invalid wallet address'}</Text>
                 </View>
               )}
             </View>
@@ -408,7 +467,8 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
             <View style={styles.walletContinueWrap}>
               <CTAButton
                 title="Continue"
-                disabled={!walletAddressValid}
+                disabled={walletValidationState !== 'valid'}
+                loading={walletValidationState === 'validating'}
                 onPress={handleContinueWithWallet}
               />
             </View>
