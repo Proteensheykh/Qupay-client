@@ -1,6 +1,8 @@
 import { apiClient } from './client';
 import type { KycStatus } from '../types/auth';
 
+export type Tier = 'TIER_0' | 'TIER_1' | 'TIER_2' | 'TIER_3';
+
 export interface KycSubmissionRequest {
   bvn: string;
   nin: string;
@@ -8,10 +10,9 @@ export interface KycSubmissionRequest {
 }
 
 export interface KycStatusResponse {
-  status: KycStatus;
+  kycStatus: KycStatus;
+  tier: Tier;
   submittedAt?: string | null;
-  reviewedAt?: string | null;
-  rejectionReason?: string | null;
 }
 
 export async function submitKyc(

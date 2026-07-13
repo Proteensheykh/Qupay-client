@@ -50,7 +50,7 @@ export const KycSubmissionScreen: React.FC<Props> = ({ navigation }) => {
   const dobValid = parsedDob !== null;
   const allValid = bvnValid && ninValid && dobValid;
 
-  const alreadySubmitted = kycData?.status === 'PENDING' || kycData?.status === 'APPROVED';
+  const alreadySubmitted = kycData?.kycStatus === 'PENDING' || kycData?.kycStatus === 'APPROVED';
 
   const handleSubmit = useCallback(async () => {
     if (!allValid || !parsedDob) return;
@@ -73,10 +73,10 @@ export const KycSubmissionScreen: React.FC<Props> = ({ navigation }) => {
         <ScreenHeader title="KYC Verification" onBack={() => navigation.goBack()} />
         <View style={styles.submitted}>
           <Text style={[styles.submittedTitle, { color: palette.grey[900] }]}>
-            {kycData?.status === 'APPROVED' ? 'KYC Approved' : 'KYC Under Review'}
+            {kycData?.kycStatus === 'APPROVED' ? 'KYC Approved' : 'KYC Under Review'}
           </Text>
           <Text style={[styles.submittedSub, { color: palette.grey[500] }]}>
-            {kycData?.status === 'APPROVED'
+            {kycData?.kycStatus === 'APPROVED'
               ? 'Your identity has been verified.'
               : 'Your submission is being reviewed. This usually takes 24-48 hours.'}
           </Text>
@@ -98,16 +98,14 @@ export const KycSubmissionScreen: React.FC<Props> = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {kycData?.status === 'REJECTED' && (
+          {kycData?.kycStatus === 'REJECTED' && (
             <View style={[styles.rejectionCard, { backgroundColor: 'rgba(255,77,91,0.1)', borderColor: palette.status.negative }]}>
               <Text style={[styles.rejectionTitle, { color: palette.status.negative }]}>
                 Previous submission rejected
               </Text>
-              {kycData.rejectionReason && (
-                <Text style={[styles.rejectionReason, { color: palette.grey[400] }]}>
-                  {kycData.rejectionReason}
-                </Text>
-              )}
+              <Text style={[styles.rejectionReason, { color: palette.grey[400] }]}>
+                Please review your details and submit again.
+              </Text>
             </View>
           )}
 

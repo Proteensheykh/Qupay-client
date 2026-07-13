@@ -9,11 +9,16 @@ export type TransactionStatus =
 
 export type StatusGroup = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
 
+export type Tier = 'TIER_0' | 'TIER_1' | 'TIER_2' | 'TIER_3';
+
+export type CryptoNetwork = 'SOLANA' | 'ERC20' | 'TRC20' | 'BEP20';
+
 export interface Recipient {
   bankCode?: string | null;
   accountNumber?: string | null;
   accountName?: string | null;
   walletAddress?: string | null;
+  network?: CryptoNetwork | null;
   phone?: string | null;
 }
 
@@ -46,14 +51,18 @@ export interface Transaction {
   toCurrency: string;
   originalAmount: number;
   chargeAmount: number;
+  totalToSend?: number;
   convertedAmount: number;
   fxRate: number;
+  transactionTier?: Tier;
+  spreadRate?: number;
   status: TransactionStatus;
   statusGroup: StatusGroup;
   recipient: Recipient;
   mpPaymentDetails: MpPaymentDetails | null;
   expiresAt: string;
   createdAt: string;
+  completedAt?: string | null;
   payerConfirmationDeadline: string | null;
   proof: TransactionProof | null;
 }
@@ -66,7 +75,9 @@ export interface TransactionListItem {
   fromCurrency: string;
   toCurrency: string;
   originalAmount: number;
+  totalToSend?: number;
   convertedAmount: number;
+  transactionTier?: Tier;
   createdAt: string;
   proof: TransactionProof | null;
 }

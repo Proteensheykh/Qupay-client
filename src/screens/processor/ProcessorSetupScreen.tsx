@@ -49,8 +49,8 @@ export const ProcessorSetupScreen: React.FC<Props> = ({ navigation }) => {
   const { data: kycData } = useKycStatus();
   const { data: mpProfile } = useMpProfile();
 
-  const kycApproved = kycData?.status === 'APPROVED';
-  const kycPending = kycData?.status === 'PENDING';
+  const kycApproved = kycData?.kycStatus === 'APPROVED';
+  const kycPending = kycData?.kycStatus === 'PENDING';
   const walletBound = !!user?.walletAddress;
   const bankBound = (user?.bankAccounts?.length ?? 0) > 0;
   const mpOnboarded = !!mpProfile;
