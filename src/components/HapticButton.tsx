@@ -3,6 +3,7 @@ import {
   Pressable,
   AccessibilityInfo,
   ViewStyle,
+  StyleProp,
   Platform,
 } from 'react-native';
 import Animated, {
@@ -18,7 +19,7 @@ interface HapticButtonProps {
   onPress?: (e: any) => void;
   children: React.ReactNode;
   disabled?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   withScale?: boolean;
   accessibilityLabel?: string;
 }

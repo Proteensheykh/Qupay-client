@@ -58,7 +58,6 @@ export const PinResetScreen: React.FC<Props> = ({ route, navigation }) => {
     try {
       const response = await resendOtp({
         email: user.email,
-        purpose: 'PIN_RESET',
       });
       setResendTimer(response.cooldownSeconds);
       setOtp('');

@@ -109,11 +109,9 @@ const styles = StyleSheet.create({
     flex: 1,
     ...typography.main16,
     paddingVertical: spacing(3.5),
+    // Web-only outline reset; these props aren't in RN's TextStyle type.
     ...(Platform.OS === 'web'
-      ? {
-          outlineStyle: 'none' as const,
-          outlineWidth: 0,
-        }
+      ? ({ outlineStyle: 'none', outlineWidth: 0 } as object)
       : {}),
   },
   errorText: {
