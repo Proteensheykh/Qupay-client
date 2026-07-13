@@ -7,7 +7,7 @@ import { useAuthStore } from '../store/authStore';
 import { useUser } from '../hooks/useUser';
 import { useTheme } from '../theme';
 import { palette } from '../theme/colors';
-import type { InitiateRegistrationRequest, UserRole } from '../types/auth';
+import type { CryptoNetwork, InitiateRegistrationRequest, UserRole } from '../types/auth';
 
 // Screens
 import { SplashScreen } from '../screens/onboarding/SplashScreen';
@@ -90,7 +90,7 @@ export type SendFlowParamList = {
     recipientPhone?: string;
     recipientFlag: string;
     recipientWalletAddress?: string;
-    recipientNetwork?: string;
+    recipientNetwork?: CryptoNetwork;
     recipientBankCode?: string;
     recipientAccountNumber?: string;
     recipientAccountName?: string;

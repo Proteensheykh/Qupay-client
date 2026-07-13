@@ -282,7 +282,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
         recipientMethod: 'Solana',
         recipientFlag: '\u{1FA99}',
         recipientWalletAddress: r.walletAddress,
-        recipientNetwork: 'Solana',
+        recipientNetwork: 'SOLANA',
       });
     },
     [navigation, amount, sendCurrency, receiveCurrency, receiveAmount, amountType]
@@ -308,7 +308,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
       recipientMethod: 'Solana',
       recipientFlag: '\u{1FA99}',
       recipientWalletAddress: walletAddress,
-      recipientNetwork: 'Solana',
+      recipientNetwork: 'SOLANA',
     });
   }, [navigation, amount, sendCurrency, receiveCurrency, receiveAmount, amountType, walletAddress, walletValidationState]);
 
