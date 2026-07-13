@@ -34,18 +34,48 @@ const KNOWN_MESSAGES: Record<string, string> = {
     'Add a wallet or bank account before going online.',
   'MP profile not found. Complete onboarding first: POST /v1/mp/onboard':
     'Complete processor onboarding first.',
+  'Quote has expired':
+    'Your quote expired. We refreshed it — please confirm again.',
+  'Quote not found':
+    'Your quote is no longer valid. We refreshed it — please confirm again.',
+  'Amount does not match quote':
+    'The amount changed. We refreshed your quote — please confirm again.',
+  'Duplicate transaction':
+    'This transfer is already being processed.',
 };
 
 const GENERIC_FALLBACK = 'Something went wrong. Please try again.';
 
+interface ApiErrorLike {
+  status?: number;
+  message?: string;
+}
+
+/**
+ * The client and this module each declare an `ApiError`; the interceptor throws
+ * the client's. Duck-type on `status` so message mapping works for either.
+ */
+function asApiErrorLike(error: unknown): ApiErrorLike | null {
+  if (error instanceof ApiError) return error;
+  if (error instanceof Error && typeof (error as ApiErrorLike).status === 'number') {
+    return error as ApiErrorLike;
+  }
+  return null;
+}
+
+export function getApiErrorStatus(error: unknown): number | undefined {
+  return asApiErrorLike(error)?.status;
+}
+
 export function getApiErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.status === 401) {
+  const apiError = asApiErrorLike(error);
+  if (apiError) {
+    if (apiError.status === 401) {
       return 'Your session has expired. Please sign in again.';
     }
-    const mapped = KNOWN_MESSAGES[error.message];
+    const mapped = apiError.message ? KNOWN_MESSAGES[apiError.message] : undefined;
     if (mapped) return mapped;
-    if (error.message && error.message !== 'Network error') return error.message;
+    if (apiError.message && apiError.message !== 'Network error') return apiError.message;
   }
 
   if (error instanceof Error && error.message) {

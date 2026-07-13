@@ -16,7 +16,7 @@ import { ScreenHeader, Avatar, CTAButton, BottomSheet } from '../../components';
 import { useCalculateQuote } from '../../hooks/useQuote';
 import { useCreateTransaction } from '../../hooks/useTransactions';
 import { useToast } from '../../hooks/useToast';
-import { getApiErrorMessage } from '../../api/errors';
+import { getApiErrorMessage, getApiErrorStatus } from '../../api/errors';
 import { useRecentRecipientsStore } from '../../store/recentRecipientsStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
@@ -165,6 +165,7 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
   ]);
 
   const handlePinSubmit = useCallback(async () => {
+    if (createTx.isPending) return;
     if (pin.length !== 4) {
       setPinError('PIN must be 4 digits');
       return;
@@ -197,7 +198,33 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
       saveRecent();
       navigation.replace('TransactionStatus', { transactionId: tx.id });
     } catch (error) {
+      const status = getApiErrorStatus(error);
       const msg = getApiErrorMessage(error);
+
+      // 410 gone (expired/used), 404 (quote/user not found), or a 400 amount
+      // mismatch are all recoverable by re-quoting. Keep the PIN sheet open and
+      // the entered PIN so the user can simply reconfirm the refreshed amounts.
+      if (status === 410 || status === 404 || (status === 400 && /amount|quote/i.test(msg))) {
+        toast.info('Rate updated — please review and confirm again.');
+        await requestQuote();
+        return;
+      }
+
+      // 409 duplicate submit: the transfer is already in flight; don't retry.
+      if (status === 409) {
+        setShowPin(false);
+        toast.info(msg || 'This transfer is already being processed.');
+        return;
+      }
+
+      // 403 (quote belongs to another user, wallet flagged, AML block) is not
+      // recoverable for this quote/recipient — surface and bail.
+      if (status === 403) {
+        setShowPin(false);
+        toast.error(msg);
+        return;
+      }
+
       if (msg.toLowerCase().includes('pin')) {
         setPinError(msg);
       } else {
