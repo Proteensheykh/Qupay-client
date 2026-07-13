@@ -13,13 +13,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '../../components/Icon';
 import * as Haptics from 'expo-haptics';
 import { ScreenHeader, Avatar, CTAButton, BottomSheet } from '../../components';
-import { getRate } from '../../api/rates';
+import { useCalculateQuote } from '../../hooks/useQuote';
 import { useCreateTransaction } from '../../hooks/useTransactions';
 import { useToast } from '../../hooks/useToast';
 import { getApiErrorMessage } from '../../api/errors';
 import { useRecentRecipientsStore } from '../../store/recentRecipientsStore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
+import type { QuoteResponse } from '../../api/quotes';
 import type { Recipient } from '../../types/transaction';
 import { spacing, typography } from '../../theme';
 import { palette } from '../../theme/colors';
@@ -37,17 +38,26 @@ const truncateAddress = (addr: string): string => {
   return `${addr.slice(0, 8)}\u2026${addr.slice(-6)}`;
 };
 
+const formatAmount = (value: number, currency: string): string =>
+  currency === 'USDT'
+    ? value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : Math.round(value).toLocaleString();
+
+const formatCountdown = (seconds: number): string => {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+};
+
 export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
   const {
     amount,
     sendCurrency,
     receiveCurrency,
     receiveAmount,
+    amountType,
     recipientName,
-    recipientInitials,
-    recipientColors,
     recipientMethod,
-    recipientFlag,
     recipientWalletAddress,
     recipientNetwork,
     recipientBankCode,
@@ -58,73 +68,65 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
   const hairline = borders.hairline.light;
   const toast = useToast();
   const createTx = useCreateTransaction();
+  const quoteMutation = useCalculateQuote();
   const addRecent = useRecentRecipientsStore((s) => s.add);
 
   const isCryptoOut = receiveCurrency === 'USDT';
+  const usdtIsSend = sendCurrency === 'USDT';
   const recvSymbol = currencySymbols[receiveCurrency] || '';
   const sendSymbol = currencySymbols[sendCurrency] || '';
 
-  // Rate freshness
-  const [liveRate, setLiveRate] = useState<number | null>(null);
-  const [rateLoading, setRateLoading] = useState(true);
-  const [rateFetchedAt, setRateFetchedAt] = useState<Date | null>(null);
-  const [rateFreshness, setRateFreshness] = useState('');
-  const freshnessInterval = useRef<NodeJS.Timeout | null>(null);
+  // The amount to quote reflects what the user actually typed: for RECEIVE the
+  // entered figure is the target payout, otherwise it's the base to send.
+  const quoteAmount = amountType === 'RECEIVE' ? receiveAmount : amount;
 
-  const liveReceiveAmount = liveRate
-    ? Math.round(amount * liveRate * 100) / 100
-    : receiveAmount;
+  // ─── Quote state ───
+  const [quote, setQuote] = useState<QuoteResponse | null>(null);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const expired = secondsLeft !== null && secondsLeft <= 0;
 
-  useEffect(() => {
-    let mounted = true;
-    setRateLoading(true);
-    getRate(sendCurrency, receiveCurrency)
-      .then((data) => {
-        if (!mounted) return;
-        const spread = data.spreadRate ?? 0;
-        setLiveRate(data.effectiveRate ?? data.rate * (1 - spread));
-        setRateFetchedAt(new Date());
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setLiveRate(null);
-      })
-      .finally(() => {
-        if (mounted) setRateLoading(false);
+  const requestQuote = useCallback(async () => {
+    setQuoteError(null);
+    setSecondsLeft(null);
+    try {
+      const q = await quoteMutation.mutateAsync({
+        amount: quoteAmount,
+        sendCurrency,
+        receiveCurrency,
+        amountType: amountType ?? 'SEND',
       });
-    return () => { mounted = false; };
-  }, [sendCurrency, receiveCurrency]);
+      setQuote(q);
+    } catch (error) {
+      setQuote(null);
+      setQuoteError(getApiErrorMessage(error));
+    }
+    // quoteMutation is stable across renders; excluded to avoid a re-quote loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quoteAmount, sendCurrency, receiveCurrency, amountType]);
 
   useEffect(() => {
-    if (!rateFetchedAt) return;
-    const update = () => {
-      const seconds = Math.round((Date.now() - rateFetchedAt.getTime()) / 1000);
-      if (seconds < 5) setRateFreshness('Just now');
-      else if (seconds < 60) setRateFreshness(`Updated ${seconds}s ago`);
-      else setRateFreshness(`Updated ${Math.floor(seconds / 60)}m ago`);
-    };
-    update();
-    freshnessInterval.current = setInterval(update, 1000);
-    return () => {
-      if (freshnessInterval.current) clearInterval(freshnessInterval.current);
-    };
-  }, [rateFetchedAt]);
+    requestQuote();
+    // Quote once on mount; re-quotes are explicit (expiry / refresh).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const refreshRate = useCallback(() => {
-    setRateLoading(true);
-    getRate(sendCurrency, receiveCurrency)
-      .then((data) => {
-        const spread = data.spreadRate ?? 0;
-        setLiveRate(data.effectiveRate ?? data.rate * (1 - spread));
-        setRateFetchedAt(new Date());
-      })
-      .catch(() => {
-        toast.error('Could not refresh rate');
-      })
-      .finally(() => setRateLoading(false));
-  }, [sendCurrency, receiveCurrency, toast]);
+  // Countdown from the quote's expiry.
+  useEffect(() => {
+    if (!quote?.expiresAt) return;
+    const tick = () => {
+      const remaining = Math.max(
+        0,
+        Math.floor((new Date(quote.expiresAt).getTime() - Date.now()) / 1000)
+      );
+      setSecondsLeft(remaining);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [quote?.expiresAt]);
 
-  // PIN state
+  // ─── PIN state ───
   const [showPin, setShowPin] = useState(false);
   const [pin, setPin] = useState('');
   const [pinError, setPinError] = useState('');
@@ -137,14 +139,45 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
     setTimeout(() => pinInputRef.current?.focus(), 300);
   }, []);
 
+  const saveRecent = useCallback(() => {
+    if (isCryptoOut && recipientWalletAddress) {
+      addRecent({
+        channel: 'wallet',
+        label: recipientName,
+        data: { walletAddress: recipientWalletAddress, network: recipientNetwork ?? 'SOLANA' },
+      });
+    } else if (recipientBankCode && recipientAccountNumber) {
+      addRecent({
+        channel: 'bank',
+        label: recipientAccountName || recipientName,
+        data: {
+          bankCode: recipientBankCode,
+          bankName: recipientMethod || '',
+          accountNumber: recipientAccountNumber,
+          accountName: recipientAccountName || recipientName,
+        },
+      });
+    }
+  }, [
+    isCryptoOut, recipientWalletAddress, recipientNetwork, recipientName,
+    recipientBankCode, recipientAccountNumber, recipientAccountName,
+    recipientMethod, addRecent,
+  ]);
+
   const handlePinSubmit = useCallback(async () => {
     if (pin.length !== 4) {
       setPinError('PIN must be 4 digits');
       return;
     }
+    if (!quote || expired) {
+      setShowPin(false);
+      toast.info('Rate expired. Refreshing your quote.');
+      await requestQuote();
+      return;
+    }
 
     const recipient: Recipient = isCryptoOut
-      ? { walletAddress: recipientWalletAddress }
+      ? { walletAddress: recipientWalletAddress, network: recipientNetwork ?? 'SOLANA' }
       : {
           bankCode: recipientBankCode,
           accountNumber: recipientAccountNumber,
@@ -153,36 +186,15 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
 
     try {
       const tx = await createTx.mutateAsync({
-        fromCurrency: sendCurrency,
-        toCurrency: receiveCurrency,
-        amount,
+        quoteId: quote.quoteId,
+        amount: quote.totalToSend,
         recipient,
         pin,
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setShowPin(false);
-
-      // Save to recents
-      if (isCryptoOut && recipientWalletAddress) {
-        addRecent({
-          channel: 'wallet',
-          label: recipientName,
-          data: { walletAddress: recipientWalletAddress, network: recipientNetwork || 'Solana' },
-        });
-      } else if (recipientBankCode && recipientAccountNumber) {
-        addRecent({
-          channel: 'bank',
-          label: recipientAccountName || recipientName,
-          data: {
-            bankCode: recipientBankCode,
-            bankName: recipientMethod || '',
-            accountNumber: recipientAccountNumber,
-            accountName: recipientAccountName || recipientName,
-          },
-        });
-      }
-
+      saveRecent();
       navigation.replace('TransactionStatus', { transactionId: tx.id });
     } catch (error) {
       const msg = getApiErrorMessage(error);
@@ -194,15 +206,13 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
       }
     }
   }, [
-    pin, isCryptoOut, recipientWalletAddress, recipientBankCode,
-    recipientAccountNumber, recipientAccountName, sendCurrency,
-    receiveCurrency, amount, createTx, navigation, toast,
-    addRecent, recipientName, recipientMethod, recipientNetwork,
+    pin, quote, expired, isCryptoOut, recipientWalletAddress, recipientNetwork,
+    recipientBankCode, recipientAccountNumber, recipientAccountName,
+    createTx, navigation, toast, saveRecent, requestQuote,
   ]);
 
-  // Client-side estimate only; the committed `chargeAmount` returns from POST /v1/transactions
-  // and becomes source-of-truth on TransactionStatusScreen / TransferDetail.
-  const fee = Math.round(amount * 0.015 * 100) / 100;
+  const quoteLoading = quoteMutation.isPending && !quote;
+  const canConfirm = !!quote && !expired && !quoteLoading;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
@@ -233,101 +243,131 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
 
           <View style={styles.reviewDivider} />
 
-          {/* Amount details */}
-          <View style={styles.reviewPad}>
-            <View style={styles.swapRow}>
-              <Text style={[styles.swapLabel, { color: palette.grey[500] }]}>You send</Text>
-              <Text style={[styles.swapValue, { color: palette.grey[900] }]}>
-                {sendSymbol}{amount.toLocaleString()} {sendCurrency}
+          {quoteLoading ? (
+            <View style={styles.quoteLoading}>
+              <ActivityIndicator size="small" color={palette.royal[500]} />
+              <Text style={[styles.quoteLoadingText, { color: palette.grey[500] }]}>
+                Locking in your rate…
               </Text>
             </View>
-            <View style={styles.reviewDivider} />
-            <View style={styles.swapRow}>
-              <Text style={[styles.swapLabel, { color: palette.grey[500] }]}>They receive</Text>
-              <Text style={[styles.swapValue, { color: palette.grey[900] }]}>
-                {isCryptoOut
-                  ? `${liveReceiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`
-                  : `${recvSymbol}${liveReceiveAmount.toLocaleString()}`}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.reviewDivider} />
-
-          {/* Rate + Fee */}
-          <View style={[styles.metaRows, styles.reviewPad]}>
-            <View style={styles.feeRow}>
-              <Text style={[styles.feeLabel, { color: palette.grey[500] }]}>Rate</Text>
-              <View style={styles.rateRight}>
-                {rateLoading ? (
-                  <ActivityIndicator size="small" color={palette.royal[500]} />
-                ) : liveRate ? (
-                  isCryptoOut ? (
-                    <Text style={[styles.feeValue, { color: palette.grey[900] }]}>
-                      1 {receiveCurrency} = {sendSymbol}{(1 / liveRate).toLocaleString(undefined, { maximumFractionDigits: 2 })} {sendCurrency}
-                    </Text>
-                  ) : (
-                    <Text style={[styles.feeValue, { color: palette.grey[900] }]}>
-                      1 {sendCurrency} = {recvSymbol}{liveRate.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                    </Text>
-                  )
-                ) : (
-                  <Text style={[styles.feeValue, { color: palette.status.negative }]}>
-                    Unavailable
+          ) : quote ? (
+            <>
+              {/* Primary amounts */}
+              <View style={styles.reviewPad}>
+                <View style={styles.swapRow}>
+                  <Text style={[styles.swapLabel, { color: palette.grey[500] }]}>You pay</Text>
+                  <Text style={[styles.swapValue, { color: palette.grey[900] }]}>
+                    {sendSymbol}{formatAmount(quote.totalToSend, sendCurrency)} {sendCurrency}
                   </Text>
-                )}
+                </View>
+                <View style={styles.reviewDivider} />
+                <View style={styles.swapRow}>
+                  <Text style={[styles.swapLabel, { color: palette.grey[500] }]}>They receive</Text>
+                  <Text style={[styles.swapValue, { color: palette.grey[900] }]}>
+                    {recvSymbol}{formatAmount(quote.receiveAmount, receiveCurrency)} {receiveCurrency}
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            {/* Freshness pill */}
-            <View style={styles.freshRow}>
-              <TouchableOpacity
-                style={[styles.freshPill, { backgroundColor: palette.grey[100] }, hairline]}
-                onPress={refreshRate}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="refresh" size={12} color={palette.grey[400]} />
-                <Text style={[styles.freshText, { color: palette.grey[400] }]}>
-                  {rateFreshness || 'Refreshing...'}
-                </Text>
+              <View style={styles.reviewDivider} />
+
+              {/* Breakdown */}
+              <View style={[styles.metaRows, styles.reviewPad]}>
+                <View style={styles.feeRow}>
+                  <Text style={[styles.feeLabel, { color: palette.grey[500] }]}>Amount</Text>
+                  <Text style={[styles.feeValue, { color: palette.grey[900] }]}>
+                    {sendSymbol}{formatAmount(quote.enteredAmount, sendCurrency)} {sendCurrency}
+                  </Text>
+                </View>
+
+                <View style={styles.feeRow}>
+                  <Text style={[styles.feeLabel, { color: palette.grey[500] }]}>Fee</Text>
+                  <Text style={[styles.feeValue, { color: palette.grey[900] }]}>
+                    {sendSymbol}{formatAmount(quote.fee, sendCurrency)} {sendCurrency}
+                  </Text>
+                </View>
+
+                <View style={styles.feeRow}>
+                  <Text style={[styles.feeLabel, { color: palette.grey[500] }]}>Rate</Text>
+                  <Text style={[styles.feeValue, { color: palette.grey[900] }]}>
+                    {usdtIsSend
+                      ? `1 USDT = ${recvSymbol}${quote.rate.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+                      : `1 USDT = ${sendSymbol}${(1 / quote.rate).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+                  </Text>
+                </View>
+
+                <View style={styles.feeRow}>
+                  <Text style={[styles.feeLabel, { color: palette.grey[500] }]}>Delivery</Text>
+                  <View style={styles.deliveryPill}>
+                    <Ionicons name="pulse" size={11} color={palette.grey[500]} />
+                    <Text style={[styles.deliveryText, { color: palette.grey[900] }]}>
+                      Live tracking
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </>
+          ) : (
+            <View style={styles.quoteLoading}>
+              <Ionicons name="alert-circle-outline" size={22} color={palette.status.negative} />
+              <Text style={[styles.quoteErrorText, { color: palette.grey[900] }]}>
+                {quoteError || 'Could not load a quote'}
+              </Text>
+              <TouchableOpacity onPress={requestQuote} activeOpacity={0.7} style={styles.retryBtn}>
+                <Ionicons name="refresh" size={14} color={palette.royal[500]} />
+                <Text style={[styles.retryText, { color: palette.royal[500] }]}>Try again</Text>
               </TouchableOpacity>
-              <Text style={[styles.rateNote, { color: palette.grey[600] }]}>Estimated rate</Text>
             </View>
+          )}
+        </View>
 
-            <View style={styles.feeRow}>
-              <Text style={[styles.feeLabel, { color: palette.grey[500] }]}>Fee (est.)</Text>
-              <Text style={[styles.feeValue, { color: palette.grey[900] }]}>
-                {sendSymbol}{fee.toLocaleString()} {sendCurrency}
+        {/* Countdown / expiry */}
+        {quote ? (
+          expired ? (
+            <TouchableOpacity
+              style={[styles.expiryRow, { backgroundColor: palette.grey[200] }, hairline]}
+              onPress={requestQuote}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="refresh" size={14} color={palette.status.negative} />
+              <Text style={[styles.expiryText, { color: palette.status.negative }]}>
+                Rate expired — tap to refresh
+              </Text>
+            </TouchableOpacity>
+          ) : secondsLeft !== null ? (
+            <View style={styles.countdownRow}>
+              <Ionicons name="time-outline" size={13} color={palette.grey[500]} />
+              <Text style={[styles.countdownText, { color: palette.grey[500] }]}>
+                Rate locked · expires in {formatCountdown(secondsLeft)}
               </Text>
             </View>
-
-            <View style={styles.feeRow}>
-              <Text style={[styles.feeLabel, { color: palette.grey[500] }]}>Delivery</Text>
-              <View style={styles.deliveryPill}>
-                <Ionicons name="pulse" size={11} color={palette.grey[500]} />
-                <Text style={[styles.deliveryText, { color: palette.grey[900] }]}>
-                  Live tracking
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
+          ) : null
+        ) : null}
 
         {/* Disclaimer */}
         <View style={styles.disclaimerRow}>
           <Ionicons name="information-circle-outline" size={14} color={palette.grey[500]} />
           <Text style={[styles.disclaimerText, { color: palette.grey[500] }]}>
-            The final rate and fee are locked when your transaction is created. The amounts above are estimates and may differ slightly.
+            The rate and fee shown are locked to this quote. If it expires before you confirm, we'll fetch a fresh quote automatically.
           </Text>
         </View>
 
         {/* CTA */}
         <View style={styles.ctaWrap}>
-          <CTAButton
-            title="Confirm & Send"
-            onPress={handleConfirm}
-            disabled={rateLoading || !liveRate}
-          />
+          {expired ? (
+            <CTAButton
+              title="Refresh rate"
+              onPress={requestQuote}
+              loading={quoteMutation.isPending}
+            />
+          ) : (
+            <CTAButton
+              title="Confirm & Send"
+              onPress={handleConfirm}
+              disabled={!canConfirm}
+              loading={quoteLoading}
+            />
+          )}
         </View>
       </ScrollView>
 
@@ -389,7 +429,9 @@ export const ConfirmScreen: React.FC<Props> = ({ navigation, route }) => {
           ) : null}
 
           <Text style={[styles.pinDisclaimer, { color: palette.grey[500] }]}>
-            I confirm that I want to send {sendSymbol}{amount.toLocaleString()} {sendCurrency} to {recipientName}. The committed rate and fee will be determined by the backend at transaction creation time.
+            {quote
+              ? `I confirm I want to pay ${sendSymbol}${formatAmount(quote.totalToSend, sendCurrency)} ${sendCurrency} to send ${recvSymbol}${formatAmount(quote.receiveAmount, receiveCurrency)} ${receiveCurrency} to ${recipientName}.`
+              : `I confirm I want to send to ${recipientName}.`}
           </Text>
 
           <CTAButton
@@ -420,7 +462,7 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: spacing(6) },
   reviewCard: {
     marginHorizontal: spacing(6),
-    marginBottom: spacing(4),
+    marginBottom: spacing(3),
     borderRadius: radii.lg,
     overflow: 'hidden',
   },
@@ -443,6 +485,16 @@ const styles = StyleSheet.create({
   rsInfo: { flex: 1 },
   rsName: { ...typography.main14 },
   rsSub: { ...typography.secondary12, marginTop: 2 },
+  quoteLoading: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: spacing(8),
+  },
+  quoteLoadingText: { ...typography.bodySm },
+  quoteErrorText: { ...typography.bodySm, textAlign: 'center', paddingHorizontal: spacing(6) },
+  retryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6 },
+  retryText: { ...typography.buttonS },
   swapRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -459,30 +511,32 @@ const styles = StyleSheet.create({
   },
   feeLabel: { ...typography.subheader2 },
   feeValue: { ...typography.monoSm, fontVariant: ['tabular-nums'] },
-  rateRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  freshRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: -4,
-    marginBottom: 4,
-  },
-  freshPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: radii.pill,
-  },
-  freshText: { ...typography.helperText },
-  rateNote: { ...typography.helperText },
   deliveryPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
   deliveryText: { ...typography.main12, fontVariant: ['tabular-nums'] },
+  countdownRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginHorizontal: spacing(6),
+    marginBottom: spacing(4),
+  },
+  countdownText: { ...typography.helperText, fontVariant: ['tabular-nums'] },
+  expiryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginHorizontal: spacing(6),
+    marginBottom: spacing(4),
+    paddingVertical: spacing(3),
+    borderRadius: radii.md,
+  },
+  expiryText: { ...typography.main12 },
   disclaimerRow: {
     flexDirection: 'row',
     gap: 8,

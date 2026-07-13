@@ -37,8 +37,7 @@ export interface TransactionProof {
 }
 
 export interface CreateTransactionRequest {
-  fromCurrency: string;
-  toCurrency: string;
+  quoteId: string;
   amount: number;
   recipient: Recipient;
   pin: string;
