@@ -44,7 +44,7 @@ const truncateAddress = (addr: string): string => {
 };
 
 export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { amount, sendCurrency, receiveCurrency, receiveAmount } = route.params;
+  const { amount, sendCurrency, receiveCurrency, receiveAmount, amountType } = route.params;
   const recvSymbol = currencySymbols[receiveCurrency] || '';
   const sendSymbol = currencySymbols[sendCurrency] || '';
   const isCryptoOut = receiveCurrency === 'USDT';
@@ -253,6 +253,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
         sendCurrency,
         receiveCurrency,
         receiveAmount,
+        amountType,
         recipientName: r.accountName,
         recipientInitials: initials,
         recipientColors: [palette.royal[600], palette.royal[500]],
@@ -264,7 +265,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
         recipientAccountName: r.accountName,
       });
     },
-    [navigation, amount, sendCurrency, receiveCurrency, receiveAmount]
+    [navigation, amount, sendCurrency, receiveCurrency, receiveAmount, amountType]
   );
 
   const selectWalletRecent = useCallback(
@@ -274,6 +275,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
         sendCurrency,
         receiveCurrency,
         receiveAmount,
+        amountType,
         recipientName: label,
         recipientInitials: 'WA',
         recipientColors: [palette.royal[500], palette.royal[600]],
@@ -283,7 +285,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
         recipientNetwork: 'Solana',
       });
     },
-    [navigation, amount, sendCurrency, receiveCurrency, receiveAmount]
+    [navigation, amount, sendCurrency, receiveCurrency, receiveAmount, amountType]
   );
 
   const handleWalletAddressBlur = useCallback(() => {
@@ -299,6 +301,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
       sendCurrency,
       receiveCurrency,
       receiveAmount,
+      amountType,
       recipientName: truncateAddress(walletAddress),
       recipientInitials: 'WA',
       recipientColors: [palette.royal[500], palette.royal[600]],
@@ -307,7 +310,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
       recipientWalletAddress: walletAddress,
       recipientNetwork: 'Solana',
     });
-  }, [navigation, amount, sendCurrency, receiveCurrency, receiveAmount, walletAddress, walletValidationState]);
+  }, [navigation, amount, sendCurrency, receiveCurrency, receiveAmount, amountType, walletAddress, walletValidationState]);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.grey[100] }]} edges={['top']}>
@@ -685,6 +688,7 @@ export const RecipientScreen: React.FC<Props> = ({ navigation, route }) => {
                 sendCurrency,
                 receiveCurrency,
                 receiveAmount,
+                amountType,
                 recipientName: bankAccountName.trim(),
                 recipientInitials: initials,
                 recipientColors: [palette.royal[600], palette.royal[500]],

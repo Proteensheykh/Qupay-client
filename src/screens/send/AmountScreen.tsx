@@ -16,6 +16,8 @@ import { Ionicons } from '../../components/Icon';
 import { ScreenHeader, CTAButton, BottomSheet, Odometer, Numpad } from '../../components';
 import { getCurrencies, getRate } from '../../api/rates';
 import type { CurrencyResponse, RateResponse } from '../../api/rates';
+import { useTransactionLimits } from '../../hooks/useTransactionLimits';
+import { useKycStatus } from '../../hooks/useKycStatus';
 import { findCurrencyLogo } from '../../data/logos';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SendFlowParamList } from '../../navigation/AppNavigator';
@@ -25,8 +27,10 @@ import { palette } from '../../theme/colors';
 import { radii } from '../../theme/radii';
 import { borders } from '../../theme/elevation';
 
-const MIN_AMOUNT = 0.000001;
-const MAX_AMOUNT = 10000;
+// Limits are enforced on the NGN (fiat) leg. Used only when the live tier
+// limits endpoint is unavailable so the screen still guards a sane minimum.
+const FALLBACK_MIN_NGN = 10000;
+const LIMIT_CURRENCY = 'NGN';
 
 type Props = NativeStackScreenProps<SendFlowParamList, 'Amount'>;
 
@@ -161,6 +165,9 @@ const findByCode = (list: CurrencyDisplay[], code: string): CurrencyDisplay | un
 
 export const AmountScreen: React.FC<Props> = ({ navigation }) => {
   const hairline = borders.hairline.light;
+  const { data: kyc } = useKycStatus();
+  const { limitFor } = useTransactionLimits(LIMIT_CURRENCY);
+  const ngnLimit = limitFor(kyc?.tier);
   const [currencies, setCurrencies] = useState<CurrencyDisplay[]>(FALLBACK_CURRENCIES);
   const [selectedSendCurrency, setSelectedSendCurrency] = useState<CurrencyDisplay>(
     findByCode(FALLBACK_CURRENCIES, 'USDT') ?? FALLBACK_CURRENCIES[0]
@@ -324,8 +331,22 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
   const numSendAmount = parseFloat(sendAmount) || 0;
   const numReceiveAmount = parseFloat(receiveAmountStr) || 0;
 
+  // Tier limits are keyed on the NGN leg, whichever side of the pair it is.
+  const ngnAmount =
+    selectedSendCurrency.code === LIMIT_CURRENCY
+      ? numSendAmount
+      : selectedReceiveCurrency.code === LIMIT_CURRENCY
+        ? numReceiveAmount
+        : null;
+
+  const minNgn = ngnLimit?.minAmount ?? FALLBACK_MIN_NGN;
+  const maxNgn = ngnLimit && ngnLimit.maxAmount > 0 ? ngnLimit.maxAmount : null;
+
+  const belowMin = ngnAmount != null && ngnAmount > 0 && ngnAmount < minNgn;
+  const aboveMax = ngnAmount != null && maxNgn != null && ngnAmount > maxNgn;
+
   const pairSupported = isPairSupported(selectedSendCurrency.code, selectedReceiveCurrency.code);
-  const amountValid = numSendAmount >= MIN_AMOUNT && numSendAmount <= MAX_AMOUNT;
+  const amountValid = numSendAmount > 0 && !belowMin && !aboveMax;
   const canContinue = amountValid && pairSupported && effectiveRate > 0 && !rateLoading;
 
   const handleContinue = () => {
@@ -334,6 +355,7 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
       sendCurrency: selectedSendCurrency.code,
       receiveCurrency: selectedReceiveCurrency.code,
       receiveAmount: numReceiveAmount,
+      amountType: activeField === 'receive' ? 'RECEIVE' : 'SEND',
     });
   };
 
@@ -440,9 +462,14 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
               {selectedSendCurrency.code} → {selectedReceiveCurrency.code} is not yet supported. Only USDT ↔ NGN is available.
             </Text>
           )}
-          {numSendAmount > MAX_AMOUNT && (
+          {belowMin && (
             <Text style={[styles.pairWarning, { color: palette.status.negative }]}>
-              Maximum amount is {MAX_AMOUNT.toLocaleString()} {selectedSendCurrency.code}
+              Minimum amount is {'\u20A6'}{minNgn.toLocaleString()}
+            </Text>
+          )}
+          {aboveMax && maxNgn != null && (
+            <Text style={[styles.pairWarning, { color: palette.status.negative }]}>
+              Maximum amount is {'\u20A6'}{maxNgn.toLocaleString()}
             </Text>
           )}
           <CTAButton

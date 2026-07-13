@@ -75,12 +75,14 @@ export type SendFlowParamList = {
     sendCurrency: string;
     receiveCurrency: string;
     receiveAmount: number;
+    amountType?: 'SEND' | 'RECEIVE';
   };
   Confirm: {
     amount: number;
     sendCurrency: string;
     receiveCurrency: string;
     receiveAmount: number;
+    amountType?: 'SEND' | 'RECEIVE';
     recipientName: string;
     recipientInitials: string;
     recipientColors: [string, string];
