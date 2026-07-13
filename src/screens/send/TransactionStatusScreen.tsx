@@ -14,6 +14,8 @@ import { Ionicons } from '../../components/Icon';
 import * as Haptics from 'expo-haptics';
 import { CTAButton, BottomSheet } from '../../components';
 import { useTransaction, useConfirmTransfer } from '../../hooks/useTransactions';
+import { useBanks } from '../../hooks/useBanks';
+import { findBankName } from '../../api/banks';
 import { useToast } from '../../hooks/useToast';
 import { getApiErrorMessage } from '../../api/errors';
 import { isTerminalStatus } from '../../utils/transactionStatus';
@@ -92,6 +94,7 @@ function formatCountdown(deadline: string): string {
 export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) => {
   const { transactionId, origin = 'send' } = route.params;
   const { data: tx, refetch, isLoading, error } = useTransaction(transactionId);
+  const { data: banks } = useBanks();
   const confirmTransfer = useConfirmTransfer();
   const toast = useToast();
 
@@ -296,7 +299,7 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
                   {tx.mpPaymentDetails.accountName}
                 </Text>
                 <Text style={[styles.detailMono, { color: palette.grey[400] }]}>
-                  {tx.mpPaymentDetails.accountNumber} · {tx.mpPaymentDetails.bankCode}
+                  {tx.mpPaymentDetails.accountNumber} · {findBankName(banks, tx.mpPaymentDetails.bankCode) ?? tx.mpPaymentDetails.bankCode}
                 </Text>
               </View>
             ) : null}
@@ -332,6 +335,14 @@ export const TransactionStatusScreen: React.FC<Props> = ({ navigation, route }) 
                 <Text style={[styles.summaryLabel, { color: palette.grey[500] }]}>Fee</Text>
                 <Text style={[styles.summaryValue, { color: palette.grey[900] }]}>
                   {tx.chargeAmount} {tx.fromCurrency}
+                </Text>
+              </View>
+            ) : null}
+            {tx.totalToSend != null ? (
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: palette.grey[500] }]}>Total paid</Text>
+                <Text style={[styles.summaryValue, { color: palette.grey[900] }]}>
+                  {tx.totalToSend.toLocaleString()} {tx.fromCurrency}
                 </Text>
               </View>
             ) : null}

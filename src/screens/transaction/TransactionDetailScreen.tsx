@@ -6,6 +6,8 @@ import { Ionicons } from '../../components/Icon';
 import { StatusBadge } from '../../components';
 import { useToast } from '../../hooks/useToast';
 import { useTransaction } from '../../hooks/useTransactions';
+import { useBanks } from '../../hooks/useBanks';
+import { findBankName } from '../../api/banks';
 import { toStatusGroup } from '../../utils/transactionStatus';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HistoryStackParamList } from '../../navigation/AppNavigator';
@@ -85,6 +87,7 @@ const Row: React.FC<{
 export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const { transactionId } = route.params;
   const { data: tx, isLoading } = useTransaction(transactionId);
+  const { data: banks } = useBanks();
   const toast = useToast();
 
   const goBack = () => navigation.goBack();
@@ -116,6 +119,7 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
       : tx.transactionCode);
 
   const isWallet = !!tx.recipient?.walletAddress && !tx.recipient?.accountNumber;
+  const bankName = findBankName(banks, tx.recipient?.bankCode);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: backdrop }]} edges={['top', 'bottom']}>
@@ -148,14 +152,17 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
           ]}
         >
           <Row label="You sent" value={formatCurrency(tx.originalAmount, tx.fromCurrency)} />
-          <Row label="They receive" value={formatCurrency(tx.convertedAmount, tx.toCurrency)} emphasis />
-          <Row label="Rate" value={`1 ${tx.fromCurrency} = ${tx.fxRate?.toLocaleString() ?? '—'} ${tx.toCurrency}`} />
           {tx.chargeAmount > 0 && (
             <Row label="Fee" value={formatCurrency(tx.chargeAmount, tx.fromCurrency)} />
           )}
+          {tx.totalToSend != null && (
+            <Row label="Total paid" value={formatCurrency(tx.totalToSend, tx.fromCurrency)} />
+          )}
+          <Row label="They receive" value={formatCurrency(tx.convertedAmount, tx.toCurrency)} emphasis />
+          <Row label="Rate" value={`1 ${tx.fromCurrency} = ${tx.fxRate?.toLocaleString() ?? '—'} ${tx.toCurrency}`} />
           <Row label="Created" value={formatDate(tx.createdAt)} />
-          {tx.status === 'COMPLETE' && tx.expiresAt && (
-            <Row label="Completed" value={formatDate(tx.expiresAt)} />
+          {tx.status === 'COMPLETE' && (tx.completedAt || tx.expiresAt) && (
+            <Row label="Completed" value={formatDate(tx.completedAt ?? tx.expiresAt)} />
           )}
           <TouchableOpacity
             activeOpacity={0.6}
@@ -189,7 +196,7 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigation, route }) 
             <Row label="Account" value={tx.recipient.accountNumber} />
           )}
           {tx.recipient?.bankCode && (
-            <Row label="Bank" value={tx.recipient.bankCode} />
+            <Row label="Bank" value={bankName ?? tx.recipient.bankCode} />
           )}
           {tx.recipient?.walletAddress && (
             <Row label="Wallet" value={tx.recipient.walletAddress} mono />

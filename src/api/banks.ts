@@ -30,3 +30,15 @@ export async function validateBankAccount(
   const response = await apiClient.post<BankAccountData>('/v1/banks/validate', request);
   return response.data;
 }
+
+/**
+ * Resolves a bank code to its human-readable name. Transactions returned by the
+ * backend carry only `bankCode`, so receipts look up the display name here.
+ */
+export function findBankName(
+  banks: BankResponse[] | undefined,
+  bankCode: string | null | undefined
+): string | undefined {
+  if (!bankCode || !banks) return undefined;
+  return banks.find((b) => b.bankCode === bankCode)?.bankName;
+}
