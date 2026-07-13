@@ -339,8 +339,11 @@ export const AmountScreen: React.FC<Props> = ({ navigation }) => {
         ? numReceiveAmount
         : null;
 
-  const minNgn = ngnLimit?.minAmount ?? FALLBACK_MIN_NGN;
-  const maxNgn = ngnLimit && ngnLimit.maxAmount > 0 ? ngnLimit.maxAmount : null;
+  // Backend limits can carry kobo precision (e.g. 100000.01 meaning "≥ ₦100,000").
+  // Normalize to whole naira so the label matches what actually passes, since the
+  // NGN leg is only ever entered/computed as an integer.
+  const minNgn = Math.floor(ngnLimit?.minAmount ?? FALLBACK_MIN_NGN);
+  const maxNgn = ngnLimit && ngnLimit.maxAmount > 0 ? Math.floor(ngnLimit.maxAmount) : null;
 
   const belowMin = ngnAmount != null && ngnAmount > 0 && ngnAmount < minNgn;
   const aboveMax = ngnAmount != null && maxNgn != null && ngnAmount > maxNgn;
