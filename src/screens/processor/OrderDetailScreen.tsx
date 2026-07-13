@@ -15,6 +15,8 @@ import { ScreenHeader, CTAButton, StatusBadge, BottomSheet } from '../../compone
 import { useTransaction } from '../../hooks/useTransactions';
 import { useAcceptOrder } from '../../hooks/useMpQueue';
 import { useUploadProof } from '../../hooks/useMyOrders';
+import { useBanks } from '../../hooks/useBanks';
+import { findBankName } from '../../api/banks';
 import { useToast } from '../../hooks/useToast';
 import { getApiErrorMessage } from '../../api/errors';
 import { isApiError } from '../../api/client';
@@ -38,6 +40,7 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   });
   const acceptOrder = useAcceptOrder();
   const uploadProof = useUploadProof();
+  const { data: banks } = useBanks();
   const toast = useToast();
 
   const [pickedFile, setPickedFile] = useState<PickedFile | null>(null);
@@ -266,7 +269,7 @@ export const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             <DetailRow label="Account number" value={tx.recipient.accountNumber} />
           )}
           {tx.recipient?.bankCode && (
-            <DetailRow label="Bank code" value={tx.recipient.bankCode} />
+            <DetailRow label="Bank" value={findBankName(banks, tx.recipient.bankCode) ?? tx.recipient.bankCode} />
           )}
           {tx.recipient?.walletAddress && (
             <DetailRow label="Wallet" value={tx.recipient.walletAddress} mono />
